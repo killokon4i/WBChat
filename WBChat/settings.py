@@ -21,6 +21,7 @@ ALLOWED_HOSTS = [
     '.serveousercontent.com',
     '.ngrok-free.app',
     '.trycloudflare.com',
+    "wbchat-production.up.railway.app",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
