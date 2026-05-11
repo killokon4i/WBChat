@@ -1,6 +1,7 @@
 
 from pathlib import Path
-
+import os
+import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -102,14 +103,13 @@ ASGI_APPLICATION = 'WBChat.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'wbchat_db',
+        'NAME': 'railway',
         'USER': 'postgres',
-        'PASSWORD': '1234',  # Using trust authentication
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'PASSWORD': 'vyHbFUtPwbnbLwFAfEauyoaagLOASuEj',
+        'HOST': 'yamabiko.proxy.rlwy.net',
+        'PORT': '40560',
     }
 }
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
