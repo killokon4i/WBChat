@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Предпросмотр — WBChat{% endblock %}
+{% block content %}
+<div style="max-width:900px;margin:0 auto;padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h1 style="color:var(--text-primary);font-size:24px;">Предпросмотр</h1>
+        <button onclick="window.close()" class="btn" style="background:var(--bg-hover);color:var(--text-primary);border:1px solid var(--border-color);padding:8px 20px;border-radius:10px;cursor:pointer;">Закрыть</button>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:32px;">
+        <h1 style="color:var(--text-primary);font-size:28px;margin-bottom:20px;">{{ title }}</h1>
+        <div class="article-content" style="color:var(--text-secondary);line-height:1.7;">{{ content|safe }}</div>
+    </div>
+</div>
+{% endblock %}

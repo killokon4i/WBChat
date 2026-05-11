@@ -1,0 +1,604 @@
+{% extends 'base.html' %}
+
+{% block title %}Редактирование профиля - WBChat{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .edit-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 32px;
+    }
+
+    .page-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+
+    .page-header p {
+        font-size: 16px;
+        color: var(--text-secondary);
+    }
+
+    .edit-card {
+        background: var(--bg-white);
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: var(--shadow);
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-title svg {
+        width: 22px;
+        height: 22px;
+        color: var(--magenta);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text-primary);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        font-size: 15px;
+        font-family: inherit;
+        transition: all 0.3s ease;
+        background: var(--bg-white);
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--magenta);
+        box-shadow: 0 0 0 4px rgba(203, 17, 171, 0.1);
+    }
+
+    .form-control::placeholder {
+        color: #A1A1A6;
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .input-icon {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+        pointer-events: none;
+    }
+
+    .form-control.with-icon {
+        padding-right: 48px;
+    }
+
+    .divider {
+        height: 1px;
+        background: var(--border-color);
+        margin: 28px 0;
+    }
+
+    .password-section {
+        background: linear-gradient(135deg, rgba(72, 17, 115, 0.03), rgba(203, 17, 171, 0.03));
+        border-radius: 16px;
+        padding: 24px;
+        margin-top: 8px;
+    }
+
+    .password-hint {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .password-hint svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 14px 28px;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        font-family: inherit;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--magenta) 0%, var(--purplish) 100%);
+        color: white;
+        flex: 1;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(203, 17, 171, 0.4);
+    }
+
+    .btn-secondary {
+        background: var(--bg-light);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+        background: #E8E8ED;
+    }
+
+    .alert {
+        padding: 16px 20px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .alert-error {
+        background: linear-gradient(135deg, rgba(255, 59, 48, 0.08), rgba(255, 59, 48, 0.04));
+        color: #C41E3A;
+        border: 1px solid rgba(255, 59, 48, 0.2);
+    }
+
+    .alert-error svg {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+    }
+
+    .alert-content {
+        flex: 1;
+    }
+
+    .alert-content ul {
+        margin: 0;
+        padding-left: 18px;
+    }
+
+    .alert-content li {
+        margin-bottom: 4px;
+    }
+
+    .avatar-edit {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 28px;
+        padding-bottom: 28px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .current-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--border-color);
+    }
+
+    .avatar-placeholder {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 700;
+        color: white;
+    }
+
+    .avatar-info h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .avatar-info p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 12px;
+    }
+    
+    .btn-upload {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: var(--magenta);
+        color: white;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .btn-upload:hover {
+        background: #a00d8c;
+    }
+    
+    .btn-remove {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: transparent;
+        color: var(--text-secondary);
+        border-radius: 8px;
+        font-size: 13px;
+        cursor: pointer;
+        margin-left: 8px;
+        transition: all 0.2s;
+    }
+    
+    .btn-remove:hover {
+        color: #ff3b30;
+    }
+
+    @media (max-width: 768px) {
+        .edit-card {
+            padding: 24px;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-secondary {
+            order: 2;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-container">
+    <div class="page-header">
+        <h1>Редактирование профиля</h1>
+        <p>Обновите вашу личную информацию</p>
+    </div>
+
+    {% if form.errors %}
+    <div class="alert alert-error">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div class="alert-content">
+            <strong>Ошибка сохранения</strong>
+            <ul>
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="edit-card">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Аватар -->
+            <div class="avatar-edit">
+                {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="" class="current-avatar" id="avatar-preview">
+                {% else %}
+                    <div class="avatar-placeholder" id="avatar-placeholder">
+                        {{ user.username|slice:":1"|upper }}
+                    </div>
+                    <img src="" alt="" class="current-avatar" id="avatar-preview" style="display: none;">
+                {% endif %}
+                <div class="avatar-info">
+                    <h3>Фото профиля</h3>
+                    <p>JPG, PNG до 5 МБ</p>
+                    <label for="id_avatar" class="btn-upload">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Загрузить фото
+                    </label>
+                    <input type="file" 
+                           name="avatar" 
+                           id="id_avatar" 
+                           accept="image/jpeg,image/png,image/webp"
+                           style="display: none;"
+                           onchange="previewAvatar(this)">
+                    {% if user.avatar %}
+                    <label class="btn-remove" onclick="removeAvatar()">Удалить</label>
+                    <input type="hidden" name="remove_avatar" id="remove_avatar" value="">
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Учётные данные -->
+            <div class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                Учётные данные
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_username">Имя пользователя (ник)</label>
+                <div class="input-wrapper">
+                    <input type="text" 
+                           name="username" 
+                           id="id_username" 
+                           class="form-control with-icon" 
+                           value="{{ form.username.value|default:'' }}"
+                           placeholder="username"
+                           required>
+                    <span class="input-icon" style="color: var(--magenta);">@</span>
+                </div>
+                <small style="color: var(--text-muted); font-size: 12px; margin-top: 4px; display: block;">
+                    Используется для входа и упоминаний (@username)
+                </small>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Личная информация -->
+            <div class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Личная информация
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="id_last_name">Фамилия</label>
+                    <input type="text" 
+                           name="last_name" 
+                           id="id_last_name" 
+                           class="form-control" 
+                           value="{{ form.last_name.value|default:'' }}"
+                           placeholder="Введите фамилию">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_first_name">Имя</label>
+                    <input type="text" 
+                           name="first_name" 
+                           id="id_first_name" 
+                           class="form-control" 
+                           value="{{ form.first_name.value|default:'' }}"
+                           placeholder="Введите имя">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_middle_name">Отчество</label>
+                <input type="text" 
+                       name="middle_name" 
+                       id="id_middle_name" 
+                       class="form-control" 
+                       value="{{ form.middle_name.value|default:'' }}"
+                       placeholder="Введите отчество (при наличии)">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_email">Email</label>
+                <div class="input-wrapper">
+                    <input type="email" 
+                           name="email" 
+                           id="id_email" 
+                           class="form-control with-icon" 
+                           value="{{ form.email.value|default:'' }}"
+                           placeholder="example@wildberries.ru">
+                    <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Смена пароля -->
+            <div class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                Смена пароля
+            </div>
+
+            <div class="password-section">
+                <div class="password-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <span>Оставьте поля пустыми, если не хотите менять пароль</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_old_password">Текущий пароль</label>
+                    <input type="password" 
+                           name="old_password" 
+                           id="id_old_password" 
+                           class="form-control"
+                           placeholder="Введите текущий пароль">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="id_new_password">Новый пароль</label>
+                        <input type="password" 
+                               name="new_password" 
+                               id="id_new_password" 
+                               class="form-control"
+                               placeholder="Введите новый пароль">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_confirm_password">Подтверждение</label>
+                        <input type="password" 
+                               name="confirm_password" 
+                               id="id_confirm_password" 
+                               class="form-control"
+                               placeholder="Повторите пароль">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'profile' %}" class="btn btn-secondary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                    Отмена
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Сохранить изменения
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        
+        // Проверка размера (5 МБ)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Файл слишком большой. Максимум 5 МБ.');
+            input.value = '';
+            return;
+        }
+        
+        // Проверка типа
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            alert('Допустимы только JPG, PNG и WebP.');
+            input.value = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('avatar-preview');
+            const placeholder = document.getElementById('avatar-placeholder');
+            
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
+        };
+        reader.readAsDataURL(file);
+        
+        // Сбрасываем флаг удаления
+        const removeField = document.getElementById('remove_avatar');
+        if (removeField) {
+            removeField.value = '';
+        }
+    }
+}
+
+function removeAvatar() {
+    const preview = document.getElementById('avatar-preview');
+    const placeholder = document.getElementById('avatar-placeholder');
+    const fileInput = document.getElementById('id_avatar');
+    const removeField = document.getElementById('remove_avatar');
+    
+    // Очищаем input
+    fileInput.value = '';
+    
+    // Показываем placeholder, скрываем превью
+    if (placeholder) {
+        placeholder.style.display = 'flex';
+    }
+    preview.style.display = 'none';
+    preview.src = '';
+    
+    // Устанавливаем флаг удаления
+    if (removeField) {
+        removeField.value = '1';
+    }
+}
+</script>
+{% endblock %}

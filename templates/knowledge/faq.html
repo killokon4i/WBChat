@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+
+{% block title %}FAQ — База знаний{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .faq-page { max-width: 800px; margin: 0 auto; }
+
+    .faq-page h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .faq-page .subtitle {
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+    }
+
+    .faq-filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+    }
+
+    .faq-filter-btn {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        border: 1px solid var(--border-light);
+        background: transparent;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .faq-filter-btn:hover, .faq-filter-btn.active {
+        background: var(--magenta);
+        color: white;
+        border-color: var(--magenta);
+    }
+
+    .faq-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+
+    .faq-question {
+        padding: 18px 20px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        font-size: 15px;
+        transition: background 0.2s;
+        user-select: none;
+    }
+
+    .faq-question:hover {
+        background: var(--bg-hover);
+    }
+
+    .faq-chevron {
+        font-size: 18px;
+        transition: transform 0.2s;
+        color: var(--text-muted);
+    }
+
+    .faq-item.open .faq-chevron {
+        transform: rotate(180deg);
+    }
+
+    .faq-answer {
+        display: none;
+        padding: 0 20px 20px;
+        font-size: 14px;
+        line-height: 1.8;
+        color: var(--text-primary);
+    }
+
+    .faq-answer p {
+        margin: 0 0 10px;
+        color: var(--text-primary);
+    }
+
+    .faq-answer ul, .faq-answer ol {
+        padding-left: 20px;
+        margin: 8px 0;
+        color: var(--text-primary);
+    }
+
+    .faq-answer li {
+        margin-bottom: 4px;
+    }
+
+    .faq-answer code {
+        background: var(--bg-hover);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .faq-answer a {
+        color: var(--magenta);
+        text-decoration: none;
+    }
+
+    .faq-answer a:hover {
+        color: var(--link-hover);
+    }
+
+    .faq-item.open .faq-answer {
+        display: block;
+    }
+
+    .faq-answer-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border-light);
+        font-size: 13px;
+    }
+
+    .faq-helpful {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        color: var(--text-secondary);
+    }
+
+    .faq-helpful button {
+        padding: 6px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border-light);
+        background: transparent;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+        color: var(--text-primary);
+    }
+
+    .faq-helpful button:hover {
+        border-color: var(--magenta);
+        color: var(--magenta);
+    }
+
+    .faq-helpful button.yes {
+        color: var(--text-primary);
+    }
+
+    .faq-helpful button.yes:hover {
+        background: rgba(34, 197, 94, 0.12);
+        border-color: #22c55e;
+        color: #22c55e;
+    }
+
+    .faq-helpful button.no {
+        color: var(--text-primary);
+    }
+
+    .faq-helpful button.no:hover {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="faq-page">
+    <h1>FAQ</h1>
+    <p class="subtitle">Часто задаваемые вопросы и быстрые ответы</p>
+
+    <div class="faq-filters">
+        <a href="{% url 'kb_faq' %}" class="faq-filter-btn {% if not current_category %}active{% endif %}">Все</a>
+        {% for cat in categories %}
+        <a href="{% url 'kb_faq' %}?category={{ cat.slug }}"
+           class="faq-filter-btn {% if current_category == cat.slug %}active{% endif %}">
+            {{ cat.name }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% for faq in faqs %}
+    <div class="faq-item">
+        <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+            <span>{{ faq.question }}</span>
+            <span class="faq-chevron">▼</span>
+        </div>
+        <div class="faq-answer">
+            {{ faq.answer|safe }}
+            <div class="faq-answer-footer">
+                <div class="faq-helpful">
+                    <span>Было полезно?</span>
+                    <button class="yes" onclick="faqHelpful({{ faq.id }}, 'yes', this)">👍 Да ({{ faq.helpful_yes }})</button>
+                    <button class="no" onclick="faqHelpful({{ faq.id }}, 'no', this)">👎 Нет ({{ faq.helpful_no }})</button>
+                    <button class="no" onclick="faqEscalate({{ faq.id }})" style="margin-left:8px;" title="Сообщить автору, что ответ не помог">⚠️ Сообщить автору</button>
+                </div>
+                {% if faq.related_article %}
+                <a href="{% url 'kb_article_detail' slug=faq.related_article.slug %}">Подробнее →</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-muted" style="text-align: center; padding: 40px;">Вопросов пока нет</p>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function faqHelpful(faqId, helpful, btn) {
+    fetch(`/knowledge/faq/${faqId}/helpful/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'helpful=' + helpful
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            btn.style.background = helpful === 'yes' ? 'var(--success-bg)' : 'var(--error-bg)';
+            btn.style.color = helpful === 'yes' ? 'var(--success-text)' : 'var(--error-text)';
+        }
+    });
+}
+
+function faqEscalate(faqId) {
+    const feedback = prompt('Опишите, почему ответ не помог (необязательно):');
+    if (feedback === null) return;
+    fetch(`/knowledge/faq/${faqId}/escalate/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'feedback=' + encodeURIComponent(feedback)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) alert('Автор уведомлён. Спасибо за обратную связь!');
+    });
+}
+</script>
+{% endblock %}

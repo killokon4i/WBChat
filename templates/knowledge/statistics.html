@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}Статистика Базы знаний{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .stats-page { max-width: 1100px; margin: 0 auto; }
+
+    .stats-page h1 {
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 24px;
+    }
+
+    .stats-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 14px;
+        margin-bottom: 32px;
+    }
+
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 14px;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .stat-card .value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--magenta);
+    }
+
+    .stat-card .label {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+
+    .stat-card.warning .value { color: var(--warning-text); }
+    .stat-card.danger .value { color: var(--error-text); }
+
+    .stats-section {
+        margin-bottom: 32px;
+    }
+
+    .stats-section h2 {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    .stats-table {
+        width: 100%;
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .stats-table th {
+        background: var(--bg-hover);
+        padding: 12px 16px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        font-weight: 600;
+        text-align: left;
+    }
+
+    .stats-table td {
+        padding: 12px 16px;
+        font-size: 14px;
+        border-top: 1px solid var(--border-light);
+    }
+
+    .stats-table tr:hover { background: var(--bg-hover); }
+
+    .stats-cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .export-btn {
+        margin-bottom: 24px;
+    }
+
+    @media (max-width: 768px) {
+        .stats-cols { grid-template-columns: 1fr; }
+        .stats-overview { grid-template-columns: 1fr 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stats-page">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap:wrap; gap:10px;">
+        <h1>Статистика Базы знаний</h1>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="{% url 'kb_export_csv' %}?format=csv" class="btn btn-secondary">Экспорт CSV</a>
+            <a href="{% url 'kb_export_csv' %}?format=xlsx" class="btn btn-secondary">Экспорт XLSX</a>
+            <a href="{% url 'kb_term_requests' %}" class="btn btn-secondary">Заявки на термины{% if pending_terms %} ({{ pending_terms }}){% endif %}</a>
+        </div>
+    </div>
+
+    <div class="stats-overview">
+        <div class="stat-card">
+            <div class="value">{{ overview.total_articles }}</div>
+            <div class="label">Статей опубликовано</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ overview.total_drafts }}</div>
+            <div class="label">Черновиков</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ overview.total_categories }}</div>
+            <div class="label">Рубрик</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ overview.total_tags }}</div>
+            <div class="label">Тегов</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ overview.total_faqs }}</div>
+            <div class="label">FAQ</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="value">{{ overview.needs_review }}</div>
+            <div class="label">Требует пересмотра</div>
+        </div>
+        <div class="stat-card danger">
+            <div class="value">{{ overview.needs_actualization }}</div>
+            <div class="label">Требует актуализации</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{% if avg_reading_time %}{{ avg_reading_time|floatformat:0 }}с{% else %}—{% endif %}</div>
+            <div class="label">Среднее время чтения</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ update_ratio }}%</div>
+            <div class="label">Доля устаревших</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ pending_suggestions }}</div>
+            <div class="label">Ожидают правок</div>
+        </div>
+    </div>
+
+    <div class="stats-cols">
+        <div class="stats-section">
+            <h2>Топ по просмотрам</h2>
+            <table class="stats-table">
+                <thead>
+                    <tr><th>Статья</th><th>Просмотры</th><th>Рейтинг</th></tr>
+                </thead>
+                <tbody>
+                    {% for a in top_by_views %}
+                    <tr>
+                        <td><a href="{% url 'kb_article_detail' slug=a.slug %}">{{ a.title|truncatewords:8 }}</a></td>
+                        <td>{{ a.views_count }}</td>
+                        <td>{% if a.avg_rating %}{{ a.avg_rating }}★{% else %}-{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="stats-section">
+            <h2>Топ по рейтингу</h2>
+            <table class="stats-table">
+                <thead>
+                    <tr><th>Статья</th><th>Рейтинг</th><th>Голосов</th></tr>
+                </thead>
+                <tbody>
+                    {% for a in top_by_rating %}
+                    <tr>
+                        <td><a href="{% url 'kb_article_detail' slug=a.slug %}">{{ a.title|truncatewords:8 }}</a></td>
+                        <td>{{ a.avg_rating }}★</td>
+                        <td>{{ a.ratings_count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="stats-section">
+        <h2>Статистика по рубрикам</h2>
+        <table class="stats-table">
+            <thead>
+                <tr><th>Рубрика</th><th>Статей</th><th>Средний рейтинг</th><th>Просмотров</th></tr>
+            </thead>
+            <tbody>
+                {% for cat in category_stats %}
+                <tr>
+                    <td>{{ cat.name }}</td>
+                    <td>{{ cat.article_count }}</td>
+                    <td>{% if cat.avg_rating %}{{ cat.avg_rating|floatformat:1 }}★{% else %}-{% endif %}</td>
+                    <td>{{ cat.total_views|default:0 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="stats-section">
+        <h2>Топ авторов</h2>
+        <table class="stats-table">
+            <thead>
+                <tr><th>Автор</th><th>Статей</th><th>Средний рейтинг</th></tr>
+            </thead>
+            <tbody>
+                {% for u in author_stats %}
+                <tr>
+                    <td>{{ u.get_full_name|default:u.username }}</td>
+                    <td>{{ u.articles_count }}</td>
+                    <td>{% if u.avg_article_rating %}{{ u.avg_article_rating|floatformat:1 }}★{% else %}-{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if needs_review_list %}
+    <div class="stats-section">
+        <h2>Статьи, требующие пересмотра</h2>
+        <table class="stats-table">
+            <thead>
+                <tr><th>Статья</th><th>Автор</th><th>Срок</th><th>Рубрика</th></tr>
+            </thead>
+            <tbody>
+                {% for a in needs_review_list %}
+                <tr>
+                    <td><a href="{% url 'kb_article_detail' slug=a.slug %}">{{ a.title|truncatewords:8 }}</a></td>
+                    <td>{{ a.author.get_full_name|default:a.author.username }}</td>
+                    <td style="color: var(--error-text);">{{ a.next_review_date|date:"d.m.Y" }}</td>
+                    <td>{{ a.category.name|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if search_analytics.zero_results %}
+    <div class="stats-section">
+        <h2>Нулевые поисковые запросы (бэклог для авторов)</h2>
+        <table class="stats-table">
+            <thead>
+                <tr><th>Запрос</th><th>Количество</th></tr>
+            </thead>
+            <tbody>
+                {% for q in search_analytics.zero_results %}
+                <tr>
+                    <td>{{ q.query }}</td>
+                    <td>{{ q.count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Опрос завершён — WBChat{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card text-center">
+        <h1 class="page-title">Спасибо за участие!</h1>
+        <p class="text-secondary mt-2">
+            Ваши ответы по опросу «{{ survey.title }}» сохранены.
+        </p>
+        <div class="mt-3">
+            <a href="{% url 'surveys_list' %}" class="btn btn-primary">К списку опросов</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

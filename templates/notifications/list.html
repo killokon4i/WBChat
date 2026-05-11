@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block title %}Уведомления — WB Bank{% endblock %}
+
+{% block content %}
+<style>
+    .notifications-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .notifications-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+    
+    .notifications-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .notifications-count {
+        font-size: 14px;
+        color: var(--text-secondary);
+        font-weight: 400;
+        margin-left: 12px;
+    }
+    
+    .btn-mark-all {
+        padding: 10px 20px;
+        background: var(--bg-hover);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .btn-mark-all:hover {
+        background: var(--border-color);
+    }
+    
+    .notifications-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .notification-card {
+        display: flex;
+        gap: 16px;
+        padding: 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        transition: all 0.2s;
+    }
+    
+    .notification-card.unread {
+        background: var(--bg-card);
+        border-left: 3px solid var(--magenta);
+    }
+    
+    .notification-card:hover {
+        background: var(--bg-hover);
+    }
+    
+    .notification-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+    
+    .notification-icon.info { background: var(--info-bg); }
+    .notification-icon.success { background: var(--success-bg); }
+    .notification-icon.warning { background: var(--warning-bg); }
+    .notification-icon.error { background: var(--error-bg); }
+    .notification-icon.mention { background: rgba(168, 85, 247, 0.15); }
+    
+    .notification-content {
+        flex: 1;
+    }
+    
+    .notification-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    
+    .notification-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
+
+    .notification-text a {
+        color: var(--magenta);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .notification-text a:hover {
+        color: var(--link-hover);
+    }
+    
+    .notification-meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    
+    .notification-time {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+    
+    .notification-link {
+        font-size: 13px;
+        color: var(--magenta);
+        text-decoration: none;
+    }
+    
+    .notification-link:hover {
+        color: var(--link-hover);
+    }
+    
+    .notification-actions {
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .btn-mark-read {
+        padding: 6px 12px;
+        background: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .btn-mark-read:hover {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+    
+    .empty-title {
+        font-size: 18px;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .empty-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+</style>
+
+<div class="notifications-container">
+    <div class="notifications-header">
+        <h1 class="notifications-title">
+            Уведомления
+            {% if unread_count %}<span class="notifications-count">{{ unread_count }} непрочитанных</span>{% endif %}
+        </h1>
+        {% if unread_count %}
+        <button class="btn-mark-all" onclick="markAllRead()">
+            Отметить все прочитанными
+        </button>
+        {% endif %}
+    </div>
+    
+    {% if notifications %}
+    <div class="notifications-list">
+        {% for notif in notifications %}
+        <div class="notification-card {% if not notif.is_read %}unread{% endif %}" data-id="{{ notif.id }}">
+            <div class="notification-icon {{ notif.notification_type.code|default:'info' }}">
+                {% if notif.notification_type.icon %}
+                {{ notif.notification_type.icon }}
+                {% else %}
+                🔔
+                {% endif %}
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">{{ notif.title }}</div>
+                <div class="notification-text">{{ notif.content|safe }}</div>
+                <div class="notification-meta">
+                    <span class="notification-time">{{ notif.created_at|timesince }} назад</span>
+                    {% if notif.link %}
+                    <a href="{{ notif.link }}" class="notification-link">Перейти →</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% if not notif.is_read %}
+            <div class="notification-actions">
+                <button class="btn-mark-read" onclick="markRead({{ notif.id }})">Прочитано</button>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🔔</div>
+        <div class="empty-title">Нет уведомлений</div>
+        <div class="empty-text">Здесь будут появляться ваши уведомления</div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function markRead(notificationId) {
+    fetch(`/notifications/${notificationId}/read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    }).then(response => {
+        if (response.ok) {
+            const card = document.querySelector(`[data-id="${notificationId}"]`);
+            card.classList.remove('unread');
+            card.querySelector('.btn-mark-read')?.remove();
+        }
+    });
+}
+
+function markAllRead() {
+    fetch('/notifications/mark-all-read/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    }).then(response => {
+        if (response.ok) {
+            document.querySelectorAll('.notification-card.unread').forEach(card => {
+                card.classList.remove('unread');
+                card.querySelector('.btn-mark-read')?.remove();
+            });
+            document.querySelector('.btn-mark-all')?.remove();
+            document.querySelector('.notifications-count')?.remove();
+        }
+    });
+}
+</script>
+{% endblock %}

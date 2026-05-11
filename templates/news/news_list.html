@@ -1,0 +1,815 @@
+{% extends 'base.html' %}
+
+{% block title %}Новости - WBChat{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .news-page {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 40px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-header-left {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .page-title {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -0.5px;
+    }
+
+    .page-subtitle {
+        font-size: 15px;
+        color: var(--text-secondary);
+    }
+
+    .create-news-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(203, 17, 171, 0.3);
+    }
+
+    .create-news-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 25px rgba(203, 17, 171, 0.4);
+    }
+
+    /* Featured News (первая новость) */
+    .featured-news {
+        margin-bottom: 40px;
+    }
+
+    .featured-card {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        background: var(--bg-card);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .featured-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 20px 40px rgba(203, 17, 171, 0.15);
+        border-color: rgba(203, 17, 171, 0.3);
+    }
+
+    .featured-image {
+        position: relative;
+        overflow: hidden;
+        background: var(--bg-hover);
+    }
+
+    .featured-image img {
+        width: 100%;
+        height: auto;
+        max-height: 450px;
+        object-fit: contain;
+        transition: transform 0.6s ease;
+        cursor: zoom-in;
+    }
+
+    .featured-card:hover .featured-image img {
+        transform: scale(1.02);
+    }
+
+    .featured-image-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--dark-violet) 0%, var(--magenta) 50%, var(--purplish) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .featured-image-placeholder svg {
+        width: 80px;
+        height: 80px;
+        color: rgba(255,255,255,0.3);
+    }
+
+    .featured-badge {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        padding: 6px 14px;
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        border-radius: 20px;
+        box-shadow: 0 4px 15px rgba(203, 17, 171, 0.4);
+    }
+
+    .featured-content {
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .featured-meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .featured-date {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-secondary);
+        font-size: 13px;
+    }
+
+    .featured-author {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .featured-author-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: white;
+        overflow: hidden;
+    }
+
+    .featured-author-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .featured-author-name {
+        color: var(--text-secondary);
+        font-size: 13px;
+    }
+
+    .featured-title {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        line-height: 1.25;
+        letter-spacing: -0.5px;
+        transition: color 0.3s ease;
+    }
+
+    .featured-card:hover .featured-title {
+        color: var(--magenta);
+    }
+
+    .featured-excerpt {
+        color: var(--text-secondary);
+        font-size: 15px;
+        line-height: 1.7;
+        margin-bottom: 24px;
+    }
+
+    .featured-footer {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .read-more-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: var(--bg-hover);
+        color: var(--text-primary);
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
+    }
+
+    .read-more-btn:hover {
+        background: var(--magenta);
+        color: white;
+        border-color: var(--magenta);
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-secondary);
+        font-size: 13px;
+    }
+
+    .stat-item svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* News Grid */
+    .news-section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 24px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .news-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 24px;
+    }
+
+    .news-card {
+        background: var(--bg-card);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .news-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.15);
+        border-color: rgba(203, 17, 171, 0.2);
+    }
+
+    .news-image-wrapper {
+        position: relative;
+        overflow: hidden;
+        background: var(--bg-hover);
+    }
+
+    .news-image {
+        width: 100%;
+        height: auto;
+        max-height: 280px;
+        object-fit: contain;
+        transition: transform 0.5s ease;
+        cursor: zoom-in;
+    }
+
+    .news-card:hover .news-image {
+        transform: scale(1.02);
+    }
+
+    .news-image-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--dark-violet) 0%, var(--magenta) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .news-image-placeholder svg {
+        width: 48px;
+        height: 48px;
+        color: rgba(255,255,255,0.25);
+    }
+
+    .news-content {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .news-meta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .news-date {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    .news-date svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .news-author-small {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .news-author-avatar-small {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 600;
+        color: white;
+        overflow: hidden;
+    }
+
+    .news-author-avatar-small img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .news-author-name-small {
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    .news-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+        line-height: 1.35;
+        transition: color 0.3s ease;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .news-card:hover .news-title {
+        color: var(--magenta);
+    }
+
+    .news-excerpt {
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.6;
+        flex: 1;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+
+    .news-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .news-stats {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .news-stat {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    .news-stat svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .news-read-more {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--magenta);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: gap 0.3s ease;
+    }
+
+    .news-read-more:hover {
+        gap: 8px;
+    }
+
+    .news-read-more svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: var(--bg-card);
+        border-radius: 24px;
+        border: 2px dashed var(--border-color);
+    }
+
+    .empty-state-icon {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 24px;
+        background: linear-gradient(135deg, rgba(203, 17, 171, 0.1), rgba(153, 0, 153, 0.1));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .empty-state-icon svg {
+        width: 48px;
+        height: 48px;
+        color: var(--magenta);
+    }
+
+    .empty-state h3 {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+
+    .empty-state p {
+        font-size: 15px;
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+    }
+
+    /* Lightbox */
+    .lightbox {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        cursor: zoom-out;
+        animation: lightboxFadeIn 0.3s ease;
+    }
+
+    .lightbox.active {
+        display: flex;
+    }
+
+    @keyframes lightboxFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .lightbox img {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        animation: lightboxZoomIn 0.3s ease;
+    }
+
+    @keyframes lightboxZoomIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+    .lightbox-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+    }
+
+    .lightbox-close svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    @media (max-width: 900px) {
+        .featured-card {
+            grid-template-columns: 1fr;
+        }
+
+        .featured-content {
+            padding: 28px;
+        }
+
+        .featured-title {
+            font-size: 22px;
+        }
+
+        .news-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .page-title {
+            font-size: 26px;
+        }
+
+        .featured-content {
+            padding: 20px;
+        }
+
+        .featured-title {
+            font-size: 20px;
+        }
+
+        .news-content {
+            padding: 18px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="news-page">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1 class="page-title">Новости</h1>
+            <p class="page-subtitle">Будьте в курсе последних событий</p>
+        </div>
+        {% if request.user.is_authenticated and request.user.isModerator %}
+        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+            <a href="{% url 'create_news' %}" class="create-news-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Создать
+            </a>
+            <a href="{% url 'news_personal_dashboard' %}" class="create-news-btn" style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border-color);box-shadow:none;">
+                Личный кабинет
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if news %}
+        <!-- Featured News (первая новость) -->
+        {% with first_news=news.0 %}
+        <div class="featured-news">
+            <div class="featured-card" onclick="window.location.href='{% url 'news_detail' first_news.pk %}'">
+                <div class="featured-image">
+                    {% if first_news.image %}
+                    <img src="{{ first_news.image.url }}" alt="{{ first_news.title }}" onclick="openLightbox(this.src, event)">
+                    {% else %}
+                    <div class="featured-image-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                    <span class="featured-badge">Актуально</span>
+                </div>
+                <div class="featured-content">
+                    <div class="featured-meta">
+                        <span class="featured-date">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            {{ first_news.created_at|date:"d.m.Y" }}
+                        </span>
+                        {% if first_news.author %}
+                        <div class="featured-author">
+                            <div class="featured-author-avatar">
+                                {% if first_news.author.avatar %}
+                                <img src="{{ first_news.author.avatar.url }}" alt="">
+                                {% else %}
+                                {{ first_news.author.first_name|slice:":1"|default:first_news.author.username|slice:":1"|upper }}
+                                {% endif %}
+                            </div>
+                            <span class="featured-author-name">{{ first_news.author.get_full_name|default:first_news.author.username }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h2 class="featured-title">{{ first_news.title }}</h2>
+                    <p class="featured-excerpt">{{ first_news.content|striptags|truncatechars:220 }}</p>
+                    
+                    <div class="featured-footer">
+                        <a href="{% url 'news_detail' first_news.pk %}" class="read-more-btn" onclick="event.stopPropagation()">
+                            Читать далее
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                <polyline points="12 5 19 12 12 19"/>
+                            </svg>
+                        </a>
+                        <div class="stat-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            {{ first_news.comments_count }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+
+        <!-- Остальные новости -->
+        {% if news|length > 1 %}
+        <h2 class="news-section-title">Все публикации</h2>
+        <div class="news-grid">
+            {% for item in news %}
+            {% if not forloop.first %}
+            <article class="news-card" onclick="window.location.href='{% url 'news_detail' item.pk %}'">
+                <div class="news-image-wrapper">
+                    {% if item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="news-image" onclick="openLightbox(this.src, event)">
+                    {% else %}
+                    <div class="news-image-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="news-content">
+                    <div class="news-meta">
+                        <span class="news-date">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            {{ item.created_at|date:"d.m.Y" }}
+                        </span>
+                        {% if item.author %}
+                        <div class="news-author-small">
+                            <div class="news-author-avatar-small">
+                                {% if item.author.avatar %}
+                                <img src="{{ item.author.avatar.url }}" alt="">
+                                {% else %}
+                                {{ item.author.first_name|slice:":1"|default:item.author.username|slice:":1"|upper }}
+                                {% endif %}
+                            </div>
+                            <span class="news-author-name-small">{{ item.author.first_name|default:item.author.username }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h3 class="news-title">{{ item.title }}</h3>
+                    <p class="news-excerpt">{{ item.content|striptags|truncatechars:120 }}</p>
+                    
+                    <div class="news-footer">
+                        <div class="news-stats">
+                            <span class="news-stat">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                {{ item.comments_count }}
+                            </span>
+                        </div>
+                        <a href="{% url 'news_detail' item.pk %}" class="news-read-more" onclick="event.stopPropagation()">
+                            Читать
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </article>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+            </svg>
+        </div>
+        <h3>Новостей пока нет</h3>
+        <p>Здесь появятся корпоративные новости и объявления</p>
+        {% if request.user.is_authenticated and request.user.isModerator %}
+        <a href="{% url 'create_news' %}" class="create-news-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Создать первую новость
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+    </button>
+    <img src="" alt="Просмотр изображения" id="lightbox-img">
+</div>
+
+<script>
+function openLightbox(src, event) {
+    event.stopPropagation();
+    const lightbox = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    img.src = src;
+    lightbox.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    const lightbox = document.getElementById('lightbox');
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeLightbox();
+    }
+});
+</script>
+{% endblock %}

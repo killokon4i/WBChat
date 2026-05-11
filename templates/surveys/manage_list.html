@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Мои опросы — WBChat{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="flex-between mb-2">
+            <h1 class="page-title">Мои опросы</h1>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <a href="{% url 'surveys_archive_list' %}" class="btn btn-secondary">Архив опросов</a>
+                <a href="{% url 'surveys_create' %}" class="btn btn-primary">Создать опрос</a>
+            </div>
+        </div>
+        {% if my_surveys %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Статус</th>
+                    <th>Создан</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in my_surveys %}
+                <tr>
+                    <td>{{ s.title }}</td>
+                    <td>{{ s.get_status_display }}</td>
+                    <td>{{ s.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>
+                        <a href="{% url 'surveys_edit' s.pk %}" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">Редактировать</a>
+                        {% if s.status == 'draft' %}
+                        <a href="{% url 'surveys_launch' s.pk %}" class="btn btn-primary" style="padding:6px 12px;font-size:12px;">Запустить</a>
+                        {% elif s.status == 'active' %}
+                        <a href="{% url 'surveys_close' s.pk %}" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">Завершить</a>
+                        {% elif s.status == 'closed' %}
+                        <a href="{% url 'surveys_archive' s.pk %}" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">В архив</a>
+                        {% endif %}
+                        <a href="{% url 'surveys_results' s.pk %}" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">Результаты</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">Вы ещё не создавали опросы.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

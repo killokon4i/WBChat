@@ -1,0 +1,900 @@
+{% extends 'base.html' %}
+
+{% block title %}Чаты - WBChat{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-header-content h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .page-header-content p {
+        font-size: 16px;
+        color: var(--text-secondary);
+    }
+
+    .chat-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* Context menu for chats */
+    .chat-ctx-menu {
+        position: fixed;
+        z-index: 5000;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0,0,0,.4);
+        min-width: 190px;
+        padding: 6px;
+        display: none;
+        animation: chatCtxIn .15s ease;
+    }
+    @keyframes chatCtxIn { from { opacity:0; transform:scale(.95); } to { opacity:1; transform:scale(1); } }
+    .chat-ctx-menu.active { display: block; }
+    .chat-ctx-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text-primary);
+        transition: background .15s;
+    }
+    .chat-ctx-item:hover { background: var(--bg-hover); }
+    .chat-ctx-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .chat-ctx-item.danger { color: #ef4444; }
+    .chat-ctx-sep { height: 1px; background: var(--border-color); margin: 4px 8px; }
+
+    .chat-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        background: var(--bg-card);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s ease;
+    }
+
+    .chat-item:hover {
+        transform: translateX(4px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .chat-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .chat-avatar-placeholder {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: 700;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .chat-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .chat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+
+    .chat-name {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .chat-position {
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--text-muted);
+    }
+
+    .chat-time {
+        font-size: 13px;
+        color: var(--text-secondary);
+        flex-shrink: 0;
+    }
+
+    .chat-preview {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .chat-last-message {
+        font-size: 14px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .chat-unread {
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
+        color: white;
+        font-size: 12px;
+        font-weight: 700;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 7px;
+        border-radius: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .chat-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .chat-type-direct {
+        background: rgba(52, 199, 89, 0.15);
+        color: #34C759;
+    }
+
+    .chat-type-group {
+        background: rgba(0, 122, 255, 0.15);
+        color: #007AFF;
+    }
+
+    .chat-type-channel {
+        background: rgba(255, 149, 0, 0.15);
+        color: #FF9500;
+    }
+
+    /* New Chat Button */
+    .new-chat-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        box-shadow: 0 4px 15px rgba(203, 17, 171, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .new-chat-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 25px rgba(203, 17, 171, 0.4);
+    }
+
+    .new-chat-btn svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal {
+        background: var(--bg-card);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 480px;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+        animation: modalIn 0.3s ease;
+    }
+
+    @keyframes modalIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .modal-close {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: var(--bg-hover);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        transition: all 0.2s ease;
+    }
+
+    .modal-close:hover {
+        background: var(--border-color);
+        color: var(--text-primary);
+    }
+
+    .modal-search {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-search input {
+        width: 100%;
+        padding: 12px 16px;
+        background: var(--bg-hover);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        font-size: 15px;
+        color: var(--text-primary);
+        transition: all 0.2s ease;
+    }
+
+    .modal-search input:focus {
+        outline: none;
+        border-color: var(--magenta);
+        box-shadow: 0 0 0 3px rgba(203, 17, 171, 0.1);
+    }
+
+    .modal-search input::placeholder {
+        color: var(--text-muted);
+    }
+
+    .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px;
+    }
+
+    .user-list-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .user-list-item:hover {
+        background: var(--bg-hover);
+    }
+
+    .user-list-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .user-list-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .user-list-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-list-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+
+    .user-list-position {
+        font-size: 13px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .user-list-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-secondary);
+    }
+
+    .user-list-loading {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-secondary);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+    }
+
+    .empty-state svg {
+        width: 120px;
+        height: 120px;
+        color: #D2D2D7;
+        margin-bottom: 24px;
+    }
+
+    .empty-state h3 {
+        font-size: 24px;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
+
+    .empty-state p {
+        font-size: 16px;
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    @media (max-width: 768px) {
+        .page-header-content h1 {
+            font-size: 24px;
+        }
+
+        .chat-item {
+            padding: 12px 16px;
+        }
+
+        .chat-avatar,
+        .chat-avatar-placeholder {
+            width: 48px;
+            height: 48px;
+        }
+
+        .chat-avatar-placeholder {
+            font-size: 18px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-content">
+        <h1>Мои чаты</h1>
+        <p>Общайтесь с коллегами в режиме реального времени</p>
+    </div>
+    <div style="display:flex;gap:12px;">
+        <button class="new-chat-btn" onclick="openGroupModal()" title="Создать беседу" style="background:linear-gradient(135deg,#007AFF,#5856D6);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+        </button>
+        <button class="new-chat-btn" onclick="openNewChatModal()" title="Начать личный чат">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<!-- New Chat Modal -->
+<div class="modal-overlay" id="newChatModal" onclick="closeNewChatModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">Новый чат</h3>
+            <button class="modal-close" onclick="closeNewChatModal()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-search">
+            <input type="text" id="userSearchInput" placeholder="Поиск сотрудника..." oninput="searchUsers(this.value)">
+        </div>
+        <div class="modal-body" id="userList">
+            <div class="user-list-loading">Загрузка...</div>
+        </div>
+    </div>
+</div>
+
+{% if conversations %}
+<div class="chat-list">
+    {% for conversation in conversations %}
+    <a href="{% url 'chat_room' conversation.id %}"
+       class="chat-item"
+       data-conversation-id="{{ conversation.id }}"
+       data-conversation-name="{{ conversation.display_name|escapejs }}">
+        {% if conversation.display_avatar %}
+            <img src="{{ conversation.display_avatar.url }}" alt="" class="chat-avatar">
+        {% else %}
+            <div class="chat-avatar-placeholder">
+                {{ conversation.display_name|slice:":1"|upper }}
+            </div>
+        {% endif %}
+
+        <div class="chat-info">
+            <div class="chat-header">
+                <span class="chat-name">
+                    {{ conversation.display_name }}
+                    {% if conversation.display_position %}
+                        <span class="chat-position">{{ conversation.display_position }}</span>
+                    {% endif %}
+                </span>
+                <span class="chat-time">{{ conversation.updated_at|date:"d.m H:i" }}</span>
+            </div>
+            <div class="chat-preview">
+                <span class="chat-last-message">
+                    <span class="chat-type-badge chat-type-{{ conversation.type }}">
+                        {% if conversation.type == 'direct' %}
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            Личные
+                        {% elif conversation.type == 'group' %}
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                            Группа
+                        {% else %}
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                            Канал
+                        {% endif %}
+                    </span>
+                </span>
+                {% if conversation.unread_count > 0 %}
+                    <span class="chat-unread">{{ conversation.unread_count }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <h3>Нет активных чатов</h3>
+        <p>Здесь будут отображаться ваши личные сообщения, групповые чаты и каналы</p>
+    </div>
+</div>
+{% endif %}
+
+<script>
+let allUsers = [];
+
+function openNewChatModal() {
+    document.getElementById('newChatModal').classList.add('active');
+    document.getElementById('userSearchInput').value = '';
+    loadUsers();
+}
+
+function closeNewChatModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('newChatModal').classList.remove('active');
+}
+
+function loadUsers() {
+    const userList = document.getElementById('userList');
+    userList.innerHTML = '<div class="user-list-loading">Загрузка...</div>';
+    
+    fetch('/api/org/employees/')
+        .then(response => response.json())
+        .then(data => {
+            allUsers = data.results || data;
+            renderUsers(allUsers);
+        })
+        .catch(err => {
+            console.error('Error loading users:', err);
+            userList.innerHTML = '<div class="user-list-empty">Ошибка загрузки</div>';
+        });
+}
+
+function searchUsers(query) {
+    query = query.toLowerCase().trim();
+    if (!query) {
+        renderUsers(allUsers);
+        return;
+    }
+    
+    const filtered = allUsers.filter(user => {
+        const fullName = `${user.last_name || ''} ${user.first_name || ''} ${user.middle_name || ''}`.toLowerCase();
+        const username = (user.username || '').toLowerCase();
+        return fullName.includes(query) || username.includes(query);
+    });
+    
+    renderUsers(filtered);
+}
+
+function renderUsers(users) {
+    const userList = document.getElementById('userList');
+    const currentUserId = {{ request.user.id }};
+    
+    // Exclude current user
+    const filteredUsers = users.filter(u => u.id !== currentUserId);
+    
+    if (filteredUsers.length === 0) {
+        userList.innerHTML = '<div class="user-list-empty">Пользователи не найдены</div>';
+        return;
+    }
+    
+    userList.innerHTML = filteredUsers.map(user => {
+        const fullName = [user.last_name, user.first_name].filter(Boolean).join(' ') || user.username;
+        const initial = (user.first_name || user.username || '?')[0].toUpperCase();
+        const position = user.position_name || '';
+        const avatarHtml = user.avatar 
+            ? `<img src="${user.avatar}" alt="">` 
+            : initial;
+        
+        return `
+            <a href="/chat/start/${user.id}/" class="user-list-item">
+                <div class="user-list-avatar">${avatarHtml}</div>
+                <div class="user-list-info">
+                    <div class="user-list-name">${fullName}</div>
+                    ${position ? `<div class="user-list-position">${position}</div>` : ''}
+                </div>
+            </a>
+        `;
+    }).join('');
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeNewChatModal();
+        closeGroupModal();
+    }
+});
+</script>
+
+<!-- Group creation modal -->
+<style>
+    .group-modal .modal { max-width: 520px; }
+    .group-form { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+    .group-form label { font-size: 14px; font-weight: 600; color: var(--text-primary); display: block; margin-bottom: 6px; }
+    .group-form input[type=text], .group-form input[type=file] { width: 100%; padding: 10px 14px; background: var(--bg-hover); border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; color: var(--text-primary); }
+    .group-form input[type=text]:focus { outline: none; border-color: var(--magenta); }
+    .group-participants-list { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+    .group-participant-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: background .15s; user-select: none; }
+    .group-participant-item:hover { background: var(--bg-hover); }
+    .group-participant-item.selected { background: rgba(203,17,171,.12); }
+    .group-participant-item input[type=checkbox] { accent-color: var(--magenta); width: 18px; height: 18px; flex-shrink: 0; pointer-events: none; }
+    .gp-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--magenta), var(--purplish)); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: white; flex-shrink: 0; }
+    .gp-info { flex: 1; min-width: 0; }
+    .group-participant-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+    .group-participant-pos { font-size: 12px; color: var(--text-secondary); }
+    .group-selected-count { font-size: 13px; color: var(--magenta); font-weight: 600; margin-bottom: 8px; min-height: 20px; }
+    .group-create-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--magenta), var(--purplish)); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+    .group-create-btn:hover { opacity: .9; }
+    .group-create-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .avatar-preview { width: 64px; height: 64px; border-radius: 50%; background: var(--bg-hover); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; transition: border-color .2s; }
+    .avatar-preview:hover { border-color: var(--magenta); }
+    .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+</style>
+
+<div class="modal-overlay group-modal" id="groupModal" onclick="closeGroupModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">Создать беседу</h3>
+            <button class="modal-close" onclick="closeGroupModal()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <form id="groupForm" class="group-form" onsubmit="createGroup(event)">
+            <div style="display:flex;align-items:center;gap:16px;">
+                <div class="avatar-preview" id="avatarPreview" onclick="document.getElementById('groupAvatar').click()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                </div>
+                <input type="file" id="groupAvatar" accept="image/*" style="display:none" onchange="previewGroupAvatar(this)">
+                <div style="flex:1;">
+                    <label for="groupName">Название</label>
+                    <input type="text" id="groupName" placeholder="Название беседы..." required>
+                </div>
+            </div>
+            <div>
+                <label>Участники</label>
+                <div class="modal-search" style="padding:0;border:none;margin-bottom:8px;">
+                    <input type="text" id="groupSearchInput" placeholder="Поиск сотрудника..." oninput="filterGroupUsers(this.value)">
+                </div>
+                <div class="group-selected-count" id="groupSelectedCount"></div>
+                <div class="group-participants-list" id="groupParticipants"></div>
+            </div>
+            <button type="submit" class="group-create-btn" id="groupCreateBtn">Создать беседу</button>
+        </form>
+    </div>
+</div>
+
+<script>
+let groupUsers = [];
+let selectedGroupUsers = new Set();
+
+function openGroupModal() {
+    document.getElementById('groupModal').classList.add('active');
+    document.getElementById('groupName').value = '';
+    document.getElementById('avatarPreview').innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+    selectedGroupUsers.clear();
+    loadGroupUsers();
+}
+
+function closeGroupModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('groupModal').classList.remove('active');
+}
+
+function previewGroupAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) { document.getElementById('avatarPreview').innerHTML = `<img src="${e.target.result}" alt="">`; };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function loadGroupUsers() {
+    fetch('/api/org/employees/')
+        .then(r => r.json())
+        .then(data => { groupUsers = data.results || data; renderGroupUsers(groupUsers); })
+        .catch(() => {});
+}
+
+function filterGroupUsers(q) {
+    q = q.toLowerCase().trim();
+    if (!q) { renderGroupUsers(groupUsers); return; }
+    renderGroupUsers(groupUsers.filter(u => {
+        const full = `${u.last_name||''} ${u.first_name||''} ${u.middle_name||''}`.toLowerCase();
+        return full.includes(q) || (u.username||'').toLowerCase().includes(q);
+    }));
+}
+
+function renderGroupUsers(users) {
+    const list = document.getElementById('groupParticipants');
+    const currentId = {{ request.user.id }};
+    const filtered = users.filter(u => u.id !== currentId);
+    if (!filtered.length) { list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-secondary)">Не найдено</div>'; return; }
+    list.innerHTML = filtered.map(u => {
+        const name = [u.last_name, u.first_name].filter(Boolean).join(' ') || u.username;
+        const checked = selectedGroupUsers.has(u.id) ? 'checked' : '';
+        const selected = selectedGroupUsers.has(u.id) ? ' selected' : '';
+        const initial = (u.first_name || u.username || '?')[0].toUpperCase();
+        return `<div class="group-participant-item${selected}" data-uid="${u.id}" onclick="toggleGroupUser(${u.id}, this)">
+            <input type="checkbox" ${checked}>
+            <div class="gp-avatar">${initial}</div>
+            <div class="gp-info"><div class="group-participant-name">${name}</div>${u.position_name ? `<div class="group-participant-pos">${u.position_name}</div>` : ''}</div>
+        </div>`;
+    }).join('');
+    updateSelectedCount();
+}
+
+function toggleGroupUser(uid, el) {
+    if (selectedGroupUsers.has(uid)) selectedGroupUsers.delete(uid);
+    else selectedGroupUsers.add(uid);
+    const cb = el.querySelector('input[type=checkbox]');
+    cb.checked = selectedGroupUsers.has(uid);
+    el.classList.toggle('selected', selectedGroupUsers.has(uid));
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const el = document.getElementById('groupSelectedCount');
+    const n = selectedGroupUsers.size;
+    el.textContent = n > 0 ? `Выбрано: ${n}` : '';
+}
+
+function createGroup(e) {
+    e.preventDefault();
+    const name = document.getElementById('groupName').value.trim();
+    if (!name) return;
+    const btn = document.getElementById('groupCreateBtn');
+    btn.disabled = true;
+    btn.textContent = 'Создание...';
+
+    const formData = new FormData();
+    formData.append('name', name);
+    const avatarFile = document.getElementById('groupAvatar').files[0];
+    if (avatarFile) formData.append('avatar', avatarFile);
+    selectedGroupUsers.forEach(uid => formData.append('participants', uid));
+
+    fetch('/chat/api/create-group/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        body: formData
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            window.location.href = '/chat/' + data.conversation_id + '/';
+        } else {
+            alert(data.error || 'Ошибка');
+            btn.disabled = false;
+            btn.textContent = 'Создать беседу';
+        }
+    }).catch(() => {
+        alert('Ошибка сети');
+        btn.disabled = false;
+        btn.textContent = 'Создать беседу';
+    });
+}
+</script>
+
+<!-- Context menu for chats -->
+<div id="chat-ctx-menu" class="chat-ctx-menu"></div>
+
+<script>
+(function() {
+    const csrfToken = '{{ csrf_token }}';
+    const menu = document.getElementById('chat-ctx-menu');
+
+    function hideChatContextMenu() {
+        menu.classList.remove('active');
+    }
+
+    function showChatContextMenu(e, convId, convName, anchorHref) {
+        let items = '';
+        items += `<div class="chat-ctx-item" onclick="window.location.href='${anchorHref}'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h7v7H4z"/><path d="M13 4h7v7h-7z"/><path d="M13 13h7v7h-7z"/><path d="M4 13h7v7H4z"/>
+            </svg>
+            Открыть чат
+        </div>`;
+        items += '<div class="chat-ctx-sep"></div>';
+        items += `<div class="chat-ctx-item danger" onclick="deleteConversation(${convId})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Удалить чат из списка
+        </div>`;
+        menu.innerHTML = items;
+        menu.classList.add('active');
+
+        const menuW = 200;
+        const menuH = menu.offsetHeight || 120;
+        let x = e.clientX;
+        let y = e.clientY;
+        if (x + menuW > window.innerWidth) x = window.innerWidth - menuW - 10;
+        if (y + menuH > window.innerHeight) y = window.innerHeight - menuH - 10;
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+    }
+
+    window.deleteConversation = function(convId) {
+        hideChatContextMenu();
+        if (!confirm('Удалить чат из списка? Он будет скрыт только у вас.')) return;
+        fetch(`/api/chat/conversations/${convId}/leave/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        }).then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        }).then(() => {
+            window.location.reload();
+        }).catch(() => {
+            alert('Не удалось удалить чат. Попробуйте ещё раз.');
+        });
+    };
+
+    document.querySelectorAll('.chat-item').forEach(el => {
+        el.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            const id = this.dataset.conversationId;
+            const name = this.dataset.conversationName || '';
+            const href = this.getAttribute('href');
+            showChatContextMenu(e, id, name, href);
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.chat-ctx-menu')) hideChatContextMenu();
+    });
+    document.addEventListener('contextmenu', (e) => {
+        if (!e.target.closest('.chat-item') && !e.target.closest('.chat-ctx-menu')) {
+            hideChatContextMenu();
+        }
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Предложить правку — {{ article.title }} — WBChat{% endblock %}
+{% block extra_styles %}
+<style>
+    .suggest-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .suggest-header { margin-bottom: 24px; }
+    .suggest-header h1 { color: var(--text-primary); font-size: 24px; margin-bottom: 8px; }
+    .suggest-header p { color: var(--text-muted); font-size: 14px; }
+    .suggest-form { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; color: var(--text-primary); font-weight: 500; margin-bottom: 6px; font-size: 14px; }
+    .form-control { width: 100%; padding: 10px 14px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; box-sizing: border-box; }
+    .btn-primary { background: var(--magenta); color: white; border: none; padding: 12px 28px; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 500; }
+    .btn-secondary { background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-color); padding: 12px 28px; border-radius: 10px; cursor: pointer; font-size: 15px; text-decoration: none; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="suggest-container">
+    <div class="suggest-header">
+        <h1>Предложить правку</h1>
+        <p>Статья: <a href="{% url 'kb_article_detail' slug=article.slug %}" style="color:var(--magenta);">{{ article.title }}</a></p>
+    </div>
+    <form method="post" class="suggest-form">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>{{ form.comment.label }}</label>
+            {{ form.comment }}
+        </div>
+        <div class="form-group">
+            <label>{{ form.title.label }}</label>
+            {{ form.title }}
+        </div>
+        <div class="form-group">
+            <label>{{ form.content.label }}</label>
+            {{ form.content }}
+        </div>
+        <div style="display:flex;gap:12px;justify-content:flex-end;">
+            <a href="{% url 'kb_article_detail' slug=article.slug %}" class="btn-secondary">Отмена</a>
+            <button type="submit" class="btn-primary">Отправить предложение</button>
+        </div>
+    </form>
+</div>
+<script src="{% static 'tinymce/tinymce.min.js' %}"></script>
+<script>
+tinymce.init({
+    selector: '.tinymce-editor',
+    license_key: 'gpl',
+    language: 'ru',
+    height: 400,
+    plugins: 'lists link image table code codesample',
+    toolbar: 'undo redo | styles | bold italic | alignleft aligncenter | bullist numlist | link image table codesample | code',
+    setup: function(editor) { editor.on('change keyup', editor.save); }
+});
+</script>
+{% endblock %}

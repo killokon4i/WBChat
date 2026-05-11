@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Заявки на термины — WBChat{% endblock %}
+{% block extra_styles %}
+<style>
+    .terms-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .terms-header h1 { color: var(--text-primary); font-size: 22px; margin-bottom: 24px; }
+    .term-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .term-info h3 { color: var(--text-primary); font-size: 16px; margin-bottom: 4px; }
+    .term-info p { color: var(--text-muted); font-size: 13px; }
+    .term-status { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .term-status.pending { background: rgba(234,179,8,0.2); color: #eab308; }
+    .term-status.approved { background: rgba(34,197,94,0.2); color: #22c55e; }
+    .term-status.rejected { background: rgba(239,68,68,0.2); color: #ef4444; }
+    .term-actions { display: flex; gap: 8px; }
+    .btn-sm { padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; }
+    .btn-approve { background: #22c55e; color: white; }
+    .btn-reject-sm { background: #ef4444; color: white; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="terms-container">
+    <div class="terms-header">
+        <h1>Заявки на термины</h1>
+    </div>
+    {% for tr in term_requests %}
+    <div class="term-card">
+        <div class="term-info">
+            <h3>{{ tr.term }}</h3>
+            <p>{{ tr.requested_by.get_full_name|default:tr.requested_by.username }} — {{ tr.created_at|date:"d.m.Y" }}{% if tr.description %} — {{ tr.description|truncatewords:15 }}{% endif %}</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <span class="term-status {{ tr.status }}">{{ tr.get_status_display }}</span>
+            {% if tr.status == 'pending' %}
+            <div class="term-actions">
+                <form method="post" action="{% url 'kb_review_term_request' request_id=tr.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="approve">
+                    <button class="btn-sm btn-approve">Одобрить</button>
+                </form>
+                <form method="post" action="{% url 'kb_review_term_request' request_id=tr.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reject">
+                    <button class="btn-sm btn-reject-sm">Отклонить</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div style="text-align:center;padding:40px;color:var(--text-muted);">Заявок пока нет</div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Заявка на термин — WBChat{% endblock %}
+{% block extra_styles %}
+<style>
+    .term-container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .term-header h1 { color: var(--text-primary); font-size: 22px; margin-bottom: 8px; }
+    .term-header p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+    .term-form { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; color: var(--text-primary); font-weight: 500; margin-bottom: 6px; font-size: 14px; }
+    .form-control { width: 100%; padding: 10px 14px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; box-sizing: border-box; }
+    textarea.form-control { resize: vertical; }
+    .btn-primary { background: var(--magenta); color: white; border: none; padding: 12px 28px; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 500; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="term-container">
+    <div class="term-header">
+        <h1>Заявка на новый термин</h1>
+        <p>Предложите добавить новый термин или тег в контролируемый словарь Базы знаний</p>
+    </div>
+    <form method="post" class="term-form">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-group">
+            <label>{{ field.label }}</label>
+            {{ field }}
+        </div>
+        {% endfor %}
+        <div style="text-align:right;">
+            <button type="submit" class="btn-primary">Отправить заявку</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

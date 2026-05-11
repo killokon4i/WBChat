@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление: {{ article.title }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 40px auto; text-align: center;">
+    <div class="card" style="padding: 32px;">
+        <h2 style="margin-bottom: 8px; color: var(--text-primary);">Удаление статьи</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 8px; font-size: 18px; font-weight: 500;">
+            {{ article.title }}
+        </p>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 24px;">
+            {{ article.get_status_display }} · v{{ article.current_version }} · {{ article.views_count }} просм.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="archive">
+                <button type="submit" class="btn" style="background: rgba(234,179,8,0.15); color: #eab308; border: 1px solid rgba(234,179,8,0.3); padding: 12px 32px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; width: 280px;">
+                    📦 В архив
+                </button>
+                <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">Статья не будет отображаться, но её можно восстановить</p>
+            </form>
+
+            {% if is_admin %}
+            <form method="post" onsubmit="return confirm('Вы уверены? Статья, все версии, комментарии и вложения будут безвозвратно удалены.')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="permanent">
+                <button type="submit" class="btn" style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 12px 32px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; width: 280px;">
+                    🗑️ Удалить навсегда
+                </button>
+                <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">Безвозвратное удаление — только для администраторов</p>
+            </form>
+            {% endif %}
+
+            <a href="{% url 'kb_article_detail' slug=article.slug %}" style="color: var(--text-muted); font-size: 14px; margin-top: 8px;">Отмена</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

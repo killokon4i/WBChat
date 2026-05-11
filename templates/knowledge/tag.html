@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}#{{ tag.name }} — База знаний{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .tag-page { max-width: 800px; margin: 0 auto; }
+
+    .tag-page h1 {
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--magenta);
+    }
+
+    .tag-page .tag-desc {
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+    }
+
+    .tag-page .articles-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .tag-article {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 16px 20px;
+        text-decoration: none;
+        color: var(--text-primary);
+        display: block;
+        transition: all 0.2s;
+    }
+
+    .tag-article:hover {
+        border-color: var(--magenta);
+        color: var(--text-primary);
+    }
+
+    .tag-article h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+
+    .tag-article .meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn-subscribe {
+        padding: 8px 18px;
+        border-radius: 10px;
+        border: 1px solid var(--magenta);
+        background: transparent;
+        color: var(--magenta);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 20px;
+    }
+    .btn-subscribe:hover, .btn-subscribe.active {
+        background: var(--magenta); color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tag-page">
+    <h1>#{{ tag.name }}</h1>
+    {% if tag.description %}
+    <p class="tag-desc">{{ tag.description }}</p>
+    {% endif %}
+
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px;">
+        <button class="btn-subscribe {% if is_subscribed %}active{% endif %}"
+                onclick="toggleSubscription('tag', {{ tag.id }}, this)" style="margin-bottom:0;">
+            {% if is_subscribed %}Подписан{% else %}Подписаться{% endif %}
+        </button>
+        {% if request.user.is_superuser or request.user.isModerator or request.user.is_admin_portal %}
+        <form method="post" action="{% url 'kb_tag_delete' slug=tag.slug %}" onsubmit="return confirm('Удалить тег «{{ tag.name }}»? Он будет снят со всех статей.')">
+            {% csrf_token %}
+            <button type="submit" style="padding:8px 18px;border-radius:10px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);color:#ef4444;font-size:13px;font-weight:500;cursor:pointer;">Удалить тег</button>
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="articles-list">
+        {% for article in articles %}
+        <a href="{% url 'kb_article_detail' slug=article.slug %}" class="tag-article">
+            <h3>{{ article.title }}</h3>
+            <div class="meta">
+                <span>{{ article.get_article_type_display }}</span>
+                {% if article.category %}<span>{{ article.category.name }}</span>{% endif %}
+                <span>{{ article.published_at|date:"d.m.Y" }}</span>
+            </div>
+        </a>
+        {% empty %}
+        <p class="text-muted" style="text-align: center; padding: 40px;">Статей с этим тегом пока нет</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleSubscription(type, id, btn) {
+    fetch(`/knowledge/subscribe/${type}/${id}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.textContent = data.subscribed ? 'Подписан' : 'Подписаться';
+        btn.classList.toggle('active', data.subscribed);
+    });
+}
+</script>
+{% endblock %}

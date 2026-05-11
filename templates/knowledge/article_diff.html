@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Сравнение v{{ ver1.version_number }} / v{{ ver2.version_number }} — {{ article.title }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .diff-page { max-width: 1100px; margin: 0 auto; }
+
+    .diff-page h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+
+    .diff-page .back-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        color: var(--text-secondary); text-decoration: none; font-size: 14px;
+        margin-bottom: 20px;
+    }
+    .diff-page .back-link:hover { color: var(--magenta); }
+
+    .diff-table-wrapper {
+        overflow-x: auto;
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    table.diff {
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    table.diff td, table.diff th {
+        padding: 4px 8px;
+        border: 1px solid var(--border-color);
+        vertical-align: top;
+    }
+
+    table.diff th {
+        background: var(--bg-hover);
+        font-weight: 600;
+    }
+
+    table.diff .diff_add { background: rgba(34, 197, 94, 0.15); }
+    table.diff .diff_sub { background: rgba(239, 68, 68, 0.15); }
+    table.diff .diff_chg { background: rgba(234, 179, 8, 0.15); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="diff-page">
+    <a href="{% url 'kb_article_versions' slug=article.slug %}" class="back-link">← История версий</a>
+    <h1>Сравнение версий: v{{ ver1.version_number }} ↔ v{{ ver2.version_number }}</h1>
+    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">{{ article.title }}</p>
+
+    <div class="diff-table-wrapper">
+        {{ diff_html|safe }}
+    </div>
+</div>
+{% endblock %}

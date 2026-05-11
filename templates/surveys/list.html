@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Опросы — WBChat{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+            <h1 class="page-title" style="margin:0;">Опросы</h1>
+            {% if can_manage_surveys %}
+            <a href="{% url 'surveys_manage_list' %}" class="btn btn-secondary">Мои опросы</a>
+            {% endif %}
+        </div>
+
+        {% if surveys %}
+            <p class="text-secondary" style="margin-bottom:16px;">Опросы, доступные вам для прохождения.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Описание</th>
+                        <th>Период</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in surveys %}
+                    <tr>
+                        <td>{{ s.title }}</td>
+                        <td style="max-width:280px;">{{ s.description|truncatewords:15|default:"—" }}</td>
+                        <td>
+                            {% if s.starts_at %}с {{ s.starts_at|date:"d.m.Y H:i" }}{% endif %}
+                            {% if s.ends_at %} по {{ s.ends_at|date:"d.m.Y H:i" }}{% endif %}
+                            {% if not s.starts_at and not s.ends_at %}—{% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'surveys_take' s.pk %}" class="btn btn-primary">Пройти</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-muted">Сейчас нет активных опросов, доступных вам.</p>
+            {% if can_manage_surveys %}
+            <p style="margin-top:12px;"><a href="{% url 'surveys_create' %}" class="btn btn-primary">Создать опрос</a></p>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,1530 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ news_item.title }} - WBChat{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 14px;
+        margin-bottom: 24px;
+        transition: all 0.3s ease;
+    }
+
+    .back-link:hover {
+        color: var(--magenta);
+        gap: 10px;
+    }
+
+    .back-link svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .article-header {
+        margin-bottom: 32px;
+    }
+
+    .article-title {
+        font-size: 42px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+    }
+
+    .article-meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 16px 0;
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+
+    .meta-item svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .author-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .author-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .article-image-wrapper {
+        width: 100%;
+        border-radius: 16px;
+        overflow: hidden;
+        margin: 32px 0;
+        box-shadow: var(--shadow);
+        background: var(--bg-hover);
+        text-align: center;
+    }
+
+    .article-image {
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
+        cursor: zoom-in;
+        transition: transform 0.3s ease;
+    }
+
+    .article-image:hover {
+        transform: scale(1.01);
+    }
+
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+        margin: 24px 0 36px;
+    }
+
+    .gallery-thumb {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: zoom-in;
+        background: var(--bg-hover);
+    }
+
+    .gallery-thumb img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        transition: transform 0.25s ease;
+    }
+
+    .gallery-thumb:hover img {
+        transform: scale(1.05);
+    }
+
+    .gallery-count-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    /* Lightbox */
+    .lightbox {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        cursor: zoom-out;
+    }
+
+    .lightbox.active {
+        display: flex;
+    }
+
+    .lightbox img {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+    .lightbox-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .lightbox-close svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .lightbox-nav {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 24px;
+        pointer-events: none;
+    }
+
+    .lightbox-arrow {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.4);
+        border: none;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        pointer-events: auto;
+    }
+
+    .article-content {
+        font-size: 18px;
+        line-height: 1.8;
+        color: var(--text-primary);
+        margin-bottom: 40px;
+    }
+
+    .article-content p {
+        margin-bottom: 16px;
+        white-space: pre-wrap;
+    }
+
+    /* Reactions */
+    .reactions-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 0;
+        margin-top: 20px;
+        border-top: 1px solid var(--border-color);
+        flex-wrap: wrap;
+    }
+
+    .reactions-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-right: 8px;
+    }
+
+    .reaction-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: var(--bg-hover);
+        border: 2px solid transparent;
+        border-radius: 24px;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .reaction-btn:hover {
+        background: var(--border-color);
+        transform: scale(1.05);
+    }
+
+    .reaction-btn.active {
+        background: rgba(203, 17, 171, 0.15);
+        border-color: var(--magenta);
+    }
+
+    .reaction-btn .count {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .reaction-btn.active .count {
+        color: var(--magenta);
+    }
+
+    .reactions-total {
+        margin-left: auto;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    .article-actions {
+        display: flex;
+        gap: 12px;
+        padding-top: 32px;
+        border-top: 1px solid var(--border-color);
+        flex-wrap: wrap;
+    }
+
+    .btn-edit {
+        background: linear-gradient(135deg, #FF9500, #FF6B00);
+        color: white;
+    }
+
+    .btn-edit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 149, 0, 0.4);
+    }
+
+    @media (max-width: 768px) {
+        .article-title {
+            font-size: 32px;
+        }
+
+        .article-content {
+            font-size: 16px;
+        }
+
+        .article-meta {
+            gap: 12px;
+        }
+    }
+
+    /* === Comments Section === */
+    .comments-section {
+        margin-top: 32px;
+    }
+
+    .comments-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .comments-count {
+        background: var(--magenta);
+        color: white;
+        font-size: 14px;
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+
+    /* Comment Form */
+    .comment-form-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .comment-input-wrapper {
+        position: relative;
+    }
+
+    .comment-textarea {
+        width: 100%;
+        min-height: 80px;
+        padding: 14px 16px;
+        background: var(--bg-hover);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        font-size: 15px;
+        color: var(--text-primary);
+        resize: vertical;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .comment-textarea:focus {
+        outline: none;
+        border-color: var(--magenta);
+        box-shadow: 0 0 0 4px rgba(203, 17, 171, 0.1);
+    }
+
+    .comment-textarea::placeholder {
+        color: var(--text-muted);
+    }
+
+    .comment-form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+    }
+
+    .comment-hint {
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .comment-hint code {
+        background: var(--bg-hover);
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: var(--magenta);
+    }
+
+    /* Autocomplete Dropdown */
+    .mention-autocomplete {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        max-height: 240px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+
+    .mention-autocomplete.active {
+        display: block;
+    }
+
+    .mention-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .mention-item:hover,
+    .mention-item.selected {
+        background: var(--bg-hover);
+    }
+
+    .mention-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        overflow: hidden;
+    }
+
+    .mention-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .mention-info {
+        flex: 1;
+    }
+
+    .mention-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .mention-position {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .mention-username {
+        font-size: 13px;
+        color: var(--magenta);
+    }
+
+    /* Comments List */
+    .comments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .comment-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px 20px;
+    }
+
+    .comment-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .comment-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+        overflow: hidden;
+    }
+
+    .comment-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .comment-meta {
+        flex: 1;
+    }
+
+    .comment-author {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 15px;
+    }
+
+    .comment-date {
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .comment-content {
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--text-primary);
+    }
+
+    .comment-content .mention {
+        color: var(--magenta);
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .comment-content .mention:hover {
+        color: var(--link-hover);
+    }
+
+    .comment-actions {
+        display: flex;
+        gap: 16px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .comment-action-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 13px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: color 0.2s ease;
+    }
+
+    .comment-action-btn:hover {
+        color: var(--magenta);
+    }
+
+    .comment-action-btn.delete:hover {
+        color: var(--error-text);
+    }
+    
+    .comment-action-btn.edit-btn:hover {
+        color: var(--warning-text);
+    }
+    
+    .reply-actions {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    /* Edit modal */
+    .edit-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    
+    .edit-modal.active {
+        display: flex;
+    }
+    
+    .edit-modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        width: 90%;
+        max-width: 500px;
+    }
+    
+    .edit-modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+    }
+    
+    .edit-modal-textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 12px;
+        background: var(--bg-hover);
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 14px;
+        resize: vertical;
+        margin-bottom: 16px;
+    }
+    
+    .edit-modal-textarea:focus {
+        outline: none;
+        border-color: var(--magenta);
+    }
+    
+    .edit-modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+    
+    .btn-cancel {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+
+    .share-modal {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .share-modal.active { display: flex; }
+    .share-modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        width: 90%;
+        max-width: 440px;
+    }
+    .share-conv-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .share-conv-item:hover { background: var(--bg-hover); }
+    .share-conv-icon {
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-weight: 600; font-size: 14px; flex-shrink: 0;
+    }
+    .share-conv-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+    .share-conv-type { font-size: 12px; color: var(--text-muted); }
+    .share-sent { color: #22c55e; font-size: 13px; font-weight: 500; }
+
+    /* Replies */
+    .comment-replies {
+        margin-left: 52px;
+        margin-top: 12px;
+        padding-left: 16px;
+        border-left: 2px solid var(--border-color);
+    }
+
+    .reply-card {
+        background: var(--bg-hover);
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+    }
+
+    .reply-card:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Empty state */
+    .no-comments {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-muted);
+    }
+
+    .no-comments svg {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'news_list' %}" class="back-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="19" y1="12" x2="5" y2="12"/>
+        <polyline points="12 19 5 12 12 5"/>
+    </svg>
+    Назад к новостям
+</a>
+
+<article class="card">
+    <div class="article-header">
+        <h1 class="article-title">{{ news_item.title }}</h1>
+        
+        <div class="article-meta">
+            <div class="meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                {{ news_item.created_at|date:"d E Y, H:i" }}
+            </div>
+            
+            {% if news_item.author %}
+            <div class="meta-item">
+                <div class="author-info">
+                    <div class="author-avatar">
+                        {{ news_item.author.username|slice:":1"|upper }}
+                    </div>
+                    <span>{{ news_item.author.username }}</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if news_item.updated_at != news_item.created_at %}
+            <div class="meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                Обновлено: {{ news_item.updated_at|date:"d.m.Y H:i" }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if news_item.image %}
+    <div class="article-image-wrapper">
+        <img src="{{ news_item.image.url }}" alt="{{ news_item.title }}" class="article-image" onclick="openLightbox(this.src)">
+    </div>
+    {% endif %}
+
+    {% if news_item.attachments.all %}
+    <div class="gallery-grid">
+        {% for img in news_item.attachments.all %}
+        {% if img.file_type == 'image' %}
+        <div class="gallery-thumb" onclick="openGallery({{ forloop.counter0 }})" data-gallery-image="{{ img.file.url }}">
+            <img src="{{ img.file.url }}" alt="">
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="article-content">
+        <p>{{ news_item.highlighted_content|safe }}</p>
+    </div>
+
+    <!-- Reactions -->
+    <div class="reactions-section" id="reactions-section">
+        <span class="reactions-label">Реакции:</span>
+        <button type="button" class="reaction-btn" data-emoji="👍" onclick="toggleReaction('👍')">
+            👍 <span class="count">0</span>
+        </button>
+        <button type="button" class="reaction-btn" data-emoji="❤️" onclick="toggleReaction('❤️')">
+            ❤️ <span class="count">0</span>
+        </button>
+        <button type="button" class="reaction-btn" data-emoji="🔥" onclick="toggleReaction('🔥')">
+            🔥 <span class="count">0</span>
+        </button>
+        <button type="button" class="reaction-btn" data-emoji="😂" onclick="toggleReaction('😂')">
+            😂 <span class="count">0</span>
+        </button>
+        <button type="button" class="reaction-btn" data-emoji="😮" onclick="toggleReaction('😮')">
+            😮 <span class="count">0</span>
+        </button>
+        <button type="button" class="reaction-btn" data-emoji="😢" onclick="toggleReaction('😢')">
+            😢 <span class="count">0</span>
+        </button>
+        <span class="reactions-total">
+            Всего: <strong id="total-reactions">0</strong>
+        </span>
+    </div>
+    
+    <script>
+    // Инициализация реакций из Django
+    const initialReactions = {{ reaction_counts_json|safe }};
+    const initialUserReactions = {{ user_reactions_json|safe }};
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Установка начальных значений
+        document.querySelectorAll('.reaction-btn').forEach(btn => {
+            const emoji = btn.dataset.emoji;
+            const count = initialReactions[emoji] || 0;
+            btn.querySelector('.count').textContent = count;
+            
+            if (initialUserReactions.includes(emoji)) {
+                btn.classList.add('active');
+            }
+        });
+        
+        document.getElementById('total-reactions').textContent = 
+            Object.values(initialReactions).reduce((a, b) => a + b, 0);
+    });
+    </script>
+
+    {% if request.user.is_authenticated and request.user.isModerator %}
+    <div class="article-actions">
+        <a href="{% url 'news_edit' news_item.pk %}" class="btn btn-edit">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Редактировать
+        </a>
+        <a href="{% url 'news_delete' news_item.pk %}" 
+           class="btn btn-danger"
+           onclick="return confirm('Вы уверены, что хотите удалить эту новость?')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+            Удалить
+        </a>
+    </div>
+    {% endif %}
+</article>
+
+<!-- Поделиться -->
+<div style="text-align: center; margin: 24px 0;">
+    <button class="btn btn-secondary" onclick="openShareModal()" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Поделиться
+    </button>
+</div>
+
+<!-- Share Modal -->
+<div class="share-modal" id="share-modal">
+    <div class="share-modal-content">
+        <div style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px;">Поделиться новостью</div>
+        <div id="share-conversations-list" style="max-height: 300px; overflow-y: auto;">
+            <p style="color: var(--text-muted); text-align: center; padding: 20px;">Загрузка...</p>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px;">
+            <button class="btn" style="background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-color);" onclick="closeShareModal()">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<!-- Comments Section -->
+{% if news_item.allow_comments %}
+<div class="comments-section">
+    <h2 class="comments-title">
+        Комментарии
+        <span class="comments-count">{{ comments|length }}</span>
+    </h2>
+
+    <!-- Comment Form -->
+    {% if request.user.is_authenticated %}
+    {% if request.user.is_comments_banned %}
+    <div class="comment-form-card" style="background: rgba(255, 59, 48, 0.1); border-color: rgba(255, 59, 48, 0.3);">
+        <div style="display: flex; align-items: center; gap: 12px; color: #ff3b30;">
+            <span style="font-size: 24px;">🚫</span>
+            <div>
+                <strong>Возможность комментирования заблокирована</strong>
+                <p style="margin: 4px 0 0; font-size: 14px; opacity: 0.9;">
+                    Заблокировано за неоднократное нарушение правил.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="comment-form-card">
+        <div id="moderation-error" style="display: none; padding: 12px 16px; background: rgba(255, 149, 0, 0.15); border-radius: 10px; margin-bottom: 16px; color: #ff9500;">
+            <strong>⚠️ <span id="error-message"></span></strong>
+        </div>
+        <form method="post" action="{% url 'add_comment' news_item.pk %}" id="comment-form">
+            {% csrf_token %}
+            <div class="comment-input-wrapper">
+                <textarea 
+                    name="content" 
+                    class="comment-textarea" 
+                    id="comment-input"
+                    placeholder="Напишите комментарий... Используйте @ для упоминания сотрудников"
+                    required
+                ></textarea>
+                <div class="mention-autocomplete" id="mention-dropdown"></div>
+            </div>
+            <div class="comment-form-actions">
+                <span class="comment-hint">Используйте <code>@username</code> для упоминания</span>
+                <button type="submit" class="btn btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                    Отправить
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="comment-form-card">
+        <p style="color: var(--text-muted); text-align: center;">
+            <a href="{% url 'login' %}" style="color: var(--magenta);">Войдите</a>, чтобы оставить комментарий
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Comments List -->
+    <div class="comments-list" id="comments-list">
+        {% for comment in comments %}
+        <div class="comment-card" id="comment-{{ comment.id }}">
+            <div class="comment-header">
+                <div class="comment-avatar">
+                    {% if comment.author.avatar %}
+                    <img src="{{ comment.author.avatar.url }}" alt="">
+                    {% else %}
+                    {{ comment.author.first_name|slice:":1"|default:comment.author.username|slice:":1"|upper }}
+                    {% endif %}
+                </div>
+                <div class="comment-meta">
+                    <div class="comment-author">{{ comment.author.get_full_name|default:comment.author.username }}</div>
+                    <div class="comment-date">{{ comment.created_at|date:"d.m.Y H:i" }}{% if comment.is_edited %} (изменено){% endif %}</div>
+                </div>
+            </div>
+            <div class="comment-content">{{ comment.highlighted_content|safe }}</div>
+            <div class="comment-actions">
+                <button class="comment-action-btn reply-btn" data-comment-id="{{ comment.id }}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 14 4 9 9 4"/>
+                        <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+                    </svg>
+                    Ответить
+                </button>
+                {% if comment.author == request.user %}
+                <button class="comment-action-btn edit-btn" onclick="editComment({{ comment.id }}, '{{ comment.content|escapejs }}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Редактировать
+                </button>
+                {% endif %}
+                {% if comment.author == request.user or request.user.isModerator %}
+                <button class="comment-action-btn delete" onclick="deleteComment({{ comment.id }})">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                    </svg>
+                    Удалить
+                </button>
+                {% endif %}
+            </div>
+            
+            <!-- Replies -->
+            {% if comment.processed_replies %}
+            <div class="comment-replies">
+                {% for reply in comment.processed_replies %}
+                <div class="reply-card" id="comment-{{ reply.id }}">
+                    <div class="comment-header">
+                        <div class="comment-avatar" style="width: 32px; height: 32px; font-size: 13px;">
+                            {% if reply.author.avatar %}
+                            <img src="{{ reply.author.avatar.url }}" alt="">
+                            {% else %}
+                            {{ reply.author.first_name|slice:":1"|default:reply.author.username|slice:":1"|upper }}
+                            {% endif %}
+                        </div>
+                        <div class="comment-meta">
+                            <div class="comment-author">{{ reply.author.get_full_name|default:reply.author.username }}</div>
+                            <div class="comment-date">{{ reply.created_at|date:"d.m.Y H:i" }}{% if reply.is_edited %} (изменено){% endif %}</div>
+                        </div>
+                    </div>
+                    <div class="comment-content">{{ reply.highlighted_content|safe }}</div>
+                    <div class="comment-actions reply-actions">
+                        <button class="comment-action-btn reply-btn" data-comment-id="{{ comment.id }}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 14 4 9 9 4"/>
+                                <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+                            </svg>
+                            Ответить
+                        </button>
+                        {% if reply.author == request.user %}
+                        <button class="comment-action-btn edit-btn" onclick="editComment({{ reply.id }}, '{{ reply.content|escapejs }}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Редактировать
+                        </button>
+                        {% endif %}
+                        {% if reply.author == request.user or request.user.isModerator %}
+                        <button class="comment-action-btn delete" onclick="deleteComment({{ reply.id }})">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                            </svg>
+                            Удалить
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="no-comments">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <p>Комментариев пока нет. Будьте первым!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Edit Comment Modal -->
+<div class="edit-modal" id="edit-modal">
+    <div class="edit-modal-content">
+        <div class="edit-modal-title">Редактирование комментария</div>
+        <textarea class="edit-modal-textarea" id="edit-textarea"></textarea>
+        <div class="edit-modal-actions">
+            <button class="btn btn-cancel" onclick="closeEditModal()">Отмена</button>
+            <button class="btn btn-primary" onclick="saveEdit()">Сохранить</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const newsId = {{ news_item.pk }};
+const commentInput = document.getElementById('comment-input');
+const mentionDropdown = document.getElementById('mention-dropdown');
+let mentionQuery = '';
+let mentionStartPos = -1;
+let selectedIndex = -1;
+
+// === MENTION AUTOCOMPLETE ===
+
+commentInput?.addEventListener('input', function(e) {
+    const cursorPos = this.selectionStart;
+    const text = this.value.substring(0, cursorPos);
+    
+    // Ищем @ перед курсором
+    const atMatch = text.match(/@(\w*)$/);
+    
+    if (atMatch) {
+        mentionQuery = atMatch[1];
+        mentionStartPos = cursorPos - mentionQuery.length - 1;
+        
+        if (mentionQuery.length >= 2) {
+            fetchMentions(mentionQuery);
+        } else if (mentionQuery.length === 0) {
+            hideMentionDropdown();
+        }
+    } else {
+        hideMentionDropdown();
+    }
+});
+
+commentInput?.addEventListener('keydown', function(e) {
+    if (!mentionDropdown.classList.contains('active')) return;
+    
+    const items = mentionDropdown.querySelectorAll('.mention-item');
+    
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+        updateSelection(items);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, 0);
+        updateSelection(items);
+    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+        e.preventDefault();
+        selectMention(items[selectedIndex].dataset.username);
+    } else if (e.key === 'Escape') {
+        hideMentionDropdown();
+    }
+});
+
+function updateSelection(items) {
+    items.forEach((item, idx) => {
+        item.classList.toggle('selected', idx === selectedIndex);
+    });
+}
+
+async function fetchMentions(query) {
+    try {
+        const response = await fetch(`/api/mentions/autocomplete/?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        if (data.users && data.users.length > 0) {
+            showMentionDropdown(data.users);
+        } else {
+            hideMentionDropdown();
+        }
+    } catch (err) {
+        console.error('Mention fetch error:', err);
+        hideMentionDropdown();
+    }
+}
+
+function showMentionDropdown(users) {
+    selectedIndex = 0;
+    mentionDropdown.innerHTML = users.map((user, idx) => `
+        <div class="mention-item ${idx === 0 ? 'selected' : ''}" 
+             data-username="${user.username}"
+             onclick="selectMention('${user.username}')">
+            <div class="mention-avatar">
+                ${user.avatar 
+                    ? `<img src="${user.avatar}" alt="">` 
+                    : user.full_name.charAt(0).toUpperCase()}
+            </div>
+            <div class="mention-info">
+                <div class="mention-name">${user.full_name}</div>
+                ${user.position ? `<div class="mention-position">${user.position}</div>` : ''}
+            </div>
+            <div class="mention-username">@${user.username}</div>
+        </div>
+    `).join('');
+    
+    mentionDropdown.classList.add('active');
+}
+
+function hideMentionDropdown() {
+    mentionDropdown.classList.remove('active');
+    mentionDropdown.innerHTML = '';
+    selectedIndex = -1;
+    mentionStartPos = -1;
+}
+
+function selectMention(username) {
+    if (mentionStartPos < 0) return;
+    
+    const before = commentInput.value.substring(0, mentionStartPos);
+    const after = commentInput.value.substring(commentInput.selectionStart);
+    
+    commentInput.value = before + '@' + username + ' ' + after;
+    commentInput.focus();
+    
+    const newPos = mentionStartPos + username.length + 2;
+    commentInput.setSelectionRange(newPos, newPos);
+    
+    hideMentionDropdown();
+}
+
+// Закрыть dropdown при клике вне
+document.addEventListener('click', function(e) {
+    if (!commentInput?.contains(e.target) && !mentionDropdown?.contains(e.target)) {
+        hideMentionDropdown();
+    }
+});
+
+// === DELETE COMMENT ===
+
+async function deleteComment(commentId) {
+    if (!confirm('Удалить комментарий?')) return;
+    
+    try {
+        const response = await fetch(`/news/${newsId}/comment/${commentId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (response.ok) {
+            const commentEl = document.getElementById(`comment-${commentId}`);
+            if (commentEl) {
+                commentEl.style.opacity = '0';
+                setTimeout(() => commentEl.remove(), 300);
+            }
+        }
+    } catch (err) {
+        console.error('Delete error:', err);
+    }
+}
+
+// === REPLY BUTTON ===
+
+document.querySelectorAll('.reply-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const commentId = this.dataset.commentId;
+        // Добавляем скрытое поле для parent_id
+        let parentInput = document.querySelector('input[name="parent_id"]');
+        if (!parentInput) {
+            parentInput = document.createElement('input');
+            parentInput.type = 'hidden';
+            parentInput.name = 'parent_id';
+            document.getElementById('comment-form')?.appendChild(parentInput);
+        }
+        if (parentInput) parentInput.value = commentId;
+        
+        if (commentInput) {
+            commentInput.focus();
+            commentInput.placeholder = 'Ответ на комментарий...';
+        }
+    });
+});
+
+// === EDIT COMMENT ===
+
+let editingCommentId = null;
+
+function editComment(commentId, content) {
+    editingCommentId = commentId;
+    document.getElementById('edit-textarea').value = content;
+    document.getElementById('edit-modal').classList.add('active');
+}
+
+function closeEditModal() {
+    editingCommentId = null;
+    document.getElementById('edit-modal').classList.remove('active');
+}
+
+async function saveEdit() {
+    if (!editingCommentId) return;
+    
+    const newContent = document.getElementById('edit-textarea').value.trim();
+    if (!newContent) {
+        alert('Комментарий не может быть пустым');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/news/${newsId}/comment/${editingCommentId}/edit/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `content=${encodeURIComponent(newContent)}`
+        });
+        
+        if (response.ok) {
+            // Обновляем текст комментария на странице
+            const commentEl = document.getElementById(`comment-${editingCommentId}`);
+            if (commentEl) {
+                const contentEl = commentEl.querySelector('.comment-content');
+                if (contentEl) {
+                    const data = await response.json();
+                    contentEl.innerHTML = data.highlighted_content || newContent;
+                }
+                // Добавляем метку "(изменено)"
+                const dateEl = commentEl.querySelector('.comment-date');
+                if (dateEl && !dateEl.textContent.includes('изменено')) {
+                    dateEl.textContent += ' (изменено)';
+                }
+            }
+            closeEditModal();
+        } else {
+            alert('Ошибка при сохранении');
+        }
+    } catch (err) {
+        console.error('Edit error:', err);
+        alert('Ошибка при сохранении');
+    }
+}
+
+// Закрыть модалку по клику вне
+document.getElementById('edit-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+
+// Lightbox & gallery
+let galleryImages = [];
+let currentGalleryIndex = 0;
+
+function openLightbox(src) {
+    const lightbox = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    img.src = src;
+    lightbox.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    const lightbox = document.getElementById('lightbox');
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function openGallery(index) {
+    galleryImages = Array.from(document.querySelectorAll('[data-gallery-image]')).map(el => el.dataset.galleryImage);
+    if (!galleryImages.length) return;
+    currentGalleryIndex = index;
+    const img = document.getElementById('lightbox-img');
+    img.src = galleryImages[currentGalleryIndex];
+    document.getElementById('lightbox').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function galleryNext() {
+    if (!galleryImages.length) return;
+    currentGalleryIndex = (currentGalleryIndex + 1) % galleryImages.length;
+    document.getElementById('lightbox-img').src = galleryImages[currentGalleryIndex];
+}
+
+function galleryPrev() {
+    if (!galleryImages.length) return;
+    currentGalleryIndex = (currentGalleryIndex - 1 + galleryImages.length) % galleryImages.length;
+    document.getElementById('lightbox-img').src = galleryImages[currentGalleryIndex];
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeLightbox();
+    } else if (e.key === 'ArrowRight') {
+        galleryNext();
+    } else if (e.key === 'ArrowLeft') {
+        galleryPrev();
+    }
+});
+
+// === COMMENT FORM WITH MODERATION ===
+
+const commentForm = document.getElementById('comment-form');
+if (commentForm) {
+    commentForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const errorDiv = document.getElementById('moderation-error');
+        const errorMsg = document.getElementById('error-message');
+        
+        try {
+            const response = await fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // Успешно — перезагружаем страницу чтобы увидеть новый комментарий
+                window.location.reload();
+            } else {
+                // Ошибка модерации
+                if (errorDiv && errorMsg) {
+                    errorMsg.textContent = data.error || 'Ошибка при отправке комментария';
+                    errorDiv.style.display = 'block';
+                    
+                    // Если забанен — заменяем форму
+                    if (data.is_banned) {
+                        const formCard = document.querySelector('.comment-form-card');
+                        if (formCard) {
+                            formCard.innerHTML = `
+                                <div style="display: flex; align-items: center; gap: 12px; color: #ff3b30;">
+                                    <span style="font-size: 24px;">🚫</span>
+                                    <div>
+                                        <strong>Возможность комментирования заблокирована</strong>
+                                        <p style="margin: 4px 0 0; font-size: 14px; opacity: 0.9;">
+                                            Заблокировано за неоднократное нарушение правил.
+                                        </p>
+                                    </div>
+                                </div>
+                            `;
+                            formCard.style.background = 'rgba(255, 59, 48, 0.1)';
+                            formCard.style.borderColor = 'rgba(255, 59, 48, 0.3)';
+                        }
+                    }
+                } else {
+                    alert(data.error || 'Ошибка при отправке комментария');
+                }
+            }
+        } catch (err) {
+            console.error('Comment submit error:', err);
+            alert('Ошибка при отправке комментария');
+        }
+    });
+}
+
+// === REACTIONS ===
+
+async function toggleReaction(emoji) {
+    try {
+        const response = await fetch(`/news/${newsId}/reaction/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `emoji=${encodeURIComponent(emoji)}`
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Обновляем UI
+            document.querySelectorAll('.reaction-btn').forEach(btn => {
+                const btnEmoji = btn.dataset.emoji;
+                const count = data.reactions[btnEmoji] || 0;
+                
+                // Обновляем счётчик
+                const countEl = btn.querySelector('.count');
+                if (countEl) countEl.textContent = count;
+                
+                // Обновляем активность
+                if (data.user_reactions.includes(btnEmoji)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Обновляем общее количество
+            const totalEl = document.getElementById('total-reactions');
+            if (totalEl) totalEl.textContent = data.total;
+        }
+    } catch (err) {
+        console.error('Reaction error:', err);
+    }
+}
+
+// === SHARE ===
+function openShareModal() {
+    document.getElementById('share-modal').classList.add('active');
+    fetch('/news/share/conversations/')
+    .then(r => r.json())
+    .then(data => {
+        const list = document.getElementById('share-conversations-list');
+        if (!data.conversations || data.conversations.length === 0) {
+            list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">Нет доступных чатов</p>';
+            return;
+        }
+        list.innerHTML = '';
+        data.conversations.forEach(function(conv) {
+            const div = document.createElement('div');
+            div.className = 'share-conv-item';
+            const typeLabel = conv.type === 'direct' ? 'Личный' : conv.type === 'group' ? 'Группа' : 'Канал';
+            div.innerHTML = '<div class="share-conv-icon">' + conv.name.charAt(0).toUpperCase() + '</div>'
+                + '<div style="flex:1"><div class="share-conv-name">' + conv.name + '</div>'
+                + '<div class="share-conv-type">' + typeLabel + '</div></div>';
+            div.addEventListener('click', function() {
+                fetch('/news/' + newsId + '/share/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'conversation_id=' + conv.id
+                })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        div.innerHTML = '<div class="share-conv-icon" style="background:#22c55e;">✓</div>'
+                            + '<div class="share-sent">Отправлено!</div>';
+                        div.style.pointerEvents = 'none';
+                    }
+                });
+            });
+            list.appendChild(div);
+        });
+    });
+}
+
+function closeShareModal() {
+    document.getElementById('share-modal').classList.remove('active');
+}
+
+document.getElementById('share-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeShareModal();
+});
+</script>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox(); event.stopPropagation();">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+    </button>
+    <div class="lightbox-nav" onclick="event.stopPropagation();">
+        <button class="lightbox-arrow" onclick="galleryPrev()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+        </button>
+        <button class="lightbox-arrow" onclick="galleryNext()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+            </svg>
+        </button>
+    </div>
+    <img src="" alt="Просмотр изображения" id="lightbox-img" onclick="event.stopPropagation();">
+</div>
+{% endblock %}

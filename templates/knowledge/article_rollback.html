@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Откат к v{{ version.version_number }} — {{ article.title }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 40px auto; text-align: center;">
+    <div class="card">
+        <h2 style="margin-bottom: 16px;">Подтверждение отката</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 8px;">
+            Вы уверены, что хотите откатить статью <strong>{{ article.title }}</strong>
+            к версии <strong>v{{ version.version_number }}</strong>?
+        </p>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 24px;">
+            Автор версии: {{ version.author.get_full_name|default:version.author.username }},
+            {{ version.created_at|date:"d.m.Y H:i" }}
+        </p>
+        <form method="post" style="display: flex; gap: 12px; justify-content: center;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">Откатить</button>
+            <a href="{% url 'kb_article_versions' slug=article.slug %}" class="btn btn-secondary">Отмена</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

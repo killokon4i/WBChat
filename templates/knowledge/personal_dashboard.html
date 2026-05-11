@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}Мой кабинет автора — WBChat{% endblock %}
+{% block extra_styles %}
+<style>
+    .dash-container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    .dash-header h1 { color: var(--text-primary); font-size: 24px; margin-bottom: 24px; }
+    .dash-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .dash-stat { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 20px; text-align: center; }
+    .dash-stat-value { font-size: 28px; font-weight: 700; color: var(--magenta); }
+    .dash-stat-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .dash-section { margin-bottom: 32px; }
+    .dash-section h2 { color: var(--text-primary); font-size: 18px; margin-bottom: 16px; }
+    .dash-table { width: 100%; border-collapse: collapse; }
+    .dash-table th, .dash-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color); }
+    .dash-table th { color: var(--text-muted); font-size: 12px; text-transform: uppercase; font-weight: 600; }
+    .dash-table td { color: var(--text-primary); font-size: 14px; }
+    .dash-table td a { color: var(--magenta); text-decoration: none; }
+    .dash-table tr:hover { background: var(--bg-hover); }
+    .badge-warn { background: rgba(234,179,8,0.2); color: #eab308; padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+    .badge-draft { background: rgba(107,114,128,0.2); color: #9ca3af; padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+.badge-archived { background: rgba(107,114,128,0.12); color: #9ca3af; padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+.dash-tabs { display:flex; gap:8px; margin-bottom:16px; }
+.dash-tab { padding:8px 14px; border-radius:999px; font-size:13px; border:1px solid var(--border-color); color:var(--text-secondary); text-decoration:none; }
+.dash-tab.active { background:var(--magenta); color:white; border-color:var(--magenta); }
+.link-button { background:none; border:none; padding:0; color:#22c55e; cursor:pointer; font-size:13px; }
+.link-button:hover { text-decoration:underline; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="dash-container">
+    <div class="dash-header">
+        <h1>Мой кабинет автора</h1>
+    </div>
+    {% if is_moderator %}
+    <div class="dash-tabs">
+        <a href="?tab=author" class="dash-tab {% if current_tab == 'author' %}active{% endif %}">Кабинет автора</a>
+        <a href="?tab=archive" class="dash-tab {% if current_tab == 'archive' %}active{% endif %}">Архив статей</a>
+    </div>
+    {% endif %}
+    {% if current_tab == 'author' %}
+    <div class="dash-cards">
+        <div class="dash-stat"><div class="dash-stat-value">{{ published_count }}</div><div class="dash-stat-label">Опубликовано</div></div>
+        <div class="dash-stat"><div class="dash-stat-value">{{ my_drafts|length }}</div><div class="dash-stat-label">Черновиков</div></div>
+        <div class="dash-stat"><div class="dash-stat-value">{{ total_views }}</div><div class="dash-stat-label">Всего просмотров</div></div>
+        <div class="dash-stat"><div class="dash-stat-value">{{ avg_rating }}</div><div class="dash-stat-label">Средний рейтинг</div></div>
+    </div>
+
+    {% if my_needs_review %}
+    <div class="dash-section">
+        <h2>Требуют пересмотра</h2>
+        <table class="dash-table">
+            <thead><tr><th>Статья</th><th>Рубрика</th><th>Срок</th></tr></thead>
+            <tbody>
+            {% for a in my_needs_review %}
+            <tr>
+                <td><a href="{% url 'kb_article_detail' slug=a.slug %}">{{ a.title }}</a></td>
+                <td>{{ a.category.name|default:"—" }}</td>
+                <td><span class="badge-warn">{{ a.next_review_date|date:"d.m.Y"|default:"Просрочено" }}</span></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if my_suggestions %}
+    <div class="dash-section">
+        <h2>Предложения правок к вашим статьям</h2>
+        <table class="dash-table">
+            <thead><tr><th>Статья</th><th>От кого</th><th>Дата</th><th></th></tr></thead>
+            <tbody>
+            {% for se in my_suggestions %}
+            <tr>
+                <td><a href="{% url 'kb_suggested_edits' slug=se.article.slug %}">{{ se.article.title|truncatewords:8 }}</a></td>
+                <td>{{ se.author.get_full_name|default:se.author.username }}</td>
+                <td>{{ se.created_at|date:"d.m.Y" }}</td>
+                <td><a href="{% url 'kb_suggested_edits' slug=se.article.slug %}">Рассмотреть</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if my_drafts %}
+    <div class="dash-section">
+        <h2>Черновики</h2>
+        <table class="dash-table">
+            <thead><tr><th>Статья</th><th>Обновлено</th><th></th><th></th></tr></thead>
+            <tbody>
+            {% for a in my_drafts %}
+            <tr>
+                <td>{{ a.title }}</td>
+                <td>{{ a.updated_at|date:"d.m.Y H:i" }}</td>
+                <td><a href="{% url 'kb_article_edit' slug=a.slug %}">Редактировать</a></td>
+                <td><a href="{% url 'kb_article_delete' slug=a.slug %}" style="color:#ef4444;">Удалить</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if is_moderator and current_tab == 'archive' %}
+    <div class="dash-section">
+        <h2>Архив статей (для модератора)</h2>
+        <table class="dash-table">
+            <thead>
+            <tr>
+                <th>Статья</th>
+                <th>Автор</th>
+                <th>Рубрика</th>
+                <th>Обновлено</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for a in archived_articles %}
+            <tr>
+                <td>
+                    <a href="{% url 'kb_article_detail' slug=a.slug %}">{{ a.title }}</a>
+                    <span class="badge-archived">Архив</span>
+                </td>
+                <td>{{ a.author.get_full_name|default:a.author.username }}</td>
+                <td>{{ a.category.name|default:"—" }}</td>
+                <td>{{ a.updated_at|date:"d.m.Y H:i" }}</td>
+                <td>
+                    <form method="post" action="{% url 'kb_article_unarchive' slug=a.slug %}">
+                        {% csrf_token %}
+                        <button type="submit" class="link-button">Разархивировать в черновики</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

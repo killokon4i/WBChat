@@ -1,0 +1,33 @@
+asgiref==3.10.0
+Django==5.2.8
+pillow==12.0.0
+psycopg==3.2.12
+psycopg-binary==3.2.12
+sqlparse==0.5.3
+tzdata==2025.2
+
+# Django Channels for WebSocket support
+channels==4.1.0
+channels-redis==4.2.1
+daphne==4.1.2
+
+# Redis and Celery for real-time features and background tasks
+redis==5.2.1
+celery==5.4.0
+
+# Django REST Framework for API
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+
+# Additional utilities
+django-cors-headers==4.6.0
+python-decouple==3.8
+
+# WYSIWYG editor for Knowledge Base
+django-tinymce
+
+# Export utilities
+openpyxl
+reportlab
+python-docx
+matplotlib

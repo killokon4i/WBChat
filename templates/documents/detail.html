@@ -1,0 +1,488 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ document.title }} — WB Bank{% endblock %}
+
+{% block content %}
+<style>
+    .doc-detail-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    /* Back link */
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #888;
+        text-decoration: none;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+    
+    .back-link:hover {
+        color: #CB11AB;
+    }
+    
+    /* Header */
+    .doc-header {
+        background: #1a1a1a;
+        border-radius: 16px;
+        padding: 32px;
+        margin-bottom: 24px;
+    }
+    
+    .doc-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        background: rgba(203, 17, 171, 0.15);
+        color: #CB11AB;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 16px;
+    }
+    
+    .doc-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 16px;
+        line-height: 1.3;
+    }
+    
+    .doc-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        margin-bottom: 20px;
+    }
+    
+    .doc-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #888;
+    }
+    
+    .doc-meta-icon {
+        color: #CB11AB;
+    }
+    
+    .doc-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .doc-status-badge.active {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22C55E;
+    }
+    
+    .doc-status-badge.draft {
+        background: rgba(234, 179, 8, 0.15);
+        color: #EAB308;
+    }
+    
+    /* Actions */
+    .doc-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+    
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+    
+    .btn-primary {
+        background: #CB11AB;
+        color: #fff;
+    }
+    
+    .btn-primary:hover {
+        background: #a00d8c;
+    }
+    
+    .btn-secondary {
+        background: #252525;
+        color: #fff;
+    }
+    
+    .btn-secondary:hover {
+        background: #333;
+    }
+    
+    /* Content sections */
+    .doc-sections {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 24px;
+    }
+    
+    @media (max-width: 900px) {
+        .doc-sections {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .section-card {
+        background: #1a1a1a;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .section-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: rgba(203, 17, 171, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+    
+    /* Description */
+    .doc-description {
+        font-size: 15px;
+        color: #ccc;
+        line-height: 1.7;
+    }
+    
+    /* Info rows */
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #252525;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-size: 14px;
+        color: #888;
+    }
+    
+    .info-value {
+        font-size: 14px;
+        color: #fff;
+    }
+    
+    /* Versions list */
+    .versions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .version-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #252525;
+        border-radius: 10px;
+    }
+    
+    .version-number {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(203, 17, 171, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+        color: #CB11AB;
+    }
+    
+    .version-info {
+        flex: 1;
+    }
+    
+    .version-name {
+        font-size: 13px;
+        color: #fff;
+        margin-bottom: 2px;
+    }
+    
+    .version-meta {
+        font-size: 11px;
+        color: #666;
+    }
+    
+    .version-download {
+        color: #CB11AB;
+        text-decoration: none;
+        font-size: 13px;
+    }
+    
+    .version-download:hover {
+        text-decoration: underline;
+    }
+    
+    /* Current file */
+    .current-file {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        background: #252525;
+        border-radius: 12px;
+    }
+    
+    .file-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        background: rgba(203, 17, 171, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+    
+    .file-info {
+        flex: 1;
+    }
+    
+    .file-name {
+        font-size: 14px;
+        color: #fff;
+        margin-bottom: 4px;
+    }
+    
+    .file-size {
+        font-size: 12px;
+        color: #888;
+    }
+</style>
+
+<div class="doc-detail-container">
+    <a href="{% url 'documents_list' %}" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Вернуться к документам
+    </a>
+    
+    <!-- Header -->
+    <div class="doc-header">
+        <span class="doc-type-badge">
+            {% if document.document_type == 'order' %}📋 Приказ
+            {% elif document.document_type == 'regulation' %}📘 Регламент
+            {% elif document.document_type == 'instruction' %}📗 Инструкция
+            {% elif document.document_type == 'policy' %}📕 Политика
+            {% else %}📄 {{ document.get_document_type_display }}{% endif %}
+        </span>
+        
+        <h1 class="doc-title">{{ document.title }}</h1>
+        
+        <div class="doc-meta-row">
+            {% if document.document_number %}
+            <div class="doc-meta-item">
+                <svg class="doc-meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+                № {{ document.document_number }}
+            </div>
+            {% endif %}
+            
+            {% if document.document_date %}
+            <div class="doc-meta-item">
+                <svg class="doc-meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                {{ document.document_date|date:"d.m.Y" }}
+            </div>
+            {% endif %}
+            
+            <div class="doc-meta-item">
+                <svg class="doc-meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                {{ document.author.get_full_name|default:"—" }}
+            </div>
+            
+            <div class="doc-meta-item">
+                <svg class="doc-meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                {{ document.views_count }} просмотров
+            </div>
+        </div>
+        
+        <span class="doc-status-badge {{ document.status }}">
+            {% if document.status == 'active' %}✓ Актуален
+            {% elif document.status == 'draft' %}📝 Черновик
+            {% else %}{{ document.get_status_display }}{% endif %}
+        </span>
+        
+        <!-- Actions -->
+        <div class="doc-actions">
+            {% if permissions.download and current_version %}
+            <a href="{% url 'document_download' document.id %}" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7,10 12,15 17,10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Скачать
+            </a>
+            {% endif %}
+            
+            {% if document.tezis_link %}
+            <a href="{{ document.tezis_link }}" target="_blank" class="btn btn-secondary">
+                Открыть в Тезис
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Content sections -->
+    <div class="doc-sections">
+        <div class="main-content">
+            <!-- Description -->
+            {% if document.description %}
+            <div class="section-card">
+                <div class="section-title">
+                    <span class="section-icon">📝</span>
+                    Описание
+                </div>
+                <div class="doc-description">{{ document.description|linebreaks }}</div>
+            </div>
+            {% endif %}
+            
+            <!-- Current file -->
+            {% if current_version %}
+            <div class="section-card">
+                <div class="section-title">
+                    <span class="section-icon">📎</span>
+                    Текущий файл
+                </div>
+                <div class="current-file">
+                    <div class="file-icon">📄</div>
+                    <div class="file-info">
+                        <div class="file-name">{{ current_version.file_name }}</div>
+                        <div class="file-size">{{ current_version.file_size|filesizeformat }} • Версия {{ current_version.version_number }}</div>
+                    </div>
+                    {% if permissions.download %}
+                    <a href="{% url 'document_download' document.id %}" class="btn btn-secondary">Скачать</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="sidebar-content">
+            <!-- Document info -->
+            <div class="section-card">
+                <div class="section-title">
+                    <span class="section-icon">ℹ️</span>
+                    Информация
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Категория</span>
+                    <span class="info-value">{{ document.category.name|default:"—" }}</span>
+                </div>
+                
+                {% if document.effective_date %}
+                <div class="info-row">
+                    <span class="info-label">Вступает в силу</span>
+                    <span class="info-value">{{ document.effective_date|date:"d.m.Y" }}</span>
+                </div>
+                {% endif %}
+                
+                {% if document.expiry_date %}
+                <div class="info-row">
+                    <span class="info-label">Действует до</span>
+                    <span class="info-value">{{ document.expiry_date|date:"d.m.Y" }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="info-row">
+                    <span class="info-label">Конфиденциальность</span>
+                    <span class="info-value">{{ document.get_confidentiality_display }}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Создано</span>
+                    <span class="info-value">{{ document.created_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Обновлено</span>
+                    <span class="info-value">{{ document.updated_at|date:"d.m.Y H:i" }}</span>
+                </div>
+            </div>
+            
+            <!-- Versions -->
+            {% if versions %}
+            <div class="section-card">
+                <div class="section-title">
+                    <span class="section-icon">📚</span>
+                    Версии ({{ versions|length }})
+                </div>
+                <div class="versions-list">
+                    {% for v in versions %}
+                    <div class="version-item">
+                        <span class="version-number">v{{ v.version_number }}</span>
+                        <div class="version-info">
+                            <div class="version-name">{{ v.file_name }}</div>
+                            <div class="version-meta">{{ v.uploaded_at|date:"d.m.Y" }} • {{ v.file_size|filesizeformat }}</div>
+                        </div>
+                        {% if permissions.download %}
+                        <a href="{% url 'document_download_version' document.id v.version_number %}" class="version-download">↓</a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

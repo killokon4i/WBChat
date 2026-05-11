@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+{% load knowledge_tags %}
+
+{% block title %}{{ category.name }} — База знаний{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .breadcrumbs {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        font-size: 14px;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .breadcrumbs a {
+        color: var(--text-secondary);
+        text-decoration: none;
+    }
+
+    .breadcrumbs a:hover { color: var(--magenta); }
+
+    .breadcrumbs .bc-sep {
+        margin: 0 8px;
+        color: var(--text-muted);
+    }
+
+    .breadcrumbs span:last-child {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .cat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .cat-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .cat-header .cat-icon { font-size: 32px; }
+
+    .cat-desc {
+        color: var(--text-secondary);
+        font-size: 15px;
+        margin-bottom: 24px;
+        line-height: 1.6;
+    }
+
+    .cat-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .sub-cats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 24px;
+    }
+
+    .sub-cat-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 10px;
+        color: var(--text-primary);
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .sub-cat-chip:hover {
+        border-color: var(--magenta);
+        color: var(--magenta);
+    }
+
+    .sort-bar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .sort-btn {
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border: 1px solid var(--border-light);
+        background: transparent;
+        transition: all 0.2s;
+    }
+
+    .sort-btn.active, .sort-btn:hover {
+        background: var(--magenta);
+        color: white;
+        border-color: var(--magenta);
+    }
+
+    .articles-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .article-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: all 0.2s;
+    }
+
+    .article-row:hover {
+        border-color: var(--magenta);
+        box-shadow: var(--shadow);
+        color: var(--text-primary);
+    }
+
+    .article-row .pinned-icon { color: var(--magenta); font-size: 14px; }
+
+    .article-row .info { flex: 1; }
+    .article-row .info h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+
+    .article-row .info .meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .article-row .type-badge {
+        background: rgba(203, 17, 171, 0.1);
+        color: var(--magenta);
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .article-row .stats {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+        white-space: nowrap;
+    }
+
+    .article-row .stats .rating { color: #f5a623; }
+
+    .btn-subscribe {
+        padding: 8px 18px;
+        border-radius: 10px;
+        border: 1px solid var(--magenta);
+        background: transparent;
+        color: var(--magenta);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-subscribe:hover, .btn-subscribe.active {
+        background: var(--magenta);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% breadcrumbs category %}
+
+<div class="cat-header">
+    <h1>
+        <span class="cat-icon">{{ category.icon|default:"📁" }}</span>
+        {{ category.name }}
+    </h1>
+    <div class="cat-actions">
+        <button class="btn-subscribe {% if is_subscribed %}active{% endif %}"
+                onclick="toggleSubscription('category', {{ category.id }}, this)">
+            {% if is_subscribed %}Подписан{% else %}Подписаться{% endif %}
+        </button>
+        <a href="{% url 'kb_article_create' %}?category={{ category.id }}" class="btn btn-primary" style="padding: 8px 18px; font-size: 13px;">
+            + Статья
+        </a>
+    </div>
+</div>
+
+{% if category.description %}
+<p class="cat-desc">{{ category.description }}</p>
+{% endif %}
+
+{% if children %}
+<div class="sub-cats">
+    {% for child in children %}
+    <a href="{% url 'kb_category' slug=child.slug %}" class="sub-cat-chip">
+        {{ child.icon|default:"📂" }} {{ child.name }}
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="sort-bar">
+    <a href="?sort=date" class="sort-btn {% if current_sort == 'date' %}active{% endif %}">По дате</a>
+    <a href="?sort=rating" class="sort-btn {% if current_sort == 'rating' %}active{% endif %}">По рейтингу</a>
+    <a href="?sort=views" class="sort-btn {% if current_sort == 'views' %}active{% endif %}">По просмотрам</a>
+</div>
+
+<div class="articles-list">
+    {% for article in articles %}
+    <a href="{% url 'kb_article_detail' slug=article.slug %}" class="article-row">
+        {% if article.is_pinned %}
+        <span class="pinned-icon" title="Закреплено">📌</span>
+        {% endif %}
+        <div class="info">
+            <h3>{{ article.title }}</h3>
+            <div class="meta">
+                <span class="type-badge">{{ article.get_article_type_display }}</span>
+                <span>{{ article.author.get_full_name|default:article.author.username }}</span>
+                <span>{{ article.published_at|date:"d.m.Y"|default:article.created_at|date:"d.m.Y" }}</span>
+            </div>
+        </div>
+        <div class="stats">
+            {% if article.avg_rating %}
+            <span class="rating">★ {{ article.avg_rating }}</span>
+            {% endif %}
+            <span>{{ article.views_count }} просм.</span>
+            <span>{{ article.comments_count }} комм.</span>
+        </div>
+    </a>
+    {% empty %}
+    <p class="text-muted" style="text-align: center; padding: 40px;">В этом разделе пока нет статей</p>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleSubscription(type, id, btn) {
+    fetch(`/knowledge/subscribe/${type}/${id}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.textContent = data.subscribed ? 'Подписан' : 'Подписаться';
+        btn.classList.toggle('active', data.subscribed);
+    });
+}
+</script>
+{% endblock %}

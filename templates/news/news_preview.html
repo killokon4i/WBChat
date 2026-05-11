@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Предпросмотр: {{ title }} — Новости{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:900px;margin:24px auto;">
+    <a href="javascript:window.close()" style="color:var(--text-secondary);font-size:14px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Закрыть предпросмотр
+    </a>
+
+    <div class="card" style="padding:24px;">
+        <h1 style="font-size:26px;font-weight:700;margin-bottom:12px;color:var(--text-primary);">
+            {{ title }}
+        </h1>
+        {% if excerpt %}
+        <p style="font-size:15px;color:var(--text-secondary);margin-bottom:20px;">{{ excerpt }}</p>
+        {% endif %}
+        <div class="content" style="font-size:15px;line-height:1.6;color:var(--text-primary);">
+            {{ content|safe }}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

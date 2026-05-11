@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+
+{% block title %}Справочник сотрудников — WB Bank{% endblock %}
+
+{% block content %}
+<style>
+    .directory-container {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 24px;
+        min-height: calc(100vh - 140px);
+    }
+    
+    @media (max-width: 1024px) {
+        .directory-container {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Sidebar */
+    .directory-sidebar {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        height: fit-content;
+        position: sticky;
+        top: 88px;
+    }
+    
+    .sidebar-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+    }
+    
+    /* Department tree */
+    .dept-tree {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .dept-item {
+        margin-bottom: 4px;
+    }
+    
+    .dept-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-radius: 8px;
+        color: var(--text-primary);
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    
+    .dept-link:hover {
+        background: rgba(203, 17, 171, 0.15);
+    }
+    
+    .dept-link.active {
+        background: var(--magenta);
+        color: #fff;
+    }
+    
+    .dept-count {
+        background: var(--bg-hover);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    
+    .dept-link.active .dept-count {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+    }
+    
+    .dept-children {
+        list-style: none;
+        padding-left: 20px;
+        margin: 0;
+    }
+    
+    /* Birthdays widget */
+    .birthdays-widget {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .birthday-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+    }
+    
+    .birthday-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        overflow: hidden;
+    }
+    
+    .birthday-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .birthday-info {
+        flex: 1;
+    }
+    
+    .birthday-name {
+        font-size: 13px;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+    
+    .birthday-date {
+        font-size: 11px;
+        color: var(--text-secondary);
+    }
+    
+    .birthday-badge {
+        background: var(--magenta);
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+    }
+    
+    /* Main content */
+    .directory-main {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+    }
+    
+    /* Search */
+    .search-container {
+        margin-bottom: 24px;
+    }
+    
+    .search-input-wrapper {
+        position: relative;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 14px 20px 14px 48px;
+        background: var(--bg-hover);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 15px;
+        outline: none;
+        transition: all 0.2s;
+    }
+    
+    .search-input::placeholder {
+        color: var(--text-muted);
+    }
+    
+    .search-input:focus {
+        border-color: var(--magenta);
+        box-shadow: 0 0 0 3px rgba(203, 17, 171, 0.1);
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+    
+    /* Employees grid */
+    .employees-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+    }
+    
+    .employee-card {
+        background: var(--bg-hover);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        gap: 16px;
+        transition: all 0.2s;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .employee-card:hover {
+        background: var(--border-color);
+        transform: translateY(-2px);
+    }
+    
+    .employee-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 600;
+        color: #fff;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+    
+    .employee-avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .employee-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .employee-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .employee-position {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .employee-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 6px;
+    }
+    
+    .employee-status.active {
+        background: var(--success-bg);
+        color: var(--success-text);
+    }
+    
+    .employee-status.vacation {
+        background: var(--warning-bg);
+        color: var(--warning-text);
+    }
+    
+    .employee-status.sick {
+        background: var(--error-bg);
+        color: var(--error-text);
+    }
+    
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+    
+    .empty-title {
+        font-size: 18px;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .empty-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+</style>
+
+<div class="directory-container">
+    <!-- Sidebar -->
+    <aside class="directory-sidebar">
+        <div class="sidebar-title">Подразделения</div>
+        <ul class="dept-tree">
+            <li class="dept-item">
+                <a href="{% url 'directory' %}" class="dept-link {% if not selected_department %}active{% endif %}">
+                    <span>Все сотрудники</span>
+                </a>
+            </li>
+            {% for dept in departments %}
+            {% if dept.level == 0 %}
+            <li class="dept-item">
+                <a href="{% url 'directory' %}?department={{ dept.id }}" 
+                   class="dept-link {% if selected_department == dept.id %}active{% endif %}">
+                    <span>{{ dept.name }}</span>
+                    <span class="dept-count">{{ dept.employee_count }}</span>
+                </a>
+                {% if dept.children.exists %}
+                <ul class="dept-children">
+                    {% for child in departments %}
+                    {% if child.parent_id == dept.id %}
+                    <li class="dept-item">
+                        <a href="{% url 'directory' %}?department={{ child.id }}" 
+                           class="dept-link {% if selected_department == child.id %}active{% endif %}">
+                            <span>{{ child.name }}</span>
+                            <span class="dept-count">{{ child.employee_count }}</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+        
+        <!-- Birthdays widget -->
+        {% if upcoming_birthdays %}
+        <div class="birthdays-widget">
+            <div class="sidebar-title">🎂 Ближайшие дни рождения</div>
+            {% for b in upcoming_birthdays %}
+            <div class="birthday-item">
+                <div class="birthday-avatar">
+                    {% if b.user.avatar %}
+                    <img src="{{ b.user.avatar.url }}" alt="">
+                    {% else %}
+                    {{ b.user.first_name|slice:":1" }}{{ b.user.last_name|slice:":1" }}
+                    {% endif %}
+                </div>
+                <div class="birthday-info">
+                    <div class="birthday-name">{{ b.user.get_full_name }}</div>
+                    <div class="birthday-date">{{ b.date|date:"d E" }}</div>
+                </div>
+                {% if b.days_until == 0 %}
+                <span class="birthday-badge">Сегодня!</span>
+                {% elif b.days_until == 1 %}
+                <span class="birthday-badge">Завтра</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </aside>
+    
+    <!-- Main content -->
+    <main class="directory-main">
+        <!-- Search -->
+        <div class="search-container">
+            <form method="get" action="{% url 'directory' %}">
+                {% if selected_department %}
+                <input type="hidden" name="department" value="{{ selected_department }}">
+                {% endif %}
+                <div class="search-input-wrapper">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="text" name="q" value="{{ query }}" 
+                           class="search-input" 
+                           placeholder="Поиск по имени, должности, email...">
+                </div>
+            </form>
+        </div>
+        
+        <!-- Employees grid -->
+        {% if employees %}
+        <div class="employees-grid">
+            {% for emp in employees %}
+            <a href="{% url 'employee_card' emp.id %}" class="employee-card">
+                <div class="employee-avatar">
+                    {% if emp.avatar %}
+                    <img src="{{ emp.avatar.url }}" alt="{{ emp.get_full_name }}">
+                    {% else %}
+                    {{ emp.first_name|slice:":1" }}{{ emp.last_name|slice:":1" }}
+                    {% endif %}
+                </div>
+                <div class="employee-info">
+                    <div class="employee-name">{{ emp.get_full_name|default:emp.username }}</div>
+                    <div class="employee-position">{{ emp.position.name|default:"—" }}</div>
+                    <span class="employee-status {% if emp.status == 'active' %}active{% elif emp.status == 'vacation' %}vacation{% else %}sick{% endif %}">
+                        <span class="status-dot"></span>
+                        {% if emp.status == 'active' %}На работе
+                        {% elif emp.status == 'vacation' %}В отпуске
+                        {% elif emp.status == 'sick_leave' %}На больничном
+                        {% else %}{{ emp.get_status_display }}
+                        {% endif %}
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">👥</div>
+            <div class="empty-title">Сотрудники не найдены</div>
+            <div class="empty-text">Попробуйте изменить параметры поиска</div>
+        </div>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}

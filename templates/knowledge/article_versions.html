@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}История версий: {{ article.title }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .versions-page { max-width: 800px; margin: 0 auto; }
+
+    .versions-page h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .versions-page .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    .versions-page .back-link:hover { color: var(--magenta); }
+
+    .version-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .version-item.current { border-color: var(--magenta); }
+
+    .version-info h3 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .version-info .meta {
+        font-size: 13px;
+        color: var(--text-muted);
+        display: flex;
+        gap: 12px;
+    }
+
+    .version-info .meta .rollback-badge {
+        background: var(--warning-bg);
+        color: var(--warning-text);
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+    }
+
+    .version-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .version-actions a {
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        text-decoration: none;
+        border: 1px solid var(--border-light);
+        color: var(--text-secondary);
+        transition: all 0.2s;
+    }
+
+    .version-actions a:hover {
+        border-color: var(--magenta);
+        color: var(--magenta);
+    }
+
+    .diff-selector {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .diff-selector select {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-input);
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="versions-page">
+    <a href="{% url 'kb_article_detail' slug=article.slug %}" class="back-link">← {{ article.title }}</a>
+    <h1>История версий</h1>
+
+    <div class="diff-selector">
+        <span style="font-size: 14px; color: var(--text-secondary);">Сравнить:</span>
+        <select id="diff-v1">
+            {% for v in versions %}
+            <option value="{{ v.version_number }}" {% if forloop.counter == 2 %}selected{% endif %}>
+                v{{ v.version_number }}
+            </option>
+            {% endfor %}
+        </select>
+        <span style="color: var(--text-muted);">↔</span>
+        <select id="diff-v2">
+            {% for v in versions %}
+            <option value="{{ v.version_number }}" {% if forloop.first %}selected{% endif %}>
+                v{{ v.version_number }}
+            </option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-secondary" style="padding: 8px 18px; font-size: 13px;" onclick="compareDiff()">
+            Сравнить
+        </button>
+    </div>
+
+    {% for version in versions %}
+    <div class="version-item {% if forloop.first %}current{% endif %}">
+        <div class="version-info">
+            <h3>Версия {{ version.version_number }} {% if forloop.first %}(текущая){% endif %}</h3>
+            <div class="meta">
+                <span>{{ version.author.get_full_name|default:version.author.username }}</span>
+                <span>{{ version.created_at|date:"d.m.Y H:i" }}</span>
+                {% if version.comment %}<span>{{ version.comment }}</span>{% endif %}
+                {% if version.is_rollback %}<span class="rollback-badge">Откат</span>{% endif %}
+            </div>
+        </div>
+        <div class="version-actions">
+            {% if not forloop.first %}
+            <a href="{% url 'kb_article_diff' slug=article.slug v1=version.version_number v2=article.current_version %}">Diff</a>
+            <a href="{% url 'kb_article_rollback' slug=article.slug version_number=version.version_number %}">Откатить</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function compareDiff() {
+    const v1 = document.getElementById('diff-v1').value;
+    const v2 = document.getElementById('diff-v2').value;
+    if (v1 !== v2) {
+        window.location.href = `/knowledge/article/{{ article.slug }}/diff/${v1}/${v2}/`;
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Поиск{% if query %}: {{ query }}{% endif %} — База знаний{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .search-page { max-width: 900px; margin: 0 auto; }
+
+    .search-page h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    .search-form {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .search-form input {
+        flex: 1;
+        padding: 14px 20px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-input);
+        color: var(--text-primary);
+        font-size: 15px;
+        font-family: inherit;
+    }
+
+    .search-form input:focus {
+        outline: none;
+        border-color: var(--magenta);
+    }
+
+    .search-form button {
+        padding: 14px 28px;
+        border-radius: 12px;
+        border: none;
+        background: var(--magenta);
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .search-filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .filter-group { margin-bottom: 12px; }
+    .filter-group-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .filter-chip {
+        display: inline-block;
+        padding: 5px 13px;
+        border-radius: 20px;
+        font-size: 13px;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s;
+        margin: 0 4px 4px 0;
+    }
+
+    .filter-chip:hover, .filter-chip.active {
+        border-color: var(--magenta);
+        color: var(--magenta);
+        background: rgba(203,17,171,0.08);
+    }
+
+    .did-you-mean {
+        font-size: 14px;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+    }
+    .did-you-mean a { color: var(--magenta); }
+
+    .search-results-info {
+        font-size: 14px;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+    }
+
+    .search-result-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 10px;
+        text-decoration: none;
+        display: block;
+        color: var(--text-primary);
+        transition: all 0.2s;
+    }
+
+    .search-result-item:hover {
+        border-color: var(--magenta);
+        box-shadow: var(--shadow);
+        color: var(--text-primary);
+    }
+
+    .search-result-item h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .search-result-item .excerpt {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 8px;
+    }
+
+    .search-result-item .meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .search-result-item .meta .type-badge {
+        background: rgba(203, 17, 171, 0.1);
+        color: var(--magenta);
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 24px;
+    }
+
+    .pagination a, .pagination span {
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        text-decoration: none;
+    }
+
+    .pagination a {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+    }
+
+    .pagination a:hover {
+        border-color: var(--magenta);
+        color: var(--magenta);
+    }
+
+    .pagination span.current {
+        background: var(--magenta);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-page">
+    <h1>Поиск по Базе знаний</h1>
+
+    <form class="search-form" method="get" id="search-form">
+        <input type="text" name="q" value="{{ query }}" placeholder="Введите запрос..." autofocus>
+        <button type="submit">Найти</button>
+    </form>
+
+    <!-- Filters -->
+    <div class="search-filters">
+        <div class="filter-group">
+            <div class="filter-group-title">Рубрики</div>
+            <a href="?q={{ query }}" class="filter-chip {% if not current_filters.category_id %}active{% endif %}">Все</a>
+            {% for cat in categories %}
+            <a href="?q={{ query }}&category={{ cat.id }}" class="filter-chip {% if current_filters.category_id == cat.id %}active{% endif %}">{{ cat.name }}</a>
+            {% endfor %}
+        </div>
+        <div class="filter-group">
+            <div class="filter-group-title">Тип</div>
+            <a href="?q={{ query }}{% if current_filters.category_id %}&category={{ current_filters.category_id }}{% endif %}" class="filter-chip {% if not current_filters.article_type %}active{% endif %}">Все</a>
+            {% for val, label in article_types %}
+            <a href="?q={{ query }}&type={{ val }}{% if current_filters.category_id %}&category={{ current_filters.category_id }}{% endif %}" class="filter-chip {% if current_filters.article_type == val %}active{% endif %}">{{ label }}</a>
+            {% endfor %}
+        </div>
+        <div class="filter-group">
+            <div class="filter-group-title">Теги</div>
+            {% for tag in tags %}
+            <a href="?q={{ query }}&tag={{ tag.slug }}" class="filter-chip {% if current_filters.tag_slug == tag.slug %}active{% endif %}">#{{ tag.name }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if did_you_mean %}
+    <div class="did-you-mean">
+        Возможно, вы имели в виду: <a href="?q={{ did_you_mean }}">{{ did_you_mean }}</a>?
+    </div>
+    {% endif %}
+
+    {% if query %}
+    <div class="search-results-info">
+        Найдено {{ total }} результатов по запросу &laquo;{{ query }}&raquo;
+    </div>
+    {% endif %}
+
+    {% for article in results %}
+    <a href="{% url 'kb_article_detail' slug=article.slug %}" class="search-result-item">
+        <h3>{{ article.title }}</h3>
+        <p class="excerpt">{{ article.excerpt|truncatewords:30 }}</p>
+        <div class="meta">
+            <span class="type-badge">{{ article.get_article_type_display }}</span>
+            {% if article.category %}
+            <span>{{ article.category.name }}</span>
+            {% endif %}
+            <span>{{ article.author.get_full_name|default:article.author.username }}</span>
+            <span>{{ article.published_at|date:"d.m.Y"|default:article.created_at|date:"d.m.Y" }}</span>
+            {% if article.avg_rating %}
+            <span style="color: #f5a623;">★ {{ article.avg_rating }}</span>
+            {% endif %}
+        </div>
+    </a>
+    {% empty %}
+    {% if query %}
+    <p style="text-align:center;padding:40px;color:var(--text-muted);">
+        По вашему запросу ничего не найдено. Попробуйте изменить поисковые слова.
+    </p>
+    {% endif %}
+    {% endfor %}
+
+    {% if pages > 1 %}
+    <div class="pagination">
+        {% for p in "x"|ljust:pages %}
+        {% if forloop.counter == page %}
+        <span class="current">{{ forloop.counter }}</span>
+        {% else %}
+        <a href="?q={{ query }}&page={{ forloop.counter }}{% if current_filters.category_id %}&category={{ current_filters.category_id }}{% endif %}{% if current_filters.tag_slug %}&tag={{ current_filters.tag_slug }}{% endif %}{% if current_filters.article_type %}&type={{ current_filters.article_type }}{% endif %}">{{ forloop.counter }}</a>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

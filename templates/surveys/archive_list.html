@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Архив опросов — WBChat{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <a href="{% url 'surveys_manage_list' %}" class="back-link" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;color:var(--text-secondary);text-decoration:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Назад к моим опросам
+        </a>
+
+        <h1 class="page-title">Архив опросов</h1>
+
+        {% if surveys %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Завершён</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in surveys %}
+                <tr>
+                    <td>{{ s.title }}</td>
+                    <td>{{ s.closed_at|date:"d.m.Y H:i"|default:"—" }}</td>
+                    <td>
+                        <a href="{% url 'surveys_results' s.pk %}" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">Результаты</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">В архиве пока нет опросов.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
