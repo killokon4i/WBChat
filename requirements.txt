@@ -5,7 +5,7 @@ psycopg==3.2.12
 psycopg-binary==3.2.12
 sqlparse==0.5.3
 tzdata==2025.2
-
+dj-database-url
 # Django Channels for WebSocket support
 channels==4.1.0
 channels-redis==4.2.1
