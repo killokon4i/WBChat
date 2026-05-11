@@ -29,6 +29,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.ngrok.io',
     'https://*.serveousercontent.com',
     'https://*.trycloudflare.com',
+    "https://wbchat-production.up.railway.app",
 ]
 
 
