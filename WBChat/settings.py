@@ -172,13 +172,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # To use Redis (uncomment when Redis is running):
 CHANNEL_LAYERS = {
-'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
-         },
-     },
- }
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get("REDIS_URL")],
+        },
+    },
+}
 
 # Redis configuration for Celery
 REDIS_HOST = 'localhost'
