@@ -71,6 +71,27 @@ def _build_question_numbering(questions):
     return numbering
 
 
+def _survey_progress_summary(survey):
+    """
+    Сводка прохождения по опросу для управленческих экранов.
+    """
+    total = survey.get_eligible_users().count()
+    submitted_users = (
+        survey.responses.filter(submitted_at__isnull=False, user_id__isnull=False)
+        .values_list("user_id", flat=True)
+        .distinct()
+        .count()
+    )
+    pending = max(total - submitted_users, 0)
+    percent = round((submitted_users / total) * 100, 1) if total else 0.0
+    return {
+        "total": total,
+        "submitted": submitted_users,
+        "pending": pending,
+        "percent": percent,
+    }
+
+
 # ---------------------------------------------------------------------------
 # list / manage / archive views
 # ---------------------------------------------------------------------------
@@ -86,7 +107,20 @@ def survey_list(request):
             continue
         if request.user not in survey.get_eligible_users():
             continue
-        available.append(survey)
+        latest_response = (
+            SurveyResponse.objects.filter(survey=survey, user=request.user)
+            .order_by("-submitted_at", "-started_at")
+            .first()
+        )
+        is_completed = bool(latest_response and latest_response.is_submitted)
+        available.append(
+            {
+                "survey": survey,
+                "is_completed": is_completed,
+                "submitted_at": latest_response.submitted_at if is_completed else None,
+                "can_take": bool(survey.allow_multiple or not is_completed),
+            }
+        )
     return render(
         request,
         "surveys/list.html",
@@ -103,11 +137,20 @@ def survey_manage_list(request):
     if not _user_can_manage_surveys(request.user):
         return HttpResponseForbidden("Нет прав для управления опросами.")
 
-    my_surveys = (
+    my_surveys_qs = (
         Survey.objects.filter(author=request.user)
         .exclude(status="archived")
         .order_by("-created_at")
     )
+    my_surveys = []
+    for survey in my_surveys_qs:
+        my_surveys.append(
+            {
+                "survey": survey,
+                "progress": _survey_progress_summary(survey),
+                "questions_count": survey.questions.count(),
+            }
+        )
     return render(
         request,
         "surveys/manage_list.html",
@@ -122,7 +165,16 @@ def survey_archive_list(request):
     """Список опросов в архиве."""
     if not _user_can_manage_surveys(request.user):
         return HttpResponseForbidden("Нет прав для просмотра архива опросов.")
-    archived = Survey.objects.filter(status="archived").order_by("-closed_at", "-updated_at")
+    archived_qs = Survey.objects.filter(status="archived").order_by("-closed_at", "-updated_at")
+    archived = []
+    for survey in archived_qs:
+        archived.append(
+            {
+                "survey": survey,
+                "progress": _survey_progress_summary(survey),
+                "questions_count": survey.questions.count(),
+            }
+        )
     return render(request, "surveys/archive_list.html", {"surveys": archived})
 
 
@@ -844,6 +896,23 @@ def _try_register_pdf_font():
         return "Helvetica"
 
     candidates = []
+    try:
+        from matplotlib import font_manager
+
+        matplotlib_font = font_manager.findfont(
+            font_manager.FontProperties(family="DejaVu Sans"),
+            fallback_to_default=True,
+        )
+        if matplotlib_font and os.path.isfile(matplotlib_font):
+            candidates.append(matplotlib_font)
+            bold_candidate = (
+                matplotlib_font.replace("DejaVuSans.ttf", "DejaVuSans-Bold.ttf")
+                .replace("dejavu/DejaVuSans.ttf", "dejavu/DejaVuSans-Bold.ttf")
+            )
+            if bold_candidate != matplotlib_font and os.path.isfile(bold_candidate):
+                candidates.append(bold_candidate)
+    except Exception:
+        pass
     static_dir = os.path.join(getattr(settings, "BASE_DIR", ""), "static", "fonts")
     candidates.extend(
         [

@@ -2,42 +2,66 @@
 {% block title %}Архив опросов — WBChat{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <a href="{% url 'surveys_manage_list' %}" class="back-link" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;color:var(--text-secondary);text-decoration:none;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="19" y1="12" x2="5" y2="12"/>
-                <polyline points="12 19 5 12 12 5"/>
-            </svg>
-            Назад к моим опросам
-        </a>
-
-        <h1 class="page-title">Архив опросов</h1>
-
-        {% if surveys %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Название</th>
-                    <th>Завершён</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for s in surveys %}
-                <tr>
-                    <td>{{ s.title }}</td>
-                    <td>{{ s.closed_at|date:"d.m.Y H:i"|default:"—" }}</td>
-                    <td>
-                        <a href="{% url 'surveys_results' s.pk %}" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">Результаты</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p class="text-muted">В архиве пока нет опросов.</p>
-        {% endif %}
+<div class="container archive-page">
+    <a href="{% url 'surveys_manage_list' %}" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Назад к управлению опросами
+    </a>
+    <div class="archive-head">
+        <h1 class="page-title" style="margin:0;">Архив опросов</h1>
+        <span class="archive-count">{{ surveys|length }} шт.</span>
     </div>
+
+    {% if surveys %}
+    <div class="archive-grid">
+        {% for item in surveys %}
+        <article class="card archive-card">
+            <div class="archive-card-top">
+                <span class="badge badge-primary">Архив</span>
+                <span class="archive-date">{{ item.survey.closed_at|date:"d.m.Y H:i"|default:"—" }}</span>
+            </div>
+            <h2 class="archive-title">{{ item.survey.title }}</h2>
+            <p class="archive-desc">{{ item.survey.description|default:"Описание не заполнено."|truncatewords:22 }}</p>
+            <div class="archive-metrics">
+                <div><b>{{ item.progress.total }}</b><span>Аудитория</span></div>
+                <div><b>{{ item.progress.submitted }}</b><span>Прошли</span></div>
+                <div><b>{{ item.questions_count }}</b><span>Вопросов</span></div>
+                <div><b>{{ item.progress.percent }}%</b><span>Конверсия</span></div>
+            </div>
+            <div class="archive-actions">
+                <a href="{% url 'surveys_results' item.survey.pk %}" class="btn btn-primary btn-small">Открыть результаты</a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card text-center">
+        <h2 style="margin:0 0 8px;">Архив пуст</h2>
+        <p class="text-secondary">Завершенные опросы будут появляться здесь.</p>
+    </div>
+    {% endif %}
 </div>
+
+<style>
+.archive-page { max-width: 1200px; }
+.back-link { display:inline-flex; align-items:center; gap:6px; margin-bottom:12px; color:var(--text-secondary); text-decoration:none; }
+.back-link svg { width:18px; height:18px; }
+.archive-head { display:flex; justify-content:space-between; align-items:center; gap: 10px; margin-bottom: 16px; }
+.archive-count { padding: 4px 10px; border-radius: 999px; background: var(--bg-hover); color: var(--text-secondary); font-size: 12px; }
+.archive-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.archive-card { padding: 18px; display:flex; flex-direction:column; min-height: 280px; }
+.archive-card-top { display:flex; justify-content:space-between; align-items:center; gap: 8px; }
+.archive-date { font-size: 12px; color: var(--text-muted); }
+.archive-title { margin: 12px 0 8px; font-size: 19px; color: var(--text-primary); line-height: 1.35; }
+.archive-desc { color: var(--text-secondary); font-size: 14px; min-height: 36px; }
+.archive-metrics { margin-top: 14px; display:grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.archive-metrics > div { background: var(--bg-hover); border: 1px solid var(--border-light); border-radius: 10px; padding: 8px 10px; display:flex; justify-content:space-between; align-items:center; gap: 8px; }
+.archive-metrics b { color: var(--text-primary); font-size: 15px; }
+.archive-metrics span { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .3px; }
+.archive-actions { margin-top: auto; padding-top: 14px; }
+.btn-small { padding: 8px 12px; font-size: 12px; }
+</style>
 {% endblock %}
