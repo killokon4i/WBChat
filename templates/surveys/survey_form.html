@@ -150,6 +150,7 @@
                          data-parent-triggers="{{ q.parent_option_values_json|escape }}">
                         <input type="hidden" name="q{{ forloop.counter0 }}-id" value="{{ q.id|default:'' }}">
                         <input type="hidden" name="q{{ forloop.counter0 }}-client_id" value="{{ q.client_id }}">
+                        <input type="hidden" name="q{{ forloop.counter0 }}-parent_client_id" value="{{ q.parent_client_id|default:'' }}" class="js-parent-client-id">
 
                         <div class="question-block-header">
                             <span class="qb-num">Вопрос <span class="qb-num-value">{{ forloop.counter }}</span></span>
@@ -198,21 +199,15 @@
                             </div>
                             {% endif %}
                         </div>
-                        <button type="button" class="btn btn-secondary btn-add-option" data-hide-for="scale,free_text">+ Добавить вариант</button>
+                        <div class="question-actions-row">
+                            <button type="button" class="btn btn-secondary btn-add-option" data-hide-for="scale,free_text">+ Добавить вариант</button>
+                            <button type="button" class="btn btn-secondary btn-add-subquestion">+ Добавить подвопрос</button>
+                        </div>
 
-                        <div class="subquestion-block">
-                            <label class="form-label form-label--mini">Подвопрос?</label>
-                            <div class="form-row form-row--tight">
-                                <div class="form-group form-group-half">
-                                    <select class="form-control js-parent-select" name="q{{ forloop.counter0 }}-parent_client_id">
-                                        <option value="">— Это основной вопрос —</option>
-                                    </select>
-                                </div>
-                                <div class="form-group form-group-half">
-                                    <div class="js-parent-triggers-wrap">
-                                        <div class="parent-triggers-empty form-help">Выберите родительский вопрос, чтобы указать триггеры.</div>
-                                    </div>
-                                </div>
+                        <div class="subquestion-settings" {% if not q.parent_client_id %}hidden{% endif %}>
+                            <div class="form-label form-label--mini js-parent-caption">Подвопрос</div>
+                            <div class="js-parent-triggers-wrap">
+                                <div class="parent-triggers-empty form-help">Выберите вариант ответа родительского вопроса, при котором подвопрос будет показан.</div>
                             </div>
                         </div>
                     </div>
@@ -281,8 +276,10 @@
 .btn-icon-delete:hover { background: rgba(239,68,68,.12); color: #ef4444; }
 
 .btn-add-option { margin-top: 4px; }
+.question-actions-row { margin-top: 10px; display:flex; flex-wrap: wrap; gap: 8px; }
+.btn-add-subquestion { border-style: dashed; }
 
-.subquestion-block { margin-top: 14px; padding: 12px 14px; border: 1px dashed var(--border-light); border-radius: 12px; background: var(--bg-card); }
+.subquestion-settings { margin-top: 14px; padding: 12px 14px; border: 1px dashed var(--border-light); border-radius: 12px; background: var(--bg-card); }
 
 .trigger-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .trigger-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 13px; background: rgba(203,17,171,.1); border: 1px solid rgba(203,17,171,.25); color: var(--text-primary); cursor: pointer; }
@@ -312,6 +309,7 @@ select.form-control { min-height: 42px; }
     var questionsContainer = document.getElementById('questions-container');
     if (!questionsContainer) return;
     var addBtn = document.getElementById('btn-add-question');
+    var formEl = document.getElementById('survey-form');
     var newCounter = 0;
 
     function makeClientId() {
@@ -325,23 +323,78 @@ select.form-control { min-height: 42px; }
         });
     }
 
+    function splitCsv(text) {
+        if (!text) return [];
+        return String(text).split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+    }
+
     function getBlocks() {
         return Array.prototype.slice.call(questionsContainer.querySelectorAll('.question-block'));
     }
 
-    function reindexBlocks() {
-        getBlocks().forEach(function(block, idx) {
-            block.setAttribute('data-question-index', idx);
-            block.querySelectorAll('input, select, textarea, button').forEach(function(el) {
-                var name = el.getAttribute('name');
-                if (!name) return;
-                el.setAttribute('name', name.replace(/^q\d+/, 'q' + idx));
-            });
-            var numEl = block.querySelector('.qb-num-value');
-            if (numEl) numEl.textContent = (idx + 1);
-            var optsBlock = block.querySelector('.js-options-block');
-            if (optsBlock) optsBlock.setAttribute('data-question-index', idx);
-        });
+    function getClientId(block) {
+        return block.getAttribute('data-client-id') || '';
+    }
+
+    function getParentInput(block) {
+        return block.querySelector('.js-parent-client-id');
+    }
+
+    function getParentClientId(block) {
+        var inp = getParentInput(block);
+        return inp ? (inp.value || '').trim() : '';
+    }
+
+    function setParentClientId(block, parentClientId) {
+        var val = parentClientId || '';
+        block.setAttribute('data-parent-client-id', val);
+        var inp = getParentInput(block);
+        if (inp) inp.value = val;
+    }
+
+    function isSubQuestion(block) {
+        return !!getParentClientId(block);
+    }
+
+    function getQuestionType(block) {
+        var sel = block.querySelector('.js-q-type');
+        return sel ? (sel.value || 'single_choice') : 'single_choice';
+    }
+
+    function getTitleText(block) {
+        var t = block.querySelector('input[name$="-title"]');
+        return (t && t.value ? t.value : '').trim();
+    }
+
+    function getQuestionLabel(block, numberingByClient) {
+        var num = numberingByClient[getClientId(block)] || '?';
+        var title = getTitleText(block) || 'Без текста';
+        return num + '. ' + title.slice(0, 80);
+    }
+
+    function getInitialTriggers(block) {
+        var raw = block.getAttribute('data-parent-triggers') || '[]';
+        try {
+            var parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed.map(String) : [];
+        } catch (_e) {
+            var m = [];
+            raw.replace(/'([^']*)'|"([^"]*)"/g, function(_, a, b) { m.push(a !== undefined ? a : b); });
+            return m.map(String);
+        }
+    }
+
+    function getCurrentTriggers(block) {
+        var wrap = block.querySelector('.js-parent-triggers-wrap');
+        if (!wrap) return [];
+        var checked = Array.prototype.map.call(
+            wrap.querySelectorAll('input[type="checkbox"]:checked'),
+            function(i){ return (i.value || '').trim(); }
+        ).filter(Boolean);
+        if (checked.length) return checked;
+        var txt = wrap.querySelector('input[type="text"]');
+        if (txt && txt.value.trim()) return splitCsv(txt.value);
+        return [];
     }
 
     function updateOptionsVisibilityForBlock(block) {
@@ -356,156 +409,232 @@ select.form-control { min-height: 42px; }
         block.setAttribute('data-question-type', v);
     }
 
-    function refreshParentOptions() {
+    function computeNumbering() {
         var blocks = getBlocks();
-        var blockData = blocks.map(function(b) {
-            return {
-                el: b,
-                clientId: b.getAttribute('data-client-id'),
-                title: (b.querySelector('input[name$="-title"]') || {}).value || '',
-                type: b.getAttribute('data-question-type') || 'single_choice'
-            };
-        });
-        blocks.forEach(function(b, idx) {
-            var sel = b.querySelector('.js-parent-select');
-            if (!sel) return;
-            var prev = sel.value;
-            sel.innerHTML = '';
-            var opt0 = document.createElement('option');
-            opt0.value = '';
-            opt0.textContent = '— Это основной вопрос —';
-            sel.appendChild(opt0);
-            for (var i = 0; i < idx; i++) {
-                var cand = blockData[i];
-                if (!cand.title) continue;
-                if (cand.type === 'free_text') continue;
-                if (cand.el.classList.contains('is-sub')) continue;
-                var o = document.createElement('option');
-                o.value = cand.clientId;
-                o.textContent = (i + 1) + '. ' + cand.title.slice(0, 60);
-                sel.appendChild(o);
+        var byClient = {};
+        var mainCounter = 0;
+        var subCounters = {};
+        blocks.forEach(function(block) {
+            var clientId = getClientId(block);
+            var parentClientId = getParentClientId(block);
+            var label = '';
+            if (!parentClientId || !byClient[parentClientId]) {
+                mainCounter += 1;
+                label = String(mainCounter);
+            } else {
+                subCounters[parentClientId] = (subCounters[parentClientId] || 0) + 1;
+                label = byClient[parentClientId] + '.' + subCounters[parentClientId];
             }
-            // восстановить предыдущее значение, если такая опция есть
-            var keep = prev || b.getAttribute('data-parent-client-id') || '';
-            if (keep) {
-                var found = Array.prototype.some.call(sel.options, function(o) { return o.value === keep; });
-                sel.value = found ? keep : '';
-            }
-            renderTriggersForBlock(b);
+            byClient[clientId] = label;
+            block.setAttribute('data-number-label', label);
         });
+        return byClient;
     }
 
-    function getParsedInitialTriggers(block) {
-        var raw = block.getAttribute('data-parent-triggers') || '';
-        if (!raw) return [];
-        // в шаблоне выводим Python-список как str() — может быть '[\'a\', \'b\']' или JSON
-        try {
-            return JSON.parse(raw);
-        } catch (e) {
-            // эвристика: парсим строки в одинарных кавычках
-            var m = [];
-            raw.replace(/'([^']*)'|"([^"]*)"/g, function(_, a, b) { m.push(a !== undefined ? a : b); });
-            return m;
-        }
-    }
-
-    function renderTriggersForBlock(block) {
-        var sel = block.querySelector('.js-parent-select');
+    function renderSubquestionSettings(block, numberingByClient) {
+        var settings = block.querySelector('.subquestion-settings');
+        var caption = block.querySelector('.js-parent-caption');
         var wrap = block.querySelector('.js-parent-triggers-wrap');
-        if (!sel || !wrap) return;
         var idx = block.getAttribute('data-question-index');
-        var parentClientId = sel.value;
-        block.classList.toggle('is-sub', !!parentClientId);
-        var badge = block.querySelector('.js-qb-badge');
-        if (badge) badge.textContent = parentClientId ? 'Подвопрос' : '';
+        if (!settings || !caption || !wrap) return;
 
-        if (!parentClientId) {
-            wrap.innerHTML = '<div class="parent-triggers-empty form-help">Выберите родительский вопрос, чтобы указать триггеры.</div>';
+        var parentClientId = getParentClientId(block);
+        var sub = !!parentClientId;
+        settings.hidden = !sub;
+        block.classList.toggle('is-sub', sub);
+
+        var badge = block.querySelector('.js-qb-badge');
+        if (badge) badge.textContent = sub ? 'Подвопрос' : 'Основной';
+
+        var addSubBtn = block.querySelector('.btn-add-subquestion');
+        if (addSubBtn) addSubBtn.style.display = sub ? 'none' : '';
+
+        if (!sub) {
+            wrap.innerHTML = '';
             return;
         }
+
         var parent = questionsContainer.querySelector('.question-block[data-client-id="' + parentClientId + '"]');
         if (!parent) {
-            wrap.innerHTML = '<div class="parent-triggers-empty form-help">Родительский вопрос не найден.</div>';
+            setParentClientId(block, '');
+            settings.hidden = true;
+            wrap.innerHTML = '';
             return;
         }
-        var parentType = parent.getAttribute('data-question-type') || 'single_choice';
-        var initialTriggers = getParsedInitialTriggers(block).map(function(x){return String(x);});
 
-        function syncFromInputs(){
-            // ничего отдельно делать не надо: name="qN-parent_triggers" сериализуется автоматически
-        }
+        caption.textContent = 'Подвопрос к: ' + getQuestionLabel(parent, numberingByClient);
+        var parentType = getQuestionType(parent);
+        var selectedTriggers = getCurrentTriggers(block);
+        if (!selectedTriggers.length) selectedTriggers = getInitialTriggers(block);
 
         if (parentType === 'single_choice' || parentType === 'multiple_choice') {
-            var opts = parent.querySelectorAll('.option-row input[type="text"]');
-            var html = ['<label class="form-label form-label--mini">Показывать, если выбрано:</label>'];
-            html.push('<div class="trigger-list">');
-            var found = false;
-            Array.prototype.forEach.call(opts, function(inp) {
-                var val = (inp.value || '').trim();
-                if (!val) return;
-                found = true;
-                var checked = initialTriggers.indexOf(val) !== -1;
+            var options = Array.prototype.map.call(
+                parent.querySelectorAll('.option-row input[type="text"]'),
+                function(inp){ return (inp.value || '').trim(); }
+            ).filter(Boolean);
+            if (!options.length) {
+                wrap.innerHTML = '<div class="form-help">Добавьте варианты в родительском вопросе, затем выберите триггер.</div>';
+                return;
+            }
+            var html = ['<label class="form-label form-label--mini">Показывать при выборе:</label><div class="trigger-list">'];
+            options.forEach(function(opt) {
+                var checked = selectedTriggers.indexOf(opt) !== -1;
                 html.push(
                     '<label class="trigger-chip' + (checked ? ' is-checked' : '') + '">' +
-                        '<input type="checkbox" name="q' + idx + '-parent_triggers" value="' + escapeHtml(val) + '"' + (checked ? ' checked' : '') + '>' +
-                        '<span>' + escapeHtml(val) + '</span>' +
+                        '<input type="checkbox" name="q' + idx + '-parent_triggers" value="' + escapeHtml(opt) + '"' + (checked ? ' checked' : '') + '>' +
+                        '<span>' + escapeHtml(opt) + '</span>' +
                     '</label>'
                 );
             });
             html.push('</div>');
-            if (!found) html.push('<div class="form-help">Добавьте варианты в родительский вопрос, чтобы выбрать триггер.</div>');
             wrap.innerHTML = html.join('');
         } else if (parentType === 'scale') {
-            var current = initialTriggers.join(', ');
             wrap.innerHTML =
-                '<label class="form-label form-label--mini">Триггерные значения шкалы (через запятую):</label>' +
-                '<input type="text" name="q' + idx + '-parent_triggers_text" class="form-control" placeholder="например 1, 2, 3" value="' + escapeHtml(current) + '">';
+                '<label class="form-label form-label--mini">Триггерные значения шкалы (через запятую)</label>' +
+                '<input type="text" class="form-control" name="q' + idx + '-parent_triggers_text" value="' + escapeHtml(selectedTriggers.join(', ')) + '" placeholder="например 1,2,3">';
         } else {
-            wrap.innerHTML = '<div class="parent-triggers-empty form-help">Подвопрос недоступен для этого типа родителя.</div>';
+            wrap.innerHTML = '<div class="form-help">Для родителя с типом «Свободный текст» подвопрос не поддерживается.</div>';
         }
-        syncFromInputs();
     }
 
-    function rebindBlock(block) {
-        updateOptionsVisibilityForBlock(block);
+    function reindexBlocks() {
+        getBlocks().forEach(function(block, idx) {
+            block.setAttribute('data-question-index', idx);
+            block.querySelectorAll('input, select, textarea').forEach(function(el) {
+                var name = el.getAttribute('name');
+                if (!name) return;
+                el.setAttribute('name', name.replace(/^q\d+/, 'q' + idx));
+            });
+            var optsBlock = block.querySelector('.js-options-block');
+            if (optsBlock) optsBlock.setAttribute('data-question-index', idx);
+        });
+
+        var numberingByClient = computeNumbering();
+        getBlocks().forEach(function(block) {
+            var numEl = block.querySelector('.qb-num-value');
+            if (numEl) numEl.textContent = block.getAttribute('data-number-label') || '?';
+            updateOptionsVisibilityForBlock(block);
+            renderSubquestionSettings(block, numberingByClient);
+        });
     }
 
-    function init() {
-        getBlocks().forEach(rebindBlock);
-        refreshParentOptions();
+    function resetOptionsForNewBlock(block) {
+        var optsDiv = block.querySelector('.js-options-block');
+        if (!optsDiv) return;
+        optsDiv.querySelectorAll('.option-row').forEach(function(r){ r.remove(); });
+        var row = document.createElement('div');
+        row.className = 'option-row';
+        row.innerHTML =
+            '<input type="text" name="placeholder-option_0" value="" class="form-control" placeholder="Вариант 1">' +
+            '<button type="button" class="btn-icon-delete js-btn-remove-option" title="Удалить вариант" aria-label="Удалить вариант">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+            '</button>';
+        optsDiv.appendChild(row);
     }
 
-    // делегированные обработчики
-    document.getElementById('survey-form').addEventListener('change', function(e) {
-        var target = e.target;
-        if (!target) return;
-        if (target.classList && target.classList.contains('js-q-type')) {
-            var b = target.closest('.question-block');
-            if (b) { rebindBlock(b); refreshParentOptions(); }
-        } else if (target.classList && target.classList.contains('js-parent-select')) {
-            var b2 = target.closest('.question-block');
-            if (b2) {
-                b2.setAttribute('data-parent-client-id', target.value || '');
-                b2.setAttribute('data-parent-triggers', '[]');
-                renderTriggersForBlock(b2);
+    function makeNewBlock() {
+        var blocks = getBlocks();
+        var template = blocks[blocks.length - 1] || blocks[0];
+        if (!template) return null;
+        var clone = template.cloneNode(true);
+        var clientId = makeClientId();
+        clone.setAttribute('data-client-id', clientId);
+        clone.setAttribute('data-parent-client-id', '');
+        clone.setAttribute('data-parent-triggers', '[]');
+        clone.setAttribute('data-question-type', 'single_choice');
+        clone.classList.remove('is-sub');
+
+        clone.querySelectorAll('input, select, textarea').forEach(function(input) {
+            var name = input.getAttribute('name') || '';
+            if (input.type === 'checkbox' || input.type === 'radio') input.checked = false;
+            if (input.tagName === 'SELECT') input.selectedIndex = 0;
+            if (input.tagName === 'TEXTAREA') input.value = '';
+            if (input.type === 'text' && !/-parent_triggers_text$/.test(name)) input.value = '';
+            if (/-parent_triggers_text$/.test(name)) input.value = '';
+            if (input.type === 'hidden') input.value = '';
+        });
+        var idInput = clone.querySelector('input[name$="-id"]');
+        if (idInput) idInput.value = '';
+        var clientInput = clone.querySelector('input[name$="-client_id"]');
+        if (clientInput) clientInput.value = clientId;
+        setParentClientId(clone, '');
+
+        var typeSel = clone.querySelector('.js-q-type');
+        if (typeSel) typeSel.value = 'single_choice';
+
+        resetOptionsForNewBlock(clone);
+
+        var wrap = clone.querySelector('.js-parent-triggers-wrap');
+        if (wrap) wrap.innerHTML = '';
+        var settings = clone.querySelector('.subquestion-settings');
+        if (settings) settings.hidden = true;
+
+        return clone;
+    }
+
+    function insertAfter(newNode, referenceNode) {
+        if (!referenceNode || !referenceNode.parentNode) return;
+        if (referenceNode.nextSibling) {
+            referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+        } else {
+            referenceNode.parentNode.appendChild(newNode);
+        }
+    }
+
+    function addMainQuestion() {
+        var block = makeNewBlock();
+        if (!block) return;
+        questionsContainer.appendChild(block);
+        reindexBlocks();
+    }
+
+    function addSubQuestion(parentBlock) {
+        if (!parentBlock || isSubQuestion(parentBlock)) return;
+        var block = makeNewBlock();
+        if (!block) return;
+        var parentClientId = getClientId(parentBlock);
+        setParentClientId(block, parentClientId);
+
+        var blocks = getBlocks();
+        var parentIndex = blocks.indexOf(parentBlock);
+        var insertAfterBlock = parentBlock;
+        for (var i = parentIndex + 1; i < blocks.length; i++) {
+            if (getParentClientId(blocks[i]) === parentClientId) {
+                insertAfterBlock = blocks[i];
+                continue;
             }
-        } else if (target.matches('.trigger-chip input[type="checkbox"]')) {
-            var lab = target.closest('.trigger-chip');
-            if (lab) lab.classList.toggle('is-checked', target.checked);
-        } else if (target.name && target.name.endsWith('-title')) {
-            refreshParentOptions();
-        } else if (target.name && /-option_\d+$/.test(target.name)) {
-            // обновим список триггеров для подвопросов, ссылающихся на этот блок
-            refreshParentOptions();
+            if (!getParentClientId(blocks[i])) break;
+        }
+        insertAfter(block, insertAfterBlock);
+        reindexBlocks();
+
+        var titleInput = block.querySelector('input[name$="-title"]');
+        if (titleInput) titleInput.focus();
+    }
+
+    formEl.addEventListener('change', function(e) {
+        var t = e.target;
+        if (!t) return;
+        if (t.classList.contains('js-q-type')) {
+            reindexBlocks();
+            return;
+        }
+        if (t.matches('.trigger-chip input[type="checkbox"]')) {
+            var chip = t.closest('.trigger-chip');
+            if (chip) chip.classList.toggle('is-checked', t.checked);
+            return;
+        }
+        if (t.name && (t.name.endsWith('-title') || /-option_\d+$/.test(t.name) || /-parent_triggers/.test(t.name))) {
+            reindexBlocks();
         }
     });
 
-    document.getElementById('survey-form').addEventListener('input', function(e) {
+    formEl.addEventListener('input', function(e) {
         var t = e.target;
         if (!t || !t.name) return;
         if (t.name.endsWith('-title') || /-option_\d+$/.test(t.name)) {
-            clearTimeout(window.__refreshT);
-            window.__refreshT = setTimeout(refreshParentOptions, 150);
+            clearTimeout(window.__surveyBuilderRefreshTimer);
+            window.__surveyBuilderRefreshTimer = setTimeout(reindexBlocks, 120);
         }
     });
 
@@ -521,76 +650,42 @@ select.form-control { min-height: 42px; }
             row.innerHTML =
                 '<input type="text" name="q' + idx + '-option_' + nextOpt + '" value="" class="form-control" placeholder="Вариант ' + (nextOpt + 1) + '">' +
                 '<button type="button" class="btn-icon-delete js-btn-remove-option" title="Удалить вариант" aria-label="Удалить вариант">' +
-                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
                 '</button>';
             optsDiv.appendChild(row);
-            refreshParentOptions();
+            reindexBlocks();
+            return;
+        }
+        if (e.target.closest('.btn-add-subquestion')) {
+            var parent = e.target.closest('.question-block');
+            addSubQuestion(parent);
             return;
         }
         if (e.target.closest('.js-btn-remove-option')) {
             var row2 = e.target.closest('.option-row');
             if (row2) row2.remove();
-            refreshParentOptions();
+            reindexBlocks();
             return;
         }
         if (e.target.closest('.js-btn-remove-question')) {
             var blk = e.target.closest('.question-block');
             if (!blk) return;
-            var cnt = getBlocks().length;
-            if (cnt <= 1) {
+            var blkClientId = getClientId(blk);
+            var toRemove = getBlocks().filter(function(b) {
+                return b === blk || getParentClientId(b) === blkClientId;
+            });
+            if (getBlocks().length - toRemove.length <= 0) {
                 alert('Должен оставаться хотя бы один вопрос.');
                 return;
             }
-            blk.remove();
+            toRemove.forEach(function(b){ b.remove(); });
             reindexBlocks();
-            refreshParentOptions();
             return;
         }
     });
 
-    addBtn.addEventListener('click', function() {
-        var blocks = getBlocks();
-        var template = blocks[blocks.length - 1] || blocks[0];
-        if (!template) return;
-        var clone = template.cloneNode(true);
-        var clientId = makeClientId();
-        clone.setAttribute('data-client-id', clientId);
-        clone.setAttribute('data-parent-client-id', '');
-        clone.setAttribute('data-parent-triggers', '[]');
-        clone.setAttribute('data-question-type', 'single_choice');
-        clone.classList.remove('is-sub');
-
-        clone.querySelectorAll('input, select, textarea').forEach(function(input) {
-            if (input.type === 'checkbox' || input.type === 'radio') input.checked = false;
-            if (input.type === 'text' || input.type === 'hidden' || input.tagName === 'TEXTAREA') input.value = '';
-            if (input.tagName === 'SELECT') input.selectedIndex = 0;
-        });
-        var hid = clone.querySelector('input[name$="-client_id"]');
-        if (hid) hid.value = clientId;
-        var sel = clone.querySelector('.js-q-type');
-        if (sel) sel.value = 'single_choice';
-        // оставляем один пустой вариант
-        var optsDiv = clone.querySelector('.js-options-block');
-        if (optsDiv) {
-            optsDiv.querySelectorAll('.option-row').forEach(function(r) { r.remove(); });
-            var row = document.createElement('div');
-            row.className = 'option-row';
-            row.innerHTML =
-                '<input type="text" name="placeholder-option_0" value="" class="form-control" placeholder="Вариант 1">' +
-                '<button type="button" class="btn-icon-delete js-btn-remove-option" title="Удалить вариант"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
-            optsDiv.appendChild(row);
-        }
-        // удалить чипы триггеров
-        var tw = clone.querySelector('.js-parent-triggers-wrap');
-        if (tw) tw.innerHTML = '<div class="parent-triggers-empty form-help">Выберите родительский вопрос, чтобы указать триггеры.</div>';
-
-        questionsContainer.appendChild(clone);
-        reindexBlocks();
-        rebindBlock(clone);
-        refreshParentOptions();
-    });
-
-    init();
+    addBtn.addEventListener('click', addMainQuestion);
+    reindexBlocks();
 })();
 </script>
 {% endblock %}
