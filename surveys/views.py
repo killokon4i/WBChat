@@ -1067,7 +1067,7 @@ def _render_chart_png(item, width_px=720, height_px=380):
     fig_w = width_px / 100
     fig_h = height_px / 100
     fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=100)
-    palette = ["#CB11AB", "#990099", "#481173", "#B42371", "#6f42c1", "#d63384", "#ff7ab8", "#ffb86b"]
+    palette = ["#ff2fb3", "#008a4e", "#ca1d91", "#00a35c", "#ff75cb", "#005f3a", "#db3aa5", "#7de0b0"]
     colors = [palette[i % len(palette)] for i in range(len(values))]
 
     if kind == "pie" and sum(values) > 0:
@@ -1100,7 +1100,7 @@ def _render_chart_png(item, width_px=720, height_px=380):
                     ha="center",
                     va="bottom",
                     fontsize=9,
-                    color="#333333",
+                    color="#f2f2ef",
                 )
 
     fig.tight_layout()

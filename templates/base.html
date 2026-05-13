@@ -14,42 +14,43 @@
         /* ===== DARK THEME (default) ===== */
         :root,
         [data-theme="dark"] {
-            --magenta: #CB11AB;
-            --purplish: #990099;
-            --dark-violet: #481173;
-            --wb-pink: #B42371;
-            
-            --bg-body: #0d0d0d;
-            --bg-card: #1a1a1a;
-            --bg-hover: #252525;
-            --bg-input: #252525;
-            --bg-navbar: linear-gradient(135deg, #1a1a1a 0%, #252525 100%);
-            
-            --text-primary: #ffffff;
-            --text-secondary: #aaaaaa;
-            --text-muted: #666666;
-            --text-inverse: #000000;
-            
-            --border-color: #333333;
-            --border-light: #404040;
+            --magenta: #ff2fb3;
+            --purplish: #ca1d91;
+            --dark-violet: #006f43;
+            --wb-pink: #ff2fb3;
+            --brand-green: #008a4e;
+
+            --bg-body: #050505;
+            --bg-card: #131313;
+            --bg-hover: #1d1d1d;
+            --bg-input: #151515;
+            --bg-navbar: linear-gradient(135deg, #090909 0%, #161616 100%);
+
+            --text-primary: #f2f2ef;
+            --text-secondary: #b4b4ae;
+            --text-muted: #7f7f79;
+            --text-inverse: #050505;
+
+            --border-color: #2e2e2b;
+            --border-light: #3a3a36;
             
             --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
             
             --link-color: #CB11AB;
-            --link-hover: #e040c0;
+            --link-hover: #ff75cb;
             
-            --success-bg: rgba(34, 197, 94, 0.15);
-            --success-text: #4ade80;
-            --success-border: rgba(34, 197, 94, 0.3);
+            --success-bg: rgba(0, 138, 78, 0.2);
+            --success-text: #1fd27d;
+            --success-border: rgba(0, 138, 78, 0.45);
             
             --error-bg: rgba(239, 68, 68, 0.15);
             --error-text: #f87171;
             --error-border: rgba(239, 68, 68, 0.3);
             
-            --warning-bg: rgba(234, 179, 8, 0.15);
-            --warning-text: #facc15;
-            --warning-border: rgba(234, 179, 8, 0.3);
+            --warning-bg: rgba(255, 47, 179, 0.15);
+            --warning-text: #ff73cb;
+            --warning-border: rgba(255, 47, 179, 0.38);
             
             --info-bg: rgba(59, 130, 246, 0.15);
             --info-text: #60a5fa;
@@ -58,42 +59,43 @@
 
         /* ===== LIGHT THEME ===== */
         [data-theme="light"] {
-            --magenta: #CB11AB;
-            --purplish: #990099;
-            --dark-violet: #481173;
-            --wb-pink: #B42371;
-            
-            --bg-body: #f5f5f7;
+            --magenta: #ff2fb3;
+            --purplish: #ca1d91;
+            --dark-violet: #006f43;
+            --wb-pink: #ff2fb3;
+            --brand-green: #008a4e;
+
+            --bg-body: #f3f2ec;
             --bg-card: #ffffff;
-            --bg-hover: #f0f0f2;
+            --bg-hover: #ecebe4;
             --bg-input: #ffffff;
-            --bg-navbar: linear-gradient(135deg, #ffffff 0%, #f8f8fa 100%);
-            
-            --text-primary: #1d1d1f;
-            --text-secondary: #6e6e73;
-            --text-muted: #999999;
+            --bg-navbar: linear-gradient(135deg, #ffffff 0%, #ecebe4 100%);
+
+            --text-primary: #121212;
+            --text-secondary: #565650;
+            --text-muted: #8a8a83;
             --text-inverse: #ffffff;
-            
-            --border-color: #d2d2d7;
-            --border-light: #e5e5ea;
+
+            --border-color: #d6d5ce;
+            --border-light: #e3e2db;
             
             --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
             
-            --link-color: #990099;
-            --link-hover: #CB11AB;
+            --link-color: #ca1d91;
+            --link-hover: #ff2fb3;
             
-            --success-bg: rgba(34, 197, 94, 0.1);
-            --success-text: #16a34a;
-            --success-border: rgba(34, 197, 94, 0.3);
+            --success-bg: rgba(0, 138, 78, 0.12);
+            --success-text: #007a46;
+            --success-border: rgba(0, 138, 78, 0.32);
             
             --error-bg: rgba(239, 68, 68, 0.1);
             --error-text: #dc2626;
             --error-border: rgba(239, 68, 68, 0.3);
             
-            --warning-bg: rgba(234, 179, 8, 0.1);
-            --warning-text: #ca8a04;
-            --warning-border: rgba(234, 179, 8, 0.3);
+            --warning-bg: rgba(255, 47, 179, 0.12);
+            --warning-text: #ca1d91;
+            --warning-border: rgba(255, 47, 179, 0.32);
             
             --info-bg: rgba(59, 130, 246, 0.1);
             --info-text: #2563eb;
@@ -170,7 +172,7 @@
         }
 
         .nav-link:hover {
-            background: rgba(203, 17, 171, 0.15);
+            background: rgba(255, 47, 179, 0.15);
             color: var(--text-primary);
         }
 
@@ -341,12 +343,12 @@
         }
 
         .btn-primary {
-            background: var(--magenta);
+            background: linear-gradient(135deg, var(--magenta), var(--brand-green));
             color: white;
         }
 
         .btn-primary:hover {
-            background: #a00d8c;
+            filter: brightness(1.08);
             transform: translateY(-1px);
         }
 
@@ -397,7 +399,7 @@
         .form-control:focus {
             outline: none;
             border-color: var(--magenta);
-            box-shadow: 0 0 0 3px rgba(203, 17, 171, 0.15);
+            box-shadow: 0 0 0 3px rgba(255, 47, 179, 0.18);
         }
 
         .form-control::placeholder {
