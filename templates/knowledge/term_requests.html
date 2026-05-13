@@ -10,11 +10,11 @@
     .term-status { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
     .term-status.pending { background: var(--warning-bg); color: var(--warning-text); }
     .term-status.approved { background: var(--success-bg); color: var(--brand-green); }
-    .term-status.rejected { background: rgba(239,68,68,0.2); color: #ef4444; }
+    .term-status.rejected { background: var(--error-bg); color: var(--error-text); }
     .term-actions { display: flex; gap: 8px; }
     .btn-sm { padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; }
     .btn-approve { background: var(--brand-green); color: white; }
-    .btn-reject-sm { background: #ef4444; color: white; }
+    .btn-reject-sm { background: var(--error-text); color: white; }
 </style>
 {% endblock %}
 {% block content %}

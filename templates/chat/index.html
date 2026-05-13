@@ -59,7 +59,7 @@
     }
     .chat-ctx-item:hover { background: var(--bg-hover); }
     .chat-ctx-item svg { width: 16px; height: 16px; flex-shrink: 0; }
-    .chat-ctx-item.danger { color: #ef4444; }
+    .chat-ctx-item.danger { color: #ff73cb; }
     .chat-ctx-sep { height: 1px; background: var(--border-color); margin: 4px 8px; }
 
     .chat-item {
@@ -187,8 +187,8 @@
     }
 
     .chat-type-group {
-        background: rgba(0, 122, 255, 0.15);
-        color: #007AFF;
+        background: rgba(255, 47, 179, 0.14);
+        color: #ff73cb;
     }
 
     .chat-type-channel {
@@ -208,13 +208,13 @@
         align-items: center;
         justify-content: center;
         color: white;
-        box-shadow: 0 4px 15px rgba(203, 17, 171, 0.3);
+        box-shadow: 0 4px 15px rgba(255, 47, 179, 0.3);
         transition: all 0.3s ease;
     }
 
     .new-chat-btn:hover {
         transform: scale(1.05);
-        box-shadow: 0 6px 25px rgba(203, 17, 171, 0.4);
+        box-shadow: 0 6px 25px rgba(255, 47, 179, 0.38);
     }
 
     .new-chat-btn svg {
@@ -318,7 +318,7 @@
     .modal-search input:focus {
         outline: none;
         border-color: var(--magenta);
-        box-shadow: 0 0 0 3px rgba(203, 17, 171, 0.1);
+        box-shadow: 0 0 0 3px rgba(255, 47, 179, 0.15);
     }
 
     .modal-search input::placeholder {
@@ -456,7 +456,7 @@
         <p>Общайтесь с коллегами в режиме реального времени</p>
     </div>
     <div style="display:flex;gap:12px;">
-        <button class="new-chat-btn" onclick="openGroupModal()" title="Создать беседу" style="background:linear-gradient(135deg,#007AFF,#5856D6);">
+        <button class="new-chat-btn" onclick="openGroupModal()" title="Создать беседу" style="background:linear-gradient(135deg,var(--brand-green),var(--magenta));">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
@@ -661,7 +661,7 @@ document.addEventListener('keydown', function(e) {
     .group-participants-list { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
     .group-participant-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: background .15s; user-select: none; }
     .group-participant-item:hover { background: var(--bg-hover); }
-    .group-participant-item.selected { background: rgba(203,17,171,.12); }
+    .group-participant-item.selected { background: rgba(255,47,179,.14); }
     .group-participant-item input[type=checkbox] { accent-color: var(--magenta); width: 18px; height: 18px; flex-shrink: 0; pointer-events: none; }
     .gp-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--magenta), var(--purplish)); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: white; flex-shrink: 0; }
     .gp-info { flex: 1; min-width: 0; }

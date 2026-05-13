@@ -101,7 +101,7 @@
     
     .btn-message:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(203, 17, 171, 0.4);
+        box-shadow: 0 4px 16px rgba(255, 47, 179, 0.36);
     }
     
     .employee-meta {
@@ -182,7 +182,7 @@
         width: 32px;
         height: 32px;
         border-radius: 8px;
-        background: rgba(203, 17, 171, 0.15);
+        background: rgba(255, 47, 179, 0.16);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -420,7 +420,7 @@
             <div style="margin-top:16px;padding:16px 20px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:12px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
                     <div>
-                        <div style="font-size:14px;font-weight:600;color:#ef4444;margin-bottom:4px;">⛔ Комментарии заблокированы</div>
+                        <div style="font-size:14px;font-weight:600;color:var(--error-text);margin-bottom:4px;">⛔ Комментарии заблокированы</div>
                         <div style="font-size:13px;color:var(--text-muted);">Предупреждений: {{ employee.comment_warnings }}{% if employee.comments_banned_at %} · Заблокирован: {{ employee.comments_banned_at|date:"d.m.Y H:i" }}{% endif %}</div>
                     </div>
                     <form method="post" action="{% url 'unban_comments' user_id=employee.id %}" onsubmit="return confirm('Снять блокировку комментариев и сбросить предупреждения?')">

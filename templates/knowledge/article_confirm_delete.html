@@ -27,7 +27,7 @@
             <form method="post" onsubmit="return confirm('Вы уверены? Статья, все версии, комментарии и вложения будут безвозвратно удалены.')">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="permanent">
-                <button type="submit" class="btn" style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 12px 32px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; width: 280px;">
+                <button type="submit" class="btn" style="background: var(--error-bg); color: var(--error-text); border: 1px solid var(--error-border); padding: 12px 32px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; width: 280px;">
                     🗑️ Удалить навсегда
                 </button>
                 <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">Безвозвратное удаление — только для администраторов</p>

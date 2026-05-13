@@ -265,7 +265,7 @@
     }
 
     .reaction-btn.active {
-        background: rgba(203, 17, 171, 0.15);
+        background: rgba(255, 47, 179, 0.15);
         border-color: var(--magenta);
     }
 
@@ -370,7 +370,7 @@
     .comment-textarea:focus {
         outline: none;
         border-color: var(--magenta);
-        box-shadow: 0 0 0 4px rgba(203, 17, 171, 0.1);
+        box-shadow: 0 0 0 4px rgba(255, 47, 179, 0.15);
     }
 
     .comment-textarea::placeholder {
@@ -889,8 +889,8 @@
     <!-- Comment Form -->
     {% if request.user.is_authenticated %}
     {% if request.user.is_comments_banned %}
-    <div class="comment-form-card" style="background: rgba(255, 59, 48, 0.1); border-color: rgba(255, 59, 48, 0.3);">
-        <div style="display: flex; align-items: center; gap: 12px; color: #ff3b30;">
+    <div class="comment-form-card" style="background: rgba(255, 47, 179, 0.12); border-color: rgba(255, 47, 179, 0.35);">
+        <div style="display: flex; align-items: center; gap: 12px; color: #ff73cb;">
             <span style="font-size: 24px;">🚫</span>
             <div>
                 <strong>Возможность комментирования заблокирована</strong>
@@ -1386,7 +1386,7 @@ if (commentForm) {
                         const formCard = document.querySelector('.comment-form-card');
                         if (formCard) {
                             formCard.innerHTML = `
-                                <div style="display: flex; align-items: center; gap: 12px; color: #ff3b30;">
+                                <div style="display: flex; align-items: center; gap: 12px; color: #ff73cb;">
                                     <span style="font-size: 24px;">🚫</span>
                                     <div>
                                         <strong>Возможность комментирования заблокирована</strong>
@@ -1396,8 +1396,8 @@ if (commentForm) {
                                     </div>
                                 </div>
                             `;
-                            formCard.style.background = 'rgba(255, 59, 48, 0.1)';
-                            formCard.style.borderColor = 'rgba(255, 59, 48, 0.3)';
+                            formCard.style.background = 'rgba(255, 47, 179, 0.12)';
+                            formCard.style.borderColor = 'rgba(255, 47, 179, 0.35)';
                         }
                     }
                 } else {

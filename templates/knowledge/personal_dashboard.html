@@ -93,7 +93,7 @@
                 <td>{{ a.title }}</td>
                 <td>{{ a.updated_at|date:"d.m.Y H:i" }}</td>
                 <td><a href="{% url 'kb_article_edit' slug=a.slug %}">Редактировать</a></td>
-                <td><a href="{% url 'kb_article_delete' slug=a.slug %}" style="color:#ef4444;">Удалить</a></td>
+                <td><a href="{% url 'kb_article_delete' slug=a.slug %}" style="color:var(--error-text);">Удалить</a></td>
             </tr>
             {% endfor %}
             </tbody>
