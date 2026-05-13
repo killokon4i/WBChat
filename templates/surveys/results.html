@@ -171,7 +171,7 @@
                     {% endif %}
                 {% elif item.chart_data_json %}
                     <div class="qsc-chart-wrap">
-                        <div class="qsc-chart"><canvas id="chart-{{ forloop.counter }}"></canvas></div>
+                        <div class="qsc-chart" id="chart-{{ forloop.counter }}"></div>
                         <div class="qsc-legend">
                             {% for lbl in item.chart_data.labels %}
                             <div class="qsc-legend-row">
@@ -262,6 +262,13 @@
 .trigger-mini { display:inline-block; padding: 1px 8px; border-radius: 999px; background: var(--bg-hover); color: var(--text-secondary); margin-right: 4px; font-size: 11px; }
 .qsc-chart-wrap { display:grid; grid-template-columns: 1fr 220px; gap: 18px; margin-top: 16px; align-items: center; }
 .qsc-chart { height: 260px; min-width: 0; }
+.inline-chart-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.inline-chart-svg--donut { max-width: 360px; margin: 0 auto; }
+.chart-axis { stroke: var(--border-color); stroke-width: 1; }
+.chart-value { fill: var(--text-primary); font-size: 13px; font-weight: 700; }
+.chart-label { fill: var(--text-secondary); font-size: 11px; }
+.chart-total { fill: var(--text-primary); font-size: 32px; font-weight: 800; }
+.chart-total-label { fill: var(--text-muted); font-size: 13px; }
 .qsc-legend { display:flex; flex-direction: column; gap: 8px; }
 .qsc-legend-row { display:flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
 .qsc-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
@@ -281,13 +288,85 @@
 }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function(){
     var PALETTE = ['#CB11AB','#990099','#481173','#B42371','#6f42c1','#d63384','#ff7ab8','#ffb86b','#a78bfa','#22c55e'];
 
-    document.querySelectorAll('canvas[id^="chart-"]').forEach(function(canvas){
-        var num = canvas.id.replace('chart-', '');
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function(c) {
+            return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c];
+        });
+    }
+
+    function polarToCartesian(cx, cy, r, angle) {
+        var rad = (angle - 90) * Math.PI / 180.0;
+        return { x: cx + (r * Math.cos(rad)), y: cy + (r * Math.sin(rad)) };
+    }
+
+    function describeArc(cx, cy, outerR, innerR, startAngle, endAngle) {
+        var startOuter = polarToCartesian(cx, cy, outerR, endAngle);
+        var endOuter = polarToCartesian(cx, cy, outerR, startAngle);
+        var startInner = polarToCartesian(cx, cy, innerR, startAngle);
+        var endInner = polarToCartesian(cx, cy, innerR, endAngle);
+        var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+        return [
+            "M", startOuter.x, startOuter.y,
+            "A", outerR, outerR, 0, largeArcFlag, 0, endOuter.x, endOuter.y,
+            "L", startInner.x, startInner.y,
+            "A", innerR, innerR, 0, largeArcFlag, 1, endInner.x, endInner.y,
+            "Z"
+        ].join(" ");
+    }
+
+    function renderBarChart(el, data, colors) {
+        var values = data.values || [];
+        var labels = data.labels || [];
+        var max = Math.max.apply(null, values.concat([1]));
+        var width = 720, height = 300, padL = 42, padR = 18, padT = 18, padB = 58;
+        var chartW = width - padL - padR;
+        var chartH = height - padT - padB;
+        var gap = 10;
+        var barW = Math.max(18, (chartW - gap * Math.max(values.length - 1, 0)) / Math.max(values.length, 1));
+        var html = ['<svg class="inline-chart-svg" viewBox="0 0 ' + width + ' ' + height + '" role="img">'];
+        html.push('<line x1="' + padL + '" y1="' + (padT + chartH) + '" x2="' + (width - padR) + '" y2="' + (padT + chartH) + '" class="chart-axis"/>');
+        for (var i = 0; i < values.length; i++) {
+            var v = Number(values[i]) || 0;
+            var h = Math.round((v / max) * chartH);
+            var x = padL + i * (barW + gap);
+            var y = padT + chartH - h;
+            html.push('<rect x="' + x + '" y="' + y + '" width="' + barW + '" height="' + h + '" rx="8" fill="' + colors[i % colors.length] + '"/>');
+            html.push('<text x="' + (x + barW / 2) + '" y="' + Math.max(14, y - 7) + '" text-anchor="middle" class="chart-value">' + v + '</text>');
+            html.push('<text x="' + (x + barW / 2) + '" y="' + (height - 18) + '" text-anchor="middle" class="chart-label">' + escapeHtml(String(labels[i] || '').slice(0, 16)) + '</text>');
+        }
+        html.push('</svg>');
+        el.innerHTML = html.join('');
+    }
+
+    function renderDonutChart(el, data, colors) {
+        var values = data.values || [];
+        var total = values.reduce(function(a, b){ return a + (Number(b) || 0); }, 0);
+        if (!total) {
+            el.innerHTML = '<div class="text-muted">Нет данных для отображения.</div>';
+            return;
+        }
+        var cx = 180, cy = 145, outerR = 108, innerR = 66;
+        var angle = 0;
+        var html = ['<svg class="inline-chart-svg inline-chart-svg--donut" viewBox="0 0 360 290" role="img">'];
+        values.forEach(function(v, i) {
+            v = Number(v) || 0;
+            if (!v) return;
+            var next = angle + (v / total) * 360;
+            html.push('<path d="' + describeArc(cx, cy, outerR, innerR, angle, next) + '" fill="' + colors[i % colors.length] + '"/>');
+            angle = next;
+        });
+        html.push('<text x="' + cx + '" y="' + (cy - 6) + '" text-anchor="middle" class="chart-total">' + total + '</text>');
+        html.push('<text x="' + cx + '" y="' + (cy + 20) + '" text-anchor="middle" class="chart-total-label">ответов</text>');
+        html.push('</svg>');
+        el.innerHTML = html.join('');
+    }
+
+    document.querySelectorAll('.qsc-chart[id^="chart-"]').forEach(function(chartEl){
+        var num = chartEl.id.replace('chart-', '');
         var dataEl = document.getElementById('chart-data-' + num);
         var kindEl = document.getElementById('chart-kind-' + num);
         if (!dataEl) return;
@@ -299,7 +378,7 @@
         var colors = data.values.map(function(_, i){ return PALETTE[i % PALETTE.length]; });
 
         // покраска легенды
-        var card = canvas.closest('.question-stats-card');
+        var card = chartEl.closest('.question-stats-card');
         if (card) {
             card.querySelectorAll('.qsc-legend-dot').forEach(function(dot, i){
                 dot.style.background = PALETTE[i % PALETTE.length];
@@ -313,61 +392,10 @@
             });
         }
 
-        var ctx = canvas.getContext('2d');
         if (kind === 'pie') {
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        data: data.values,
-                        backgroundColor: colors,
-                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-card').trim() || '#fff',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '60%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(ctx) {
-                                    var total = ctx.dataset.data.reduce(function(a,b){return a+b;}, 0);
-                                    var v = ctx.parsed;
-                                    var pct = total ? Math.round((v/total)*1000)/10 : 0;
-                                    return ctx.label + ': ' + v + ' (' + pct + '%)';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
+            renderDonutChart(chartEl, data, colors);
         } else {
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        data: data.values,
-                        backgroundColor: colors,
-                        borderRadius: 8,
-                        borderSkipped: false,
-                        maxBarThickness: 56
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() } },
-                        y: { beginAtZero: true, ticks: { stepSize: 1, color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() }, grid: { color: 'rgba(127,127,127,.12)' } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
+            renderBarChart(chartEl, data, colors);
         }
     });
 
