@@ -42,7 +42,7 @@
         {% for it in items %}
         <div class="card user-answer-card{% if it.is_sub_question %} user-answer-card--sub{% endif %}">
             <div class="ua-head">
-                <span class="ua-num">{{ forloop.counter }}</span>
+                <span class="ua-num">{{ it.number_label|default:forloop.counter }}</span>
                 <div>
                     <h3 class="ua-q">{{ it.question.title }}</h3>
                     <div class="ua-meta">

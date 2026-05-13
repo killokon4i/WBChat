@@ -29,7 +29,7 @@
                  data-required="{{ q.is_required|yesno:'1,0' }}"
                  {% if q.parent_question_id %}style="display:none;"{% endif %}>
                 <div class="take-question-head">
-                    <span class="take-q-num">{{ forloop.counter }}</span>
+                    <span class="take-q-num">{{ q.number_label|default:forloop.counter }}</span>
                     <div class="take-q-text">
                         {{ q.title }}
                         {% if q.is_required %}<span class="take-q-req" title="Обязательный вопрос">*</span>{% endif %}

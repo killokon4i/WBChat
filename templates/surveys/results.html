@@ -81,6 +81,29 @@
         </div>
     </div>
 
+    <section class="card completion-card">
+        <div class="completion-head">
+            <h2 class="card-title">Статистика прохождения</h2>
+            <span class="completion-percent">{{ summary.percent }}%</span>
+        </div>
+        <div class="completion-body">
+            <div class="completion-chart" id="completionChart"></div>
+            <div class="completion-legend">
+                <div class="completion-legend-row">
+                    <span class="qsc-legend-dot" style="background:#22c55e;"></span>
+                    <span>Прошли</span>
+                    <b>{{ summary.submitted }}</b>
+                </div>
+                <div class="completion-legend-row">
+                    <span class="qsc-legend-dot" style="background:#f97316;"></span>
+                    <span>Не прошли</span>
+                    <b>{{ summary.pending }}</b>
+                </div>
+            </div>
+        </div>
+        <script type="application/json" id="completion-chart-data">{{ summary.chart_data_json|safe }}</script>
+    </section>
+
     <div class="results-grid">
         <!-- Левая колонка: участники -->
         <section class="card participants-card">
@@ -140,7 +163,7 @@
             {% for item in stats %}
             <div class="card question-stats-card {% if item.is_sub_question %}question-stats-card--sub{% endif %}">
                 <div class="qsc-head">
-                    <div class="qsc-num">{{ forloop.counter }}</div>
+                    <div class="qsc-num">{{ item.number_label|default:forloop.counter }}</div>
                     <div class="qsc-title">
                         <h3>{{ item.question.title }}</h3>
                         <div class="qsc-meta">
@@ -219,6 +242,16 @@
 .metric-value { font-size: 26px; font-weight: 700; color: var(--text-primary); line-height: 1; }
 .metric-label { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
 
+.completion-card { margin-bottom: 22px; padding: 18px 20px; }
+.completion-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 10px; }
+.completion-percent { font-size: 22px; font-weight: 700; color: var(--magenta); }
+.completion-body { display:grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 16px; align-items:center; }
+.completion-chart { min-height: 180px; }
+.completion-legend { display:flex; flex-direction: column; gap: 8px; max-width: 260px; }
+.completion-legend-row { display:flex; align-items:center; gap: 8px; color: var(--text-secondary); font-size: 13px; }
+.completion-legend-row span:nth-child(2) { flex: 1; }
+.completion-legend-row b { color: var(--text-primary); }
+
 .results-grid { display:grid; grid-template-columns: 380px 1fr; gap: 22px; align-items: start; }
 .participants-card { padding: 18px; }
 .card-head { display:flex; justify-content:space-between; align-items:center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -279,6 +312,7 @@
 .free-text-item { background: var(--bg-hover); border-left: 3px solid var(--magenta); padding: 10px 12px; border-radius: 8px; font-size: 13px; color: var(--text-primary); }
 
 @media (max-width: 1200px) {
+    .completion-body { grid-template-columns: 1fr; }
     .results-grid { grid-template-columns: 1fr; }
     .qsc-chart-wrap { grid-template-columns: 1fr; }
     .qsc-chart { height: 220px; }
@@ -398,6 +432,15 @@
             renderBarChart(chartEl, data, colors);
         }
     });
+
+    var completionDataEl = document.getElementById('completion-chart-data');
+    var completionChartEl = document.getElementById('completionChart');
+    if (completionDataEl && completionChartEl) {
+        try {
+            var completionData = JSON.parse(completionDataEl.textContent);
+            renderDonutChart(completionChartEl, completionData, ['#22c55e', '#f97316']);
+        } catch (e) {}
+    }
 
     // фильтры участников
     var list = document.getElementById('participantsList');

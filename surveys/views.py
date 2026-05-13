@@ -47,6 +47,30 @@ def _split_multi_value(text: str):
     return [p.strip() for p in text.split(",") if p.strip()]
 
 
+def _build_question_numbering(questions):
+    """
+    Построить иерархическую нумерацию вопросов:
+    1, 2, 2.1, 2.2, 3 ...
+    """
+    numbering = {}
+    main_idx = 0
+    sub_idx = defaultdict(int)
+    for q in questions:
+        if not q.parent_question_id:
+            main_idx += 1
+            numbering[q.id] = str(main_idx)
+            continue
+        parent_num = numbering.get(q.parent_question_id)
+        if not parent_num:
+            # fallback для неконсистентного порядка
+            main_idx += 1
+            numbering[q.id] = str(main_idx)
+            continue
+        sub_idx[q.parent_question_id] += 1
+        numbering[q.id] = f"{parent_num}.{sub_idx[q.parent_question_id]}"
+    return numbering
+
+
 # ---------------------------------------------------------------------------
 # list / manage / archive views
 # ---------------------------------------------------------------------------
@@ -412,12 +436,14 @@ def _question_is_active(question, answers_by_qid):
 def _build_take_questions(survey):
     """Готовит список вопросов для шаблона прохождения с JSON-триггерами."""
     questions = list(survey.questions.all().order_by("order", "id"))
+    numbering = _build_question_numbering(questions)
     result = []
     for q in questions:
         result.append(
             {
                 "obj": q,
                 "id": q.id,
+                "number_label": numbering.get(q.id, ""),
                 "order": q.order,
                 "title": q.title,
                 "help_text": q.help_text,
@@ -572,11 +598,13 @@ def _build_results_stats(survey, responses):
         answers_by_question_id[a.question_id].append(a)
 
     questions = list(survey.questions.all().order_by("order", "id"))
+    numbering = _build_question_numbering(questions)
     stats = []
     for q in questions:
         answers_objs = answers_by_question_id.get(q.id, [])
         entry = {
             "question": q,
+            "number_label": numbering.get(q.id, ""),
             "answers": answers_objs,
             "chart_data": None,
             "is_sub_question": bool(q.parent_question_id),
@@ -680,12 +708,20 @@ def _participants_summary(participants):
     submitted = sum(1 for p in participants if p["is_submitted"])
     pending = total - submitted
     percent = round((submitted / total) * 100, 1) if total else 0.0
-    return {
+    summary = {
         "total": total,
         "submitted": submitted,
         "pending": pending,
         "percent": percent,
     }
+    summary["chart_data"] = {
+        "labels": ["Прошли", "Не прошли"],
+        "values": [submitted, pending],
+        "percentages": [percent, round(100 - percent, 1) if total else 0.0],
+    }
+    summary["chart_kind"] = "pie"
+    summary["chart_data_json"] = json.dumps(summary["chart_data"], ensure_ascii=False)
+    return summary
 
 
 # ---------------------------------------------------------------------------
@@ -712,8 +748,6 @@ def survey_results(request, pk):
         return _export_survey_docx(request, survey, responses, participants, summary)
 
     stats = _build_results_stats(survey, responses)
-    questions_index = {s["question"].id: idx for idx, s in enumerate(stats, start=1)}
-
     return render(
         request,
         "surveys/results.html",
@@ -724,7 +758,6 @@ def survey_results(request, pk):
             "stats": stats,
             "participants": participants,
             "summary": summary,
-            "questions_index": questions_index,
         },
     )
 
@@ -755,6 +788,7 @@ def survey_results_user(request, pk, user_id):
     )
 
     questions = list(survey.questions.all().order_by("order", "id"))
+    numbering = _build_question_numbering(questions)
     answers_map = {}
     if response:
         for a in response.answers.all():
@@ -775,6 +809,7 @@ def survey_results_user(request, pk, user_id):
         items.append(
             {
                 "question": q,
+                "number_label": numbering.get(q.id, ""),
                 "answer": a,
                 "display": display,
                 "value_parts": value_parts,
@@ -1013,6 +1048,29 @@ def _export_survey_xlsx(request, survey, responses, participants, summary):
         ws.cell(row=start_row + offset, column=1, value=k).font = bold_body
         ws.cell(row=start_row + offset, column=2, value=v).font = body_font
 
+    chart_row = start_row + len(metrics) + 1
+    ws.cell(row=chart_row, column=1, value="Статистика прохождения").font = bold_body
+    ws.cell(row=chart_row + 1, column=1, value="Статус").font = header_font
+    ws.cell(row=chart_row + 1, column=2, value="Кол-во").font = header_font
+    ws.cell(row=chart_row + 2, column=1, value="Прошли")
+    ws.cell(row=chart_row + 2, column=2, value=summary["submitted"])
+    ws.cell(row=chart_row + 3, column=1, value="Не прошли")
+    ws.cell(row=chart_row + 3, column=2, value=summary["pending"])
+    for r in (chart_row + 1, chart_row + 2, chart_row + 3):
+        for c in (1, 2):
+            cell = ws.cell(row=r, column=c)
+            cell.alignment = center if c == 2 else left
+            cell.border = border
+    p = PieChart()
+    p.title = "Прохождение"
+    labels = Reference(ws, min_col=1, min_row=chart_row + 2, max_row=chart_row + 3)
+    data = Reference(ws, min_col=2, min_row=chart_row + 1, max_row=chart_row + 3)
+    p.add_data(data, titles_from_data=True)
+    p.set_categories(labels)
+    p.height = 7
+    p.width = 10
+    ws.add_chart(p, f"D{chart_row}")
+
     _autosize(ws, [38, 38, 12, 12])
 
     # --- ЛИСТ 2: Участники ---
@@ -1050,13 +1108,11 @@ def _export_survey_xlsx(request, survey, responses, participants, summary):
     ws3 = wb.create_sheet("Ответы по вопросам")
     row_pos = 1
     chart_positions = []
-    q_num = 0
     for item in stats:
-        q_num += 1
         q = item["question"]
-        prefix = f"{q_num}. "
+        prefix = f"{item.get('number_label')}. " if item.get("number_label") else ""
         if item["is_sub_question"]:
-            prefix = f"  ↳ {q_num}. "
+            prefix = f"  ↳ {item.get('number_label')}. " if item.get("number_label") else "  ↳ "
         title_cell = ws3.cell(row=row_pos, column=1, value=f"{prefix}{q.title}")
         title_cell.font = Font(name="Calibri", size=12, bold=True, color="481173")
         ws3.merge_cells(start_row=row_pos, start_column=1, end_row=row_pos, end_column=3)
@@ -1140,8 +1196,9 @@ def _export_survey_xlsx(request, survey, responses, participants, summary):
     if not survey.is_anonymous:
         ws4 = wb.create_sheet("Ответы пользователей")
         questions = list(survey.questions.all().order_by("order", "id"))
+        numbering = _build_question_numbering(questions)
         headers = ["Сотрудник", "Подразделение", "Дата"] + [
-            f"{i}. {q.title[:80]}" for i, q in enumerate(questions, start=1)
+            f"{numbering.get(q.id, i)}. {q.title[:80]}" for i, q in enumerate(questions, start=1)
         ]
         for i, h in enumerate(headers, start=1):
             ws4.cell(row=1, column=i, value=h)
@@ -1328,6 +1385,13 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
         )
     )
     story.append(summary_table)
+    chart_item = {"chart_data": summary.get("chart_data") or {}, "chart_kind": "pie"}
+    chart_png = _render_chart_png(chart_item, width_px=680, height_px=300)
+    if chart_png:
+        story.append(Spacer(1, 8))
+        chart_img = Image(io.BytesIO(chart_png))
+        chart_img._restrictSize(14.5 * cm, 6.8 * cm)
+        story.append(chart_img)
     story.append(Spacer(1, 16))
 
     # --- участники ---
@@ -1380,9 +1444,10 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
 
     for idx, item in enumerate(stats, start=1):
         q = item["question"]
-        prefix = f"{idx}. "
+        number_label = item.get("number_label") or str(idx)
+        prefix = f"{number_label}. "
         if item["is_sub_question"]:
-            prefix = f"↳ {idx}. "
+            prefix = f"↳ {number_label}. "
         q_block = [Paragraph(prefix + q.title, h3_style)]
         meta = q.get_question_type_display()
         if item["is_sub_question"] and item.get("parent_triggers"):
@@ -1446,6 +1511,7 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
         story.append(PageBreak())
         story.append(Paragraph("Ответы по сотрудникам", h2_style))
         questions = list(survey.questions.all().order_by("order", "id"))
+        numbering = _build_question_numbering(questions)
         submitted = [r for r in responses if r.user_id is not None]
         submitted.sort(key=lambda r: (_user_display(r.user) or "").lower())
         if not submitted:
@@ -1471,7 +1537,7 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
                     val = str(a.value_number) if a.value_number is not None else "—"
                 else:
                     val = a.value_text or "—"
-                rows.append([f"{i}. {q.title}", val])
+                rows.append([f"{numbering.get(q.id, i)}. {q.title}", val])
             user_table = Table(rows, colWidths=[9.5 * cm, 8 * cm], repeatRows=1)
             user_table.setStyle(
                 TableStyle(
@@ -1592,6 +1658,11 @@ def _export_survey_docx(request, survey, responses, participants, summary):
         body_cells[i].text = v
         _shade_cell(body_cells[i], "F8F8FA")
         _set_cell_font(body_cells[i], size=14, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
+    chart_item = {"chart_data": summary.get("chart_data") or {}, "chart_kind": "pie"}
+    chart_png = _render_chart_png(chart_item, width_px=680, height_px=300)
+    if chart_png:
+        doc.add_paragraph()
+        doc.add_picture(io.BytesIO(chart_png), width=Cm(14.5))
 
     # --- участники ---
     doc.add_paragraph()
@@ -1636,9 +1707,10 @@ def _export_survey_docx(request, survey, responses, participants, summary):
 
     for idx, item in enumerate(stats, start=1):
         q = item["question"]
-        prefix = f"{idx}. "
+        number_label = item.get("number_label") or str(idx)
+        prefix = f"{number_label}. "
         if item["is_sub_question"]:
-            prefix = f"↳ {idx}. "
+            prefix = f"↳ {number_label}. "
         h3 = doc.add_paragraph()
         h3r = h3.add_run(prefix + q.title)
         h3r.bold = True
@@ -1705,6 +1777,7 @@ def _export_survey_docx(request, survey, responses, participants, summary):
         h2r.font.color.rgb = RGBColor.from_string("481173")
 
         questions = list(survey.questions.all().order_by("order", "id"))
+        numbering = _build_question_numbering(questions)
         submitted = [r for r in responses if r.user_id is not None]
         submitted.sort(key=lambda r: (_user_display(r.user) or "").lower())
         for r in submitted:
@@ -1735,7 +1808,7 @@ def _export_survey_docx(request, survey, responses, participants, summary):
                 _set_cell_font(c, bold=True, color="FFFFFF", size=10)
             for i, q in enumerate(questions, start=1):
                 cells = t.rows[i].cells
-                cells[0].text = f"{i}. {q.title}"
+                cells[0].text = f"{numbering.get(q.id, i)}. {q.title}"
                 a = answers_by_qid.get(q.id)
                 if a is None:
                     val = "—"
