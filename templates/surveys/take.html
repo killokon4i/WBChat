@@ -194,7 +194,7 @@
             var triggers = parseTriggers(qEl).map(function(x){ return String(x).toLowerCase().trim(); });
             var selected = getSelectedValues(parent).map(function(x){ return String(x).toLowerCase().trim(); });
             var shouldShow = false;
-            if (!triggers.length) shouldShow = selected.length > 0;
+            if (!triggers.length) shouldShow = false;
             else shouldShow = selected.some(function(s){ return triggers.indexOf(s) !== -1; });
             if (shouldShow) {
                 qEl.style.display = '';

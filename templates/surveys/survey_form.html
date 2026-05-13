@@ -387,6 +387,8 @@ select.form-control { min-height: 42px; }
     function getCurrentTriggers(block) {
         var wrap = block.querySelector('.js-parent-triggers-wrap');
         if (!wrap) return [];
+        var sel = wrap.querySelector('select.js-parent-trigger-select');
+        if (sel && sel.value.trim()) return [sel.value.trim()];
         var checked = Array.prototype.map.call(
             wrap.querySelectorAll('input[type="checkbox"]:checked'),
             function(i){ return (i.value || '').trim(); }
@@ -476,17 +478,15 @@ select.form-control { min-height: 42px; }
                 wrap.innerHTML = '<div class="form-help">Добавьте варианты в родительском вопросе, затем выберите триггер.</div>';
                 return;
             }
-            var html = ['<label class="form-label form-label--mini">Показывать при выборе:</label><div class="trigger-list">'];
+            var selected = selectedTriggers.length ? selectedTriggers[0] : '';
+            var html = ['<label class="form-label form-label--mini">Показывать при выборе варианта родителя:</label>'];
+            html.push('<select class="form-control js-parent-trigger-select" name="q' + idx + '-parent_triggers">');
+            html.push('<option value="">— Выберите вариант —</option>');
             options.forEach(function(opt) {
-                var checked = selectedTriggers.indexOf(opt) !== -1;
-                html.push(
-                    '<label class="trigger-chip' + (checked ? ' is-checked' : '') + '">' +
-                        '<input type="checkbox" name="q' + idx + '-parent_triggers" value="' + escapeHtml(opt) + '"' + (checked ? ' checked' : '') + '>' +
-                        '<span>' + escapeHtml(opt) + '</span>' +
-                    '</label>'
-                );
+                var isSelected = selected === opt;
+                html.push('<option value="' + escapeHtml(opt) + '"' + (isSelected ? ' selected' : '') + '>' + escapeHtml(opt) + '</option>');
             });
-            html.push('</div>');
+            html.push('</select>');
             wrap.innerHTML = html.join('');
         } else if (parentType === 'scale') {
             wrap.innerHTML =

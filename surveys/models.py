@@ -240,7 +240,8 @@ class SurveyQuestion(models.Model):
             return True
         triggers = {str(x).strip().lower() for x in (self.parent_option_values or []) if str(x).strip()}
         if not triggers:
-            return True
+            # Без явно заданного триггера подвопрос должен оставаться скрытым.
+            return False
         if isinstance(raw_value, (list, tuple)):
             values = [str(x).strip().lower() for x in raw_value if str(x).strip()]
         else:
