@@ -16,6 +16,62 @@
         </div>
     </div>
 
+    <form method="get" class="card surveys-filters">
+        <div class="surveys-filters-grid">
+            <div class="filter-search">
+                <label class="filter-label" for="id_q">Поиск</label>
+                <input
+                    id="id_q"
+                    name="q"
+                    value="{{ current_filters.q }}"
+                    class="form-control"
+                    type="text"
+                    placeholder="Название, описание, тема..."
+                >
+            </div>
+            <div>
+                <label class="filter-label" for="id_completion">Статус</label>
+                <select id="id_completion" name="completion" class="form-control">
+                    <option value="all" {% if current_filters.completion == 'all' %}selected{% endif %}>Все</option>
+                    <option value="pending" {% if current_filters.completion == 'pending' %}selected{% endif %}>Не пройденные</option>
+                    <option value="completed" {% if current_filters.completion == 'completed' %}selected{% endif %}>Уже пройденные</option>
+                    <option value="repeatable" {% if current_filters.completion == 'repeatable' %}selected{% endif %}>С повторным прохождением</option>
+                </select>
+            </div>
+            <div>
+                <label class="filter-label" for="id_sort">Сортировка</label>
+                <select id="id_sort" name="sort" class="form-control">
+                    <option value="ending_soon" {% if current_filters.sort == 'ending_soon' %}selected{% endif %}>Скоро завершатся</option>
+                    <option value="newest" {% if current_filters.sort == 'newest' %}selected{% endif %}>Сначала новые</option>
+                    <option value="title" {% if current_filters.sort == 'title' %}selected{% endif %}>По названию</option>
+                    <option value="pending_first" {% if current_filters.sort == 'pending_first' %}selected{% endif %}>Сначала не пройденные</option>
+                    <option value="completed_first" {% if current_filters.sort == 'completed_first' %}selected{% endif %}>Сначала пройденные</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="topic-row">
+            <span class="filter-label">Темы</span>
+            <div class="topic-chips">
+                <a href="?q={{ current_filters.q|urlencode }}&completion={{ current_filters.completion|urlencode }}&sort={{ current_filters.sort|urlencode }}"
+                   class="topic-chip{% if not current_filters.tag %} is-active{% endif %}">
+                    Все темы
+                </a>
+                {% for tag in available_tags %}
+                <a href="?q={{ current_filters.q|urlencode }}&completion={{ current_filters.completion|urlencode }}&sort={{ current_filters.sort|urlencode }}&tag={{ tag.slug|urlencode }}"
+                   class="topic-chip{% if current_filters.tag == tag.slug %} is-active{% endif %}">
+                    {{ tag.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">Применить</button>
+            <a href="{% url 'surveys_list' %}" class="btn btn-secondary">Сбросить</a>
+            <span class="filter-counter">Найдено: <b>{{ surveys_total_after_filter }}</b> из {{ surveys_total_before_filter }}</span>
+        </div>
+    </form>
+
     {% if surveys %}
     <div class="surveys-grid">
         {% for item in surveys %}
@@ -33,6 +89,13 @@
             </div>
             <h2 class="survey-card-title">{{ item.survey.title }}</h2>
             <p class="survey-card-desc">{{ item.survey.description|default:"Описание не заполнено."|truncatewords:26 }}</p>
+            {% if item.tags %}
+            <div class="survey-topics">
+                {% for tag in item.tags %}
+                <span class="topic-badge">{{ tag.name }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
             <div class="survey-card-meta">
                 <div class="survey-meta-item">
                     <span class="survey-meta-label">Период</span>
@@ -61,8 +124,8 @@
     </div>
     {% else %}
     <div class="card surveys-empty text-center">
-        <h2 style="margin:0 0 8px;">Активных опросов пока нет</h2>
-        <p class="text-secondary">Когда появятся новые опросы, они будут отображаться здесь.</p>
+        <h2 style="margin:0 0 8px;">Опросы не найдены</h2>
+        <p class="text-secondary">Попробуйте изменить параметры поиска, темы или сортировку.</p>
         {% if can_manage_surveys %}
         <div style="margin-top:14px;">
             <a href="{% url 'surveys_create' %}" class="btn btn-primary">Создать опрос</a>
@@ -77,6 +140,16 @@
 .surveys-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom: 18px; }
 .surveys-subtitle { margin-top: 8px; }
 .surveys-head-actions { display:flex; gap: 8px; flex-wrap: wrap; }
+.surveys-filters { padding: 16px; margin-bottom: 16px; }
+.surveys-filters-grid { display:grid; grid-template-columns: minmax(240px, 1.5fr) repeat(2, minmax(180px, 1fr)); gap: 12px; align-items: end; }
+.filter-label { display:block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+.topic-row { margin-top: 12px; }
+.topic-chips { display:flex; flex-wrap:wrap; gap: 8px; margin-top: 6px; }
+.topic-chip { display:inline-flex; align-items:center; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border-light); background: var(--bg-hover); color: var(--text-secondary); font-size: 12px; text-decoration: none; }
+.topic-chip:hover { color: var(--text-primary); border-color: rgba(203,17,171,.45); }
+.topic-chip.is-active { color: #fff; background: var(--magenta); border-color: var(--magenta); }
+.filter-actions { margin-top: 12px; display:flex; align-items:center; gap: 8px; flex-wrap: wrap; }
+.filter-counter { margin-left: auto; font-size: 13px; color: var(--text-secondary); }
 
 .surveys-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 .survey-card { padding: 18px; display:flex; flex-direction:column; min-height: 290px; border: 1px solid var(--border-light); }
@@ -85,11 +158,17 @@
 .survey-badges { display:flex; flex-wrap: wrap; gap: 6px; }
 .survey-card-title { margin: 12px 0 8px; font-size: 20px; line-height: 1.3; color: var(--text-primary); }
 .survey-card-desc { color: var(--text-secondary); font-size: 14px; line-height: 1.45; min-height: 44px; }
+.survey-topics { margin-top: 10px; display:flex; gap: 6px; flex-wrap: wrap; }
+.topic-badge { padding: 3px 10px; border-radius: 999px; font-size: 11px; background: rgba(203,17,171,.12); border: 1px solid rgba(203,17,171,.3); color: var(--text-primary); }
 .survey-card-meta { margin-top: 14px; display:grid; gap: 10px; }
 .survey-meta-item { display:flex; flex-direction:column; gap: 2px; font-size: 13px; color: var(--text-primary); }
 .survey-meta-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
 .survey-card-actions { margin-top: auto; padding-top: 14px; display:flex; gap:8px; }
 .surveys-empty { padding: 36px 24px; }
+@media (max-width: 960px) {
+    .surveys-filters-grid { grid-template-columns: 1fr; }
+    .filter-counter { margin-left: 0; width: 100%; }
+}
 </style>
 {% endblock %}
 

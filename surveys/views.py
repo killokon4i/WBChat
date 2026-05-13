@@ -2,6 +2,7 @@ from collections import Counter, defaultdict
 import io
 import json
 import os
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -100,8 +101,18 @@ def _survey_progress_summary(survey):
 @login_required
 def survey_list(request):
     """Список активных опросов, доступных текущему пользователю."""
+    search_query = (request.GET.get("q") or "").strip()
+    selected_tag = (request.GET.get("tag") or "").strip()
+    completion_filter = (request.GET.get("completion") or "all").strip()
+    sort_by = (request.GET.get("sort") or "ending_soon").strip()
+
     available = []
-    qs = Survey.objects.filter(status="active").order_by("-created_at")
+    qs = (
+        Survey.objects.filter(status="active")
+        .select_related("author")
+        .prefetch_related("tags")
+        .order_by("-created_at")
+    )
     for survey in qs:
         if not survey.is_active_now():
             continue
@@ -116,16 +127,89 @@ def survey_list(request):
         available.append(
             {
                 "survey": survey,
+                "tags": list(survey.tags.all()),
                 "is_completed": is_completed,
                 "submitted_at": latest_response.submitted_at if is_completed else None,
                 "can_take": bool(survey.allow_multiple or not is_completed),
             }
         )
+
+    available_tags_map = {}
+    for item in available:
+        for tag in item["tags"]:
+            available_tags_map[tag.slug] = tag
+    available_tags = sorted(available_tags_map.values(), key=lambda t: t.name.lower())
+
+    filtered = []
+    search_normalized = search_query.lower()
+    for item in available:
+        survey = item["survey"]
+        if selected_tag:
+            tag_slugs = {t.slug for t in item["tags"]}
+            if selected_tag not in tag_slugs:
+                continue
+
+        if completion_filter == "completed" and not item["is_completed"]:
+            continue
+        if completion_filter == "pending" and item["is_completed"]:
+            continue
+        if completion_filter == "repeatable" and not survey.allow_multiple:
+            continue
+
+        if search_normalized:
+            haystack = " ".join(
+                [
+                    survey.title or "",
+                    survey.description or "",
+                    " ".join(t.name for t in item["tags"]),
+                ]
+            ).lower()
+            if search_normalized not in haystack:
+                continue
+
+        filtered.append(item)
+
+    now = timezone.now()
+    far_future = now + timedelta(days=36500)
+    if sort_by == "newest":
+        filtered.sort(
+            key=lambda x: x["survey"].created_at or (now - timedelta(days=36500)),
+            reverse=True,
+        )
+    elif sort_by == "title":
+        filtered.sort(key=lambda x: (x["survey"].title or "").lower())
+    elif sort_by == "completed_first":
+        filtered.sort(
+            key=lambda x: (
+                not x["is_completed"],
+                -(x["survey"].created_at.timestamp() if x["survey"].created_at else 0),
+            )
+        )
+    elif sort_by == "pending_first":
+        filtered.sort(
+            key=lambda x: (
+                x["is_completed"],
+                -(x["survey"].created_at.timestamp() if x["survey"].created_at else 0),
+            )
+        )
+    else:
+        # ending_soon
+        filtered.sort(key=lambda x: x["survey"].ends_at or far_future)
+
     return render(
         request,
         "surveys/list.html",
         {
-            "surveys": available,
+            "surveys": filtered,
+            "surveys_total_before_filter": len(available),
+            "surveys_total_after_filter": len(filtered),
+            "available_tags": available_tags,
+            "current_filters": {
+                "q": search_query,
+                "tag": selected_tag,
+                "completion": completion_filter,
+                "sort": sort_by,
+            },
             "can_manage_surveys": _user_can_manage_surveys(request.user),
         },
     )
