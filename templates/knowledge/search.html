@@ -227,7 +227,7 @@
             <span>{{ article.author.get_full_name|default:article.author.username }}</span>
             <span>{{ article.published_at|date:"d.m.Y"|default:article.created_at|date:"d.m.Y" }}</span>
             {% if article.avg_rating %}
-            <span style="color: #f5a623;">★ {{ article.avg_rating }}</span>
+            <span style="color: var(--warning-text);">★ {{ article.avg_rating }}</span>
             {% endif %}
         </div>
     </a>

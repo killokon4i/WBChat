@@ -1067,7 +1067,7 @@ def _render_chart_png(item, width_px=720, height_px=380):
     fig_w = width_px / 100
     fig_h = height_px / 100
     fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=100)
-    palette = ["#ff2fb3", "#008a4e", "#ca1d91", "#00a35c", "#ff75cb", "#005f3a", "#db3aa5", "#7de0b0"]
+    palette = ["#ff2fb3", "#008a4e", "#ca1d91", "#006f43", "#f2f2ef", "#8f8f89"]
     colors = [palette[i % len(palette)] for i in range(len(values))]
 
     if kind == "pie" and sum(values) > 0:
@@ -1443,7 +1443,7 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
         parent=styles["Title"],
         fontName=font_name,
         fontSize=20,
-        textColor=colors.HexColor("#481173"),
+        textColor=colors.HexColor("#ca1d91"),
         alignment=TA_LEFT,
         spaceAfter=10,
     )
@@ -1452,7 +1452,7 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
         parent=styles["Heading2"],
         fontName=font_name,
         fontSize=14,
-        textColor=colors.HexColor("#481173"),
+        textColor=colors.HexColor("#ca1d91"),
         spaceBefore=10,
         spaceAfter=8,
     )
@@ -1461,7 +1461,7 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
         parent=styles["Heading3"],
         fontName=font_name,
         fontSize=12,
-        textColor=colors.HexColor("#990099"),
+        textColor=colors.HexColor("#ca1d91"),
         spaceBefore=6,
         spaceAfter=4,
     )
@@ -1477,7 +1477,7 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
         parent=styles["Normal"],
         fontName=font_name,
         fontSize=9,
-        textColor=colors.HexColor("#666666"),
+        textColor=colors.HexColor("#8f8f89"),
         leading=12,
     )
 
@@ -1526,13 +1526,13 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
             [
                 ("FONTNAME", (0, 0), (-1, -1), font_name),
                 ("FONTSIZE", (0, 0), (-1, -1), 10),
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#CB11AB")),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#ff2fb3")),
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
                 ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#D9D9D9")),
+                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#8f8f89")),
                 ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#F8F8FA")),
             ]
         )
@@ -1569,7 +1569,7 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
         [
             ("FONTNAME", (0, 0), (-1, -1), font_name),
             ("FONTSIZE", (0, 0), (-1, -1), 9),
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#481173")),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#ca1d91")),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("ALIGN", (0, 0), (-1, 0), "CENTER"),
             ("ALIGN", (0, 1), (0, -1), "CENTER"),
@@ -1577,13 +1577,13 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
             ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#D9D9D9")),
+            ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#8f8f89")),
             ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#FAFAFA")]),
         ]
     )
     for i, row in enumerate(participants, start=1):
         color = colors.HexColor("#DEF7EC" if row["is_submitted"] else "#FDE2E2")
-        text_color = colors.HexColor("#03543F" if row["is_submitted"] else "#9B1C1C")
+        text_color = colors.HexColor("#006f43" if row["is_submitted"] else "#9B1C1C")
         p_style.add("BACKGROUND", (3, i), (3, i), color)
         p_style.add("TEXTCOLOR", (3, i), (3, i), text_color)
         p_style.add("FONTNAME", (3, i), (3, i), font_name)
@@ -1629,11 +1629,11 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
                     [
                         ("FONTNAME", (0, 0), (-1, -1), font_name),
                         ("FONTSIZE", (0, 0), (-1, -1), 9),
-                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#CB11AB")),
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#ff2fb3")),
                         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                         ("ALIGN", (1, 0), (-1, -1), "CENTER"),
                         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                        ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#D9D9D9")),
+                        ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#8f8f89")),
                         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#FAFAFA")]),
                         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
                         ("TOPPADDING", (0, 0), (-1, -1), 3),
@@ -1697,10 +1697,10 @@ def _export_survey_pdf(request, survey, responses, participants, summary):
                     [
                         ("FONTNAME", (0, 0), (-1, -1), font_name),
                         ("FONTSIZE", (0, 0), (-1, -1), 9),
-                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#990099")),
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#ca1d91")),
                         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                        ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#D9D9D9")),
+                        ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#8f8f89")),
                         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#FAFAFA")]),
                         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
                         ("TOPPADDING", (0, 0), (-1, -1), 3),
@@ -1771,7 +1771,7 @@ def _export_survey_docx(request, survey, responses, participants, summary):
     run = title.add_run(survey.title)
     run.font.size = Pt(20)
     run.font.bold = True
-    run.font.color.rgb = RGBColor.from_string("481173")
+    run.font.color.rgb = RGBColor.from_string("CA1D91")
 
     meta = doc.add_paragraph()
     meta_runs = [
@@ -1785,7 +1785,7 @@ def _export_survey_docx(request, survey, responses, participants, summary):
         meta_runs.append(f"Окончание: {survey.ends_at.strftime('%d.%m.%Y %H:%M')}")
     mr = meta.add_run("  ·  ".join(meta_runs))
     mr.font.size = Pt(9)
-    mr.font.color.rgb = RGBColor.from_string("666666")
+    mr.font.color.rgb = RGBColor.from_string("8F8F89")
 
     if survey.description:
         d = doc.add_paragraph()
@@ -1798,7 +1798,7 @@ def _export_survey_docx(request, survey, responses, participants, summary):
     hdr_cells = summary_table.rows[0].cells
     for i, text in enumerate(["Всего в аудитории", "Прошли", "Не прошли", "% прохождения"]):
         hdr_cells[i].text = text
-        _shade_cell(hdr_cells[i], "CB11AB")
+        _shade_cell(hdr_cells[i], "FF2FB3")
         _set_cell_font(hdr_cells[i], bold=True, color="FFFFFF", size=11, align=WD_ALIGN_PARAGRAPH.CENTER)
     body_cells = summary_table.rows[1].cells
     body_values = [
@@ -1823,14 +1823,14 @@ def _export_survey_docx(request, survey, responses, participants, summary):
     hr = h.add_run("Участники")
     hr.bold = True
     hr.font.size = Pt(14)
-    hr.font.color.rgb = RGBColor.from_string("481173")
+    hr.font.color.rgb = RGBColor.from_string("CA1D91")
 
     p_table = doc.add_table(rows=1 + len(participants), cols=5)
     p_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     hdr = p_table.rows[0].cells
     for i, t in enumerate(["#", "Сотрудник", "Подразделение", "Статус", "Дата"]):
         hdr[i].text = t
-        _shade_cell(hdr[i], "481173")
+        _shade_cell(hdr[i], "CA1D91")
         _set_cell_font(hdr[i], bold=True, color="FFFFFF", size=10, align=WD_ALIGN_PARAGRAPH.CENTER)
     for i, row in enumerate(participants, start=1):
         cells = p_table.rows[i].cells
@@ -1845,7 +1845,7 @@ def _export_survey_docx(request, survey, responses, participants, summary):
         _set_cell_font(cells[1], size=9)
         _set_cell_font(cells[2], size=9)
         status_color = "DEF7EC" if row["is_submitted"] else "FDE2E2"
-        text_color = "03543F" if row["is_submitted"] else "9B1C1C"
+        text_color = "006F43" if row["is_submitted"] else "9B1C1C"
         _shade_cell(cells[3], status_color)
         _set_cell_font(cells[3], size=9, bold=True, color=text_color, align=WD_ALIGN_PARAGRAPH.CENTER)
         _set_cell_font(cells[4], size=9, align=WD_ALIGN_PARAGRAPH.CENTER)
@@ -1856,7 +1856,7 @@ def _export_survey_docx(request, survey, responses, participants, summary):
     h2r = h2.add_run("Результаты по вопросам")
     h2r.bold = True
     h2r.font.size = Pt(14)
-    h2r.font.color.rgb = RGBColor.from_string("481173")
+    h2r.font.color.rgb = RGBColor.from_string("CA1D91")
 
     for idx, item in enumerate(stats, start=1):
         q = item["question"]
@@ -1868,7 +1868,7 @@ def _export_survey_docx(request, survey, responses, participants, summary):
         h3r = h3.add_run(prefix + q.title)
         h3r.bold = True
         h3r.font.size = Pt(12)
-        h3r.font.color.rgb = RGBColor.from_string("990099")
+        h3r.font.color.rgb = RGBColor.from_string("CA1D91")
 
         meta_text = q.get_question_type_display()
         if item["is_sub_question"] and item.get("parent_triggers"):
@@ -1877,7 +1877,7 @@ def _export_survey_docx(request, survey, responses, participants, summary):
         mpr = mp.add_run(meta_text)
         mpr.italic = True
         mpr.font.size = Pt(9)
-        mpr.font.color.rgb = RGBColor.from_string("666666")
+        mpr.font.color.rgb = RGBColor.from_string("8F8F89")
 
         if item.get("chart_data") and any(item["chart_data"].get("values") or []):
             png = _render_chart_png(item)
@@ -1890,7 +1890,7 @@ def _export_survey_docx(request, survey, responses, participants, summary):
             hdr = t.rows[0].cells
             for i, txt in enumerate(["Вариант", "Кол-во", "%"]):
                 hdr[i].text = txt
-                _shade_cell(hdr[i], "CB11AB")
+                _shade_cell(hdr[i], "FF2FB3")
                 _set_cell_font(hdr[i], bold=True, color="FFFFFF", size=10, align=WD_ALIGN_PARAGRAPH.CENTER)
             for i, (lbl, val, pct) in enumerate(
                 zip(cd.get("labels", []), cd.get("values", []), cd.get("percentages", [])),
@@ -1912,13 +1912,13 @@ def _export_survey_docx(request, survey, responses, participants, summary):
                 r = p.add_run(f"… и ещё {len(item['answer_texts']) - 50} ответов")
                 r.italic = True
                 r.font.size = Pt(9)
-                r.font.color.rgb = RGBColor.from_string("666666")
+                r.font.color.rgb = RGBColor.from_string("8F8F89")
         else:
             p = doc.add_paragraph()
             r = p.add_run("Ответов нет.")
             r.italic = True
             r.font.size = Pt(9)
-            r.font.color.rgb = RGBColor.from_string("666666")
+            r.font.color.rgb = RGBColor.from_string("8F8F89")
 
     # --- ответы пользователей (неанонимные) ---
     if not survey.is_anonymous:
@@ -1927,7 +1927,7 @@ def _export_survey_docx(request, survey, responses, participants, summary):
         h2r = h2.add_run("Ответы по сотрудникам")
         h2r.bold = True
         h2r.font.size = Pt(14)
-        h2r.font.color.rgb = RGBColor.from_string("481173")
+        h2r.font.color.rgb = RGBColor.from_string("CA1D91")
 
         questions = list(survey.questions.all().order_by("order", "id"))
         numbering = _build_question_numbering(questions)
@@ -1947,7 +1947,7 @@ def _export_survey_docx(request, survey, responses, participants, summary):
             if extra:
                 er = p.add_run("  ·  " + "  ·  ".join(extra))
                 er.font.size = Pt(9)
-                er.font.color.rgb = RGBColor.from_string("666666")
+                er.font.color.rgb = RGBColor.from_string("8F8F89")
 
             answers_by_qid = {a.question_id: a for a in r.answers.all()}
             t = doc.add_table(rows=1 + len(questions), cols=2)
@@ -1955,8 +1955,8 @@ def _export_survey_docx(request, survey, responses, participants, summary):
             hdr = t.rows[0].cells
             hdr[0].text = "Вопрос"
             hdr[1].text = "Ответ"
-            _shade_cell(hdr[0], "990099")
-            _shade_cell(hdr[1], "990099")
+            _shade_cell(hdr[0], "CA1D91")
+            _shade_cell(hdr[1], "CA1D91")
             for c in hdr:
                 _set_cell_font(c, bold=True, color="FFFFFF", size=10)
             for i, q in enumerate(questions, start=1):

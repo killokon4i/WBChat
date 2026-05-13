@@ -51,7 +51,7 @@ class NotificationType(models.Model):
     description = models.TextField('Описание', blank=True)
     category = models.CharField('Категория', max_length=50, blank=True)
     icon = models.CharField('Иконка', max_length=50, blank=True)
-    color = models.CharField('Цвет', max_length=7, default='#CB11AB')
+    color = models.CharField('Цвет', max_length=7, default='#ff2fb3')
     
     # Каналы по умолчанию
     default_channels = models.ManyToManyField(

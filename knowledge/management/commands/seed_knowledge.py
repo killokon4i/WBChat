@@ -39,17 +39,17 @@ class Command(BaseCommand):
 
         data = [
             # Корневые
-            {'name': 'IT', 'slug': 'it', 'icon': '💻', 'color': '#3B82F6',
+            {'name': 'IT', 'slug': 'it', 'icon': '💻', 'color': '#006f43',
              'description': 'Инструкции по IT-инфраструктуре, ПО, системам и сервисам банка'},
-            {'name': 'HR', 'slug': 'hr', 'icon': '👥', 'color': '#8B5CF6',
+            {'name': 'HR', 'slug': 'hr', 'icon': '👥', 'color': '#ca1d91',
              'description': 'Кадровые процедуры, оформление документов, льготы и компенсации'},
-            {'name': 'Продукты Банка', 'slug': 'products', 'icon': '🏦', 'color': '#10B981',
+            {'name': 'Продукты Банка', 'slug': 'products', 'icon': '🏦', 'color': '#008a4e',
              'description': 'Справочные материалы по продуктам и сервисам WB Bank'},
-            {'name': 'Безопасность', 'slug': 'security', 'icon': '🔒', 'color': '#EF4444',
+            {'name': 'Безопасность', 'slug': 'security', 'icon': '🔒', 'color': '#ff2fb3',
              'description': 'Информационная безопасность, правила работы с данными, антифрод'},
-            {'name': 'Новичку', 'slug': 'onboarding', 'icon': '🎓', 'color': '#F59E0B',
+            {'name': 'Новичку', 'slug': 'onboarding', 'icon': '🎓', 'color': '#ca1d91',
              'description': 'Всё необходимое для адаптации нового сотрудника'},
-            {'name': 'Процессы', 'slug': 'processes', 'icon': '⚙️', 'color': '#6366F1',
+            {'name': 'Процессы', 'slug': 'processes', 'icon': '⚙️', 'color': '#008a4e',
              'description': 'Бизнес-процессы, регламенты, стандарты работы'},
         ]
 

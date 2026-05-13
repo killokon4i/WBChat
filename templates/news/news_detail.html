@@ -294,13 +294,13 @@
     }
 
     .btn-edit {
-        background: linear-gradient(135deg, #FF9500, #FF6B00);
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
         color: white;
     }
 
     .btn-edit:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(255, 149, 0, 0.4);
+        box-shadow: 0 6px 20px rgba(255, 47, 179, 0.35);
     }
 
     @media (max-width: 768px) {
@@ -434,7 +434,7 @@
         width: 36px;
         height: 36px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -495,7 +495,7 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -675,13 +675,13 @@
     .share-conv-icon {
         width: 36px; height: 36px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
         display: flex; align-items: center; justify-content: center;
         color: white; font-weight: 600; font-size: 14px; flex-shrink: 0;
     }
     .share-conv-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
     .share-conv-type { font-size: 12px; color: var(--text-muted); }
-    .share-sent { color: #22c55e; font-size: 13px; font-weight: 500; }
+    .share-sent { color: var(--brand-green); font-size: 13px; font-weight: 500; }
 
     /* Replies */
     .comment-replies {
@@ -902,7 +902,7 @@
     </div>
     {% else %}
     <div class="comment-form-card">
-        <div id="moderation-error" style="display: none; padding: 12px 16px; background: rgba(255, 149, 0, 0.15); border-radius: 10px; margin-bottom: 16px; color: #ff9500;">
+        <div id="moderation-error" style="display: none; padding: 12px 16px; background: var(--warning-bg); border-radius: 10px; margin-bottom: 16px; color: var(--magenta);">
             <strong>⚠️ <span id="error-message"></span></strong>
         </div>
         <form method="post" action="{% url 'add_comment' news_item.pk %}" id="comment-form">
@@ -1485,7 +1485,7 @@ function openShareModal() {
                 .then(r => r.json())
                 .then(result => {
                     if (result.success) {
-                        div.innerHTML = '<div class="share-conv-icon" style="background:#22c55e;">✓</div>'
+                        div.innerHTML = '<div class="share-conv-icon" style="background:var(--brand-green);">✓</div>'
                             + '<div class="share-sent">Отправлено!</div>';
                         div.style.pointerEvents = 'none';
                     }

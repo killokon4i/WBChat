@@ -20,7 +20,7 @@
     .news-dash-table tr:hover { background: var(--bg-hover); }
     .news-dash-table a { color: var(--magenta); text-decoration: none; font-size: 13px; }
     .news-dash-table a:hover { text-decoration: underline; }
-    .news-badge-draft { background: rgba(107,114,128,0.15); color: #9ca3af; padding: 3px 10px; border-radius: 12px; font-size: 11px; margin-left: 8px; }
+    .news-badge-draft { background: var(--bg-hover); color: var(--text-muted); padding: 3px 10px; border-radius: 12px; font-size: 11px; margin-left: 8px; }
     .news-dash-actions { display:flex; gap:8px; align-items:center; }
 
     .news-dash-btn,
@@ -51,14 +51,14 @@
     .news-dash-btn-edit,
     .news-dash-btn-edit:link,
     .news-dash-btn-edit:visited {
-        background: linear-gradient(135deg, #FF9500, #FF6B00);
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
         border-color: transparent;
         color: #ffffff;
     }
 
     .news-dash-btn-edit:hover,
     .news-dash-btn-edit:active {
-        background: linear-gradient(135deg, #FFB347, #FF7F11);
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
         border-color: transparent;
         color: #ffffff;
         text-decoration: none !important;

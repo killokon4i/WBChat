@@ -11,7 +11,7 @@ class NewsCategory(models.Model):
     name = models.CharField('Название', max_length=100)
     slug = models.SlugField('Slug', unique=True)
     description = models.TextField('Описание', blank=True)
-    color = models.CharField('Цвет', max_length=7, default='#CB11AB')
+    color = models.CharField('Цвет', max_length=7, default='#ff2fb3')
     icon = models.CharField('Иконка', max_length=50, blank=True)
     
     # Характеристики

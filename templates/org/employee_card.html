@@ -33,7 +33,7 @@
         width: 140px;
         height: 140px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -88,7 +88,7 @@
         align-items: center;
         gap: 8px;
         padding: 10px 20px;
-        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
         color: white;
         border: none;
         border-radius: 10px;
@@ -242,7 +242,7 @@
         width: 44px;
         height: 44px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -300,7 +300,7 @@
         width: 36px;
         height: 36px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -425,16 +425,16 @@
                     </div>
                     <form method="post" action="{% url 'unban_comments' user_id=employee.id %}" onsubmit="return confirm('Снять блокировку комментариев и сбросить предупреждения?')">
                         {% csrf_token %}
-                        <button type="submit" style="padding:8px 20px;border-radius:10px;border:1px solid rgba(34,197,94,0.3);background:rgba(34,197,94,0.1);color:#22c55e;font-size:13px;font-weight:500;cursor:pointer;">Снять блокировку</button>
+                        <button type="submit" style="padding:8px 20px;border-radius:10px;border:1px solid var(--success-border);background:var(--success-bg);color:var(--brand-green);font-size:13px;font-weight:500;cursor:pointer;">Снять блокировку</button>
                     </form>
                 </div>
             </div>
             {% endif %}
 
             {% if is_admin and employee.comment_warnings > 0 and not employee.is_comments_banned %}
-            <div style="margin-top:16px;padding:12px 20px;background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.2);border-radius:12px;">
+            <div style="margin-top:16px;padding:12px 20px;background:var(--warning-bg);border:1px solid var(--warning-border);border-radius:12px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-                    <div style="font-size:13px;color:#eab308;">⚠️ Предупреждений за комментарии: {{ employee.comment_warnings }} из 3</div>
+                    <div style="font-size:13px;color:var(--warning-text);">⚠️ Предупреждений за комментарии: {{ employee.comment_warnings }} из 3</div>
                     <form method="post" action="{% url 'unban_comments' user_id=employee.id %}" onsubmit="return confirm('Сбросить счётчик предупреждений?')">
                         {% csrf_token %}
                         <button type="submit" style="padding:6px 16px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-hover);color:var(--text-primary);font-size:12px;cursor:pointer;">Сбросить</button>

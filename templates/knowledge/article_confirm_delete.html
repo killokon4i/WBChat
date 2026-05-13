@@ -17,7 +17,7 @@
             <form method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="archive">
-                <button type="submit" class="btn" style="background: rgba(234,179,8,0.15); color: #eab308; border: 1px solid rgba(234,179,8,0.3); padding: 12px 32px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; width: 280px;">
+                <button type="submit" class="btn" style="background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border); padding: 12px 32px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; width: 280px;">
                     📦 В архив
                 </button>
                 <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">Статья не будет отображаться, но её можно восстановить</p>

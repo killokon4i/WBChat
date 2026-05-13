@@ -16,13 +16,13 @@
     .dash-table td { color: var(--text-primary); font-size: 14px; }
     .dash-table td a { color: var(--magenta); text-decoration: none; }
     .dash-table tr:hover { background: var(--bg-hover); }
-    .badge-warn { background: rgba(234,179,8,0.2); color: #eab308; padding: 3px 10px; border-radius: 12px; font-size: 12px; }
-    .badge-draft { background: rgba(107,114,128,0.2); color: #9ca3af; padding: 3px 10px; border-radius: 12px; font-size: 12px; }
-.badge-archived { background: rgba(107,114,128,0.12); color: #9ca3af; padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+    .badge-warn { background: var(--warning-bg); color: var(--warning-text); padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+    .badge-draft { background: var(--bg-hover); color: var(--text-muted); padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+.badge-archived { background: var(--bg-hover); color: var(--text-muted); padding: 3px 10px; border-radius: 12px; font-size: 12px; }
 .dash-tabs { display:flex; gap:8px; margin-bottom:16px; }
 .dash-tab { padding:8px 14px; border-radius:999px; font-size:13px; border:1px solid var(--border-color); color:var(--text-secondary); text-decoration:none; }
 .dash-tab.active { background:var(--magenta); color:white; border-color:var(--magenta); }
-.link-button { background:none; border:none; padding:0; color:#22c55e; cursor:pointer; font-size:13px; }
+.link-button { background:none; border:none; padding:0; color:var(--brand-green); cursor:pointer; font-size:13px; }
 .link-button:hover { text-decoration:underline; }
 </style>
 {% endblock %}

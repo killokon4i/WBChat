@@ -13,7 +13,7 @@ class Category(models.Model):
     slug = models.SlugField('Slug', unique=True, max_length=255)
     description = models.TextField('Описание', blank=True)
     icon = models.CharField('Иконка (emoji/css)', max_length=50, blank=True)
-    color = models.CharField('Цвет', max_length=7, default='#CB11AB')
+    color = models.CharField('Цвет', max_length=7, default='#ff2fb3')
 
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE,

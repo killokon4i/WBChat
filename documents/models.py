@@ -33,7 +33,7 @@ class DocumentCategory(models.Model):
         help_text='Оставьте пустым для бессрочного хранения'
     )
     icon = models.CharField('Иконка', max_length=50, blank=True)
-    color = models.CharField('Цвет', max_length=7, default='#CB11AB')
+    color = models.CharField('Цвет', max_length=7, default='#ff2fb3')
     
     # Служебные
     is_active = models.BooleanField('Активна', default=True)

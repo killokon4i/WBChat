@@ -292,7 +292,7 @@
     }
 
     .star-rating .star.active {
-        color: #f5a623;
+        color: var(--warning-text);
     }
 
     .rating-info {
@@ -387,7 +387,7 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -830,7 +830,7 @@
         width: 36px;
         height: 36px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--magenta), #8B0077);
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -850,7 +850,7 @@
         color: var(--text-muted);
     }
     .share-sent {
-        color: #22c55e;
+        color: var(--brand-green);
         font-size: 13px;
         font-weight: 500;
     }
@@ -882,7 +882,7 @@ function showReplyForm(commentId) {
     stars.forEach(function(star, idx) {
         star.addEventListener('mouseenter', function() {
             stars.forEach(function(s, i) {
-                s.style.color = i <= idx ? '#f5a623' : '';
+                s.style.color = i <= idx ? 'var(--warning-text)' : '';
             });
         });
     });
@@ -1007,7 +1007,7 @@ function shareToConversation(convId, el) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            el.innerHTML = '<div class="share-conv-icon" style="background:#22c55e;">✓</div>'
+            el.innerHTML = '<div class="share-conv-icon" style="background:var(--brand-green);">✓</div>'
                 + '<div class="share-sent">Отправлено!</div>';
             el.style.pointerEvents = 'none';
         }
