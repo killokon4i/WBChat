@@ -386,6 +386,15 @@
         var cx = 180, cy = 145, outerR = 108, innerR = 66;
         var angle = 0;
         var html = ['<svg class="inline-chart-svg inline-chart-svg--donut" viewBox="0 0 360 290" role="img">'];
+        var nonZeroCount = values.filter(function(v){ return (Number(v) || 0) > 0; }).length;
+        if (nonZeroCount === 1) {
+            var colorIdx = 0;
+            for (var j = 0; j < values.length; j++) {
+                if ((Number(values[j]) || 0) > 0) { colorIdx = j; break; }
+            }
+            html.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + outerR + '" fill="' + colors[colorIdx % colors.length] + '"/>');
+            html.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + innerR + '" fill="var(--bg-card)"/>');
+        } else {
         values.forEach(function(v, i) {
             v = Number(v) || 0;
             if (!v) return;
@@ -393,6 +402,7 @@
             html.push('<path d="' + describeArc(cx, cy, outerR, innerR, angle, next) + '" fill="' + colors[i % colors.length] + '"/>');
             angle = next;
         });
+        }
         html.push('<text x="' + cx + '" y="' + (cy - 6) + '" text-anchor="middle" class="chart-total">' + total + '</text>');
         html.push('<text x="' + cx + '" y="' + (cy + 20) + '" text-anchor="middle" class="chart-total-label">ответов</text>');
         html.push('</svg>');
