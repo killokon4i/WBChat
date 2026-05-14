@@ -64,6 +64,40 @@
     .btn-subscribe:hover, .btn-subscribe.active {
         background: var(--magenta); color: white;
     }
+
+    @media (max-width: 480px) {
+        .tag-actions-row {
+            flex-wrap: wrap;
+            align-items: stretch !important;
+        }
+
+        .tag-actions-row .btn-subscribe,
+        .tag-actions-row form {
+            width: 100%;
+        }
+
+        .tag-actions-row form button {
+            width: 100%;
+        }
+
+        .tag-page h1 {
+            font-size: 22px;
+        }
+
+        .tag-page .tag-desc {
+            font-size: 14px;
+            margin-bottom: 14px;
+        }
+
+        .tag-article {
+            padding: 12px;
+        }
+
+        .tag-article .meta {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -74,7 +108,7 @@
     <p class="tag-desc">{{ tag.description }}</p>
     {% endif %}
 
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px;">
+    <div class="tag-actions-row" style="display:flex;gap:10px;align-items:center;margin-bottom:20px;">
         <button class="btn-subscribe {% if is_subscribed %}active{% endif %}"
                 onclick="toggleSubscription('tag', {{ tag.id }}, this)" style="margin-bottom:0;">
             {% if is_subscribed %}Подписан{% else %}Подписаться{% endif %}

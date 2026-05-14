@@ -314,6 +314,53 @@
         font-size: 14px;
         color: var(--text-secondary);
     }
+
+    @media (max-width: 480px) {
+        .directory-container {
+            gap: 12px;
+            min-height: auto;
+        }
+
+        .directory-sidebar,
+        .directory-main {
+            padding: 14px;
+            border-radius: 12px;
+        }
+
+        .directory-sidebar {
+            position: static;
+            top: auto;
+        }
+
+        .search-container {
+            margin-bottom: 14px;
+        }
+
+        .search-input {
+            padding: 12px 14px 12px 42px;
+            font-size: 14px;
+        }
+
+        .employees-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .employee-card {
+            padding: 14px;
+            gap: 12px;
+        }
+
+        .employee-avatar {
+            width: 48px;
+            height: 48px;
+            font-size: 16px;
+        }
+
+        .birthday-item {
+            padding: 6px 0;
+        }
+    }
 </style>
 
 <div class="directory-container">

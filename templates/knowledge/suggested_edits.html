@@ -81,6 +81,42 @@
     }
     .title-change .old { text-decoration: line-through; color: var(--error-text); }
     .title-change .new { color: var(--brand-green); font-weight: 500; }
+
+    @media (max-width: 480px) {
+        .edits-container {
+            padding: 0;
+        }
+
+        .edits-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .edits-header h1 {
+            font-size: 20px;
+        }
+
+        .edit-card {
+            padding: 14px;
+        }
+
+        .edit-meta {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .edit-actions form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .btn-sm {
+            width: 100%;
+            min-height: 40px;
+        }
+    }
 </style>
 {% endblock %}
 {% block content %}

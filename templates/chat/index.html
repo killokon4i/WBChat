@@ -446,6 +446,74 @@
             font-size: 18px;
         }
     }
+
+    @media (max-width: 480px) {
+        .page-header {
+            align-items: stretch;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .page-header-content h1 {
+            font-size: 22px;
+            line-height: 1.2;
+        }
+
+        .page-header-content p {
+            font-size: 14px;
+        }
+
+        .chat-item {
+            padding: 10px 12px;
+            gap: 10px;
+        }
+
+        .chat-header {
+            gap: 8px;
+        }
+
+        .chat-name {
+            font-size: 15px;
+        }
+
+        .chat-time {
+            font-size: 11px;
+        }
+
+        .chat-last-message {
+            font-size: 12px;
+        }
+
+        .new-chat-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+        }
+
+        .modal-overlay {
+            padding: 10px;
+        }
+
+        .modal-header,
+        .modal-search {
+            padding-left: 14px;
+            padding-right: 14px;
+        }
+
+        .modal-close {
+            width: 40px;
+            height: 40px;
+        }
+
+        .group-form {
+            padding: 14px;
+        }
+
+        .group-form > div:first-child {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
 </style>
 {% endblock %}
 

@@ -2,9 +2,45 @@
 
 {% block title %}Откат к v{{ version.version_number }} — {{ article.title }}{% endblock %}
 
+{% block extra_styles %}
+<style>
+    .rollback-wrap {
+        max-width: 600px;
+        margin: 40px auto;
+        text-align: center;
+    }
+
+    .rollback-card {
+        padding: 24px;
+    }
+
+    .rollback-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 480px) {
+        .rollback-wrap {
+            margin: 16px auto;
+        }
+
+        .rollback-card {
+            padding: 14px;
+        }
+
+        .rollback-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="max-width: 600px; margin: 40px auto; text-align: center;">
-    <div class="card">
+<div class="rollback-wrap">
+    <div class="card rollback-card">
         <h2 style="margin-bottom: 16px;">Подтверждение отката</h2>
         <p style="color: var(--text-secondary); margin-bottom: 8px;">
             Вы уверены, что хотите откатить статью <strong>{{ article.title }}</strong>
@@ -14,7 +50,7 @@
             Автор версии: {{ version.author.get_full_name|default:version.author.username }},
             {{ version.created_at|date:"d.m.Y H:i" }}
         </p>
-        <form method="post" style="display: flex; gap: 12px; justify-content: center;">
+        <form method="post" class="rollback-actions">
             {% csrf_token %}
             <button type="submit" class="btn btn-primary">Откатить</button>
             <a href="{% url 'kb_article_versions' slug=article.slug %}" class="btn btn-secondary">Отмена</a>

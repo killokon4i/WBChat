@@ -167,6 +167,51 @@
         background: var(--magenta);
         color: white;
     }
+
+    @media (max-width: 480px) {
+        .search-page h1 {
+            font-size: 20px;
+            margin-bottom: 14px;
+        }
+
+        .search-form {
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .search-form button {
+            width: 100%;
+            min-height: 44px;
+        }
+
+        .search-filters {
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .filter-chip {
+            font-size: 12px;
+            padding: 4px 10px;
+        }
+
+        .search-result-item {
+            padding: 14px;
+        }
+
+        .search-result-item h3 {
+            font-size: 15px;
+        }
+
+        .search-result-item .excerpt {
+            font-size: 13px;
+        }
+
+        .pagination {
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+    }
 </style>
 {% endblock %}
 

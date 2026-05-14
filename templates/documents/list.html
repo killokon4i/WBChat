@@ -312,6 +312,61 @@
         font-size: 14px;
         color: var(--text-secondary);
     }
+
+    @media (max-width: 480px) {
+        .documents-container {
+            gap: 12px;
+            min-height: auto;
+        }
+
+        .docs-sidebar,
+        .docs-main {
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .docs-title {
+            font-size: 20px;
+        }
+
+        .docs-count {
+            display: block;
+            margin-left: 0;
+            margin-top: 4px;
+            font-size: 13px;
+        }
+
+        .search-row {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-search {
+            width: 100%;
+            min-height: 44px;
+        }
+
+        .doc-card {
+            flex-wrap: wrap;
+            padding: 14px;
+            gap: 10px;
+        }
+
+        .doc-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+        }
+
+        .doc-badge {
+            width: 100%;
+            text-align: center;
+        }
+
+        .pagination {
+            flex-wrap: wrap;
+        }
+    }
 </style>
 
 <div class="documents-container">

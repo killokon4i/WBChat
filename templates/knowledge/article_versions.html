@@ -98,6 +98,44 @@
         color: var(--text-primary);
         font-size: 14px;
     }
+
+    @media (max-width: 480px) {
+        .versions-page h1 {
+            font-size: 20px;
+        }
+
+        .diff-selector {
+            padding: 12px;
+        }
+
+        .diff-selector select,
+        .diff-selector .btn {
+            width: 100%;
+        }
+
+        .version-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px;
+        }
+
+        .version-info .meta {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .version-actions {
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .version-actions a {
+            flex: 1;
+            text-align: center;
+            min-width: 120px;
+        }
+    }
 </style>
 {% endblock %}
 

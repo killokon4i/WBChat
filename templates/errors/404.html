@@ -2,16 +2,96 @@
 
 {% block title %}404 — Страница не найдена{% endblock %}
 
+{% block extra_styles %}
+<style>
+    .error-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .error-code {
+        font-size: 120px;
+        line-height: 1;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--magenta), var(--purplish));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 16px;
+    }
+
+    .error-title {
+        font-size: 24px;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
+
+    .error-text {
+        color: var(--text-muted);
+        font-size: 15px;
+        max-width: 440px;
+        margin-bottom: 32px;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .error-btn {
+        padding: 12px 28px;
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 15px;
+    }
+
+    @media (max-width: 480px) {
+        .error-wrap {
+            min-height: 50vh;
+            padding: 20px 10px;
+        }
+
+        .error-code {
+            font-size: 84px;
+            margin-bottom: 10px;
+        }
+
+        .error-title {
+            font-size: 20px;
+        }
+
+        .error-text {
+            margin-bottom: 16px;
+        }
+
+        .error-actions {
+            width: 100%;
+        }
+
+        .error-btn {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:40px 20px;">
-    <div style="font-size:120px;line-height:1;font-weight:800;background:linear-gradient(135deg,var(--magenta),var(--purplish));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px;">404</div>
-    <h1 style="font-size:24px;color:var(--text-primary);margin-bottom:12px;">Страница не найдена</h1>
-    <p style="color:var(--text-muted);font-size:15px;max-width:440px;margin-bottom:32px;">
+<div class="error-wrap">
+    <div class="error-code">404</div>
+    <h1 class="error-title">Страница не найдена</h1>
+    <p class="error-text">
         Такой страницы не существует. Возможно, она была удалена или вы перешли по неверной ссылке.
     </p>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
-        <a href="/" style="padding:12px 28px;background:var(--magenta);color:white;border-radius:10px;font-weight:500;font-size:15px;">На главную</a>
-        <a href="javascript:history.back()" style="padding:12px 28px;background:var(--bg-hover);color:var(--text-primary);border:1px solid var(--border-color);border-radius:10px;font-weight:500;font-size:15px;">Назад</a>
+    <div class="error-actions">
+        <a href="/" class="error-btn" style="background:var(--magenta);color:white;">На главную</a>
+        <a href="javascript:history.back()" class="error-btn" style="background:var(--bg-hover);color:var(--text-primary);border:1px solid var(--border-color);">Назад</a>
     </div>
 </div>
 {% endblock %}

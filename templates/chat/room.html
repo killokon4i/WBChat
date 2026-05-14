@@ -8,7 +8,8 @@
     .chat-container {
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 140px);
+        height: calc(100dvh - 140px);
+        min-height: 520px;
         max-width: 900px;
         margin: 0 auto;
     }
@@ -134,13 +135,13 @@
     /* Attachment rendering */
     .msg-attachment { margin-top: 8px; }
     .msg-attachment img, .msg-attachment video {
-        max-width: 300px; max-height: 260px; border-radius: 10px; cursor: pointer;
+        max-width: min(300px, 100%); max-height: 260px; border-radius: 10px; cursor: pointer;
         display: block;
     }
     .msg-attachment-file {
         display: flex; align-items: center; gap: 10px;
         background: rgba(0,0,0,.1); border-radius: 10px;
-        padding: 10px 14px; max-width: 280px;
+        padding: 10px 14px; max-width: min(280px, 100%);
         text-decoration: none; color: inherit;
         transition: background .2s;
     }
@@ -155,7 +156,7 @@
     /* Link cards */
     .kb-share-card {
         background: rgba(0,0,0,.15); border: 1px solid var(--border-color);
-        border-radius: 12px; overflow: hidden; max-width: 320px; margin-top: 8px;
+        border-radius: 12px; overflow: hidden; max-width: min(320px, 100%); margin-top: 8px;
     }
     .message-own .kb-share-card { border-color: rgba(255,255,255,.15); background: rgba(0,0,0,.2); }
     .kb-share-header { background: linear-gradient(135deg, var(--magenta), var(--purplish)); padding: 10px 14px; display: flex; align-items: center; gap: 8px; }
@@ -203,7 +204,7 @@
     .reply-bar-label { font-size: 12px; color: var(--magenta); font-weight: 600; }
     .reply-bar-text { font-size: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .reply-bar-close {
-        width: 28px; height: 28px; border-radius: 50%;
+        width: 36px; height: 36px; border-radius: 50%;
         background: transparent; border: none; cursor: pointer;
         color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
     }
@@ -218,7 +219,7 @@
     .edit-bar.active { display: flex; }
     .edit-bar-label { font-size: 12px; color: #19cf7f; font-weight: 600; flex: 1; }
     .edit-bar-close {
-        width: 28px; height: 28px; border-radius: 50%;
+        width: 36px; height: 36px; border-radius: 50%;
         background: transparent; border: none; cursor: pointer;
         color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
     }
@@ -474,10 +475,102 @@
     .chat-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     @media (max-width: 768px) {
-        .chat-container { height: calc(100vh - 120px); }
+        .chat-container { height: calc(100dvh - 120px); }
         .message { max-width: 85%; }
         .chat-header-card { padding: 12px 16px; }
         .messages-area { padding: 12px; }
+    }
+
+    @media (max-width: 480px) {
+        .chat-container {
+            height: calc(100dvh - 108px);
+            min-height: 440px;
+        }
+
+        .chat-header-card {
+            padding: 10px 12px;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .chat-header-name {
+            font-size: 15px;
+            line-height: 1.2;
+        }
+
+        .chat-header-status {
+            font-size: 12px;
+        }
+
+        .messages-area {
+            padding: 10px;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 92%;
+            padding: 10px 12px;
+        }
+
+        .message-content {
+            font-size: 14px;
+        }
+
+        .message-time {
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+
+        .chat-input-area {
+            padding: 10px;
+            gap: 8px;
+        }
+
+        .chat-attach-btn,
+        .chat-send-btn {
+            width: 42px;
+            height: 42px;
+        }
+
+        .chat-textarea {
+            font-size: 14px;
+            padding: 10px 12px;
+        }
+
+        .pending-files-bar {
+            padding: 8px 10px;
+        }
+
+        .pending-file {
+            max-width: 100%;
+        }
+
+        .ext-link-dialog {
+            width: calc(100% - 20px);
+            padding: 16px;
+        }
+
+        .ext-link-actions {
+            flex-direction: column-reverse;
+        }
+
+        .ext-link-actions .btn-cancel,
+        .ext-link-actions .btn-proceed {
+            width: 100%;
+        }
+
+        .chat-info-panel {
+            width: calc(100% - 16px);
+            max-width: none;
+            max-height: 88dvh;
+            border-radius: 14px;
+        }
+
+        .cip-header,
+        .cip-body {
+            padding: 14px;
+        }
     }
 </style>
 {% endblock %}

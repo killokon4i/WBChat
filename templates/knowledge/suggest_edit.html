@@ -13,6 +13,39 @@
     .form-control { width: 100%; padding: 10px 14px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; box-sizing: border-box; }
     .btn-primary { background: var(--magenta); color: white; border: none; padding: 12px 28px; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 500; }
     .btn-secondary { background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-color); padding: 12px 28px; border-radius: 10px; cursor: pointer; font-size: 15px; text-decoration: none; }
+    .suggest-actions { display:flex; gap:12px; justify-content:flex-end; }
+
+    @media (max-width: 480px) {
+        .suggest-container {
+            padding: 0;
+        }
+
+        .suggest-header h1 {
+            font-size: 20px;
+        }
+
+        .suggest-header p {
+            font-size: 13px;
+        }
+
+        .suggest-form {
+            padding: 14px;
+            border-radius: 12px;
+        }
+
+        .suggest-actions {
+            flex-direction: column-reverse;
+        }
+
+        .suggest-actions .btn-primary,
+        .suggest-actions .btn-secondary {
+            width: 100%;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
 </style>
 {% endblock %}
 {% block content %}
@@ -35,7 +68,7 @@
             <label>{{ form.content.label }}</label>
             {{ form.content }}
         </div>
-        <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <div class="suggest-actions">
             <a href="{% url 'kb_article_detail' slug=article.slug %}" class="btn-secondary">Отмена</a>
             <button type="submit" class="btn-primary">Отправить предложение</button>
         </div>

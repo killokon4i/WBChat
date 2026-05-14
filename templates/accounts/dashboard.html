@@ -385,6 +385,62 @@
         color: var(--text-muted);
         font-size: 14px;
     }
+
+    @media (max-width: 480px) {
+        .welcome-section {
+            padding: 18px;
+            border-radius: 16px;
+        }
+
+        .welcome-name {
+            font-size: 22px;
+        }
+
+        .welcome-position {
+            font-size: 14px;
+        }
+
+        .welcome-avatar {
+            width: 76px;
+            height: 76px;
+            font-size: 28px;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .stat-card,
+        .dashboard-card {
+            padding: 16px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+        }
+
+        .card-header {
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .quick-actions {
+            grid-template-columns: 1fr;
+        }
+
+        .quick-action {
+            flex-direction: row;
+            justify-content: flex-start;
+            text-align: left;
+            padding: 14px;
+        }
+
+        .quick-action-text {
+            text-align: left;
+        }
+    }
 </style>
 
 <div class="dashboard-container">

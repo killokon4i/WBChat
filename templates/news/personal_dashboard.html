@@ -79,6 +79,34 @@
         color: #fff;
         text-decoration: none !important;
     }
+
+    @media (max-width: 480px) {
+        .news-dash-container {
+            padding: 0;
+        }
+
+        .news-dash-header h1 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .news-dash-cards {
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .news-dash-stat {
+            padding: 14px;
+        }
+
+        .news-dash-table {
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
+        }
+    }
 </style>
 {% endblock %}
 

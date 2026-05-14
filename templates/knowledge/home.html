@@ -248,6 +248,78 @@
         .kb-categories-grid { grid-template-columns: 1fr 1fr; }
         .kb-articles-grid { grid-template-columns: 1fr; }
     }
+
+    .kb-home-actions {
+        text-align: center;
+        margin-top: 32px;
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 480px) {
+        .kb-hero {
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 16px;
+        }
+
+        .kb-hero h1 {
+            font-size: 22px;
+        }
+
+        .kb-hero p {
+            font-size: 14px;
+            margin-bottom: 14px;
+        }
+
+        .kb-search-box {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .kb-search-box input,
+        .kb-search-box button {
+            width: 100%;
+        }
+
+        .kb-categories-grid,
+        .kb-articles-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .kb-cat-card,
+        .kb-article-card {
+            padding: 14px;
+        }
+
+        .kb-onboarding-banner {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+
+        .kb-section {
+            margin-bottom: 20px;
+        }
+
+        .kb-section-header h2 {
+            font-size: 18px;
+        }
+
+        .kb-home-actions {
+            margin-top: 18px;
+        }
+
+        .kb-home-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -375,7 +447,7 @@
 {% endif %}
 
 <!-- Кнопка создания -->
-<div style="text-align: center; margin-top: 32px;">
+<div class="kb-home-actions">
     <a href="{% url 'kb_article_create' %}" class="btn btn-primary">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"/>
@@ -383,8 +455,8 @@
         </svg>
         Написать статью
     </a>
-    <a href="{% url 'kb_faq' %}" class="btn btn-secondary" style="margin-left: 12px;">FAQ</a>
-    <a href="{% url 'kb_personal_dashboard' %}" class="btn btn-secondary" style="margin-left: 12px;">Мой кабинет</a>
-    <a href="{% url 'kb_request_term' %}" class="btn btn-secondary" style="margin-left: 12px;">+ Термин</a>
+    <a href="{% url 'kb_faq' %}" class="btn btn-secondary">FAQ</a>
+    <a href="{% url 'kb_personal_dashboard' %}" class="btn btn-secondary">Мой кабинет</a>
+    <a href="{% url 'kb_request_term' %}" class="btn btn-secondary">+ Термин</a>
 </div>
 {% endblock %}

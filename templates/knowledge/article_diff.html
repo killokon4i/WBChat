@@ -44,6 +44,26 @@
     table.diff .diff_add { background: rgba(34, 197, 94, 0.15); }
     table.diff .diff_sub { background: rgba(239, 68, 68, 0.15); }
     table.diff .diff_chg { background: rgba(234, 179, 8, 0.15); }
+
+    @media (max-width: 480px) {
+        .diff-page h1 {
+            font-size: 18px;
+        }
+
+        .diff-table-wrapper {
+            padding: 10px;
+        }
+
+        table.diff {
+            font-size: 11px;
+            min-width: 620px;
+        }
+
+        table.diff td,
+        table.diff th {
+            padding: 3px 6px;
+        }
+    }
 </style>
 {% endblock %}
 
