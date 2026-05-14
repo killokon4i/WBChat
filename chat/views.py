@@ -523,20 +523,38 @@ def forward_message(request, conversation_id, message_id):
 def mark_read(request, conversation_id):
     """Mark all messages in conversation as read."""
     from chat.models import MessageStatus
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+
     uc = UserConversation.objects.filter(
         user=request.user, conversation_id=conversation_id, left_at__isnull=True
     ).first()
     if not uc:
         return JsonResponse({'error': 'Нет доступа'}, status=403)
-    
-    MessageStatus.objects.filter(
+
+    statuses_qs = MessageStatus.objects.filter(
         message__conversation_id=conversation_id,
         user=request.user,
-    ).exclude(status='read').update(status='read', read_at=timezone.now())
+    ).exclude(status='read')
+    message_ids = list(statuses_qs.values_list('message_id', flat=True))
+    statuses_qs.update(status='read', read_at=timezone.now())
     
     uc.last_read_at = timezone.now()
     uc.save(update_fields=['last_read_at'])
-    return JsonResponse({'success': True})
+
+    # Push real-time read receipts so sender indicators update immediately.
+    if message_ids:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'chat_{conversation_id}',
+            {
+                'type': 'read_receipt',
+                'user_id': request.user.id,
+                'message_ids': message_ids,
+            }
+        )
+
+    return JsonResponse({'success': True, 'updated': len(message_ids)})
 
 
 @login_required

@@ -110,10 +110,17 @@
     .message-pinned-indicator { font-size: 10px; opacity: .7; }
 
     /* Read indicator */
-    .read-indicator { font-size: 11px; font-weight: 500; }
-    .read-indicator.read { color: #7de0b0; }
-    .message-own .read-indicator.read { color: rgba(255,255,255,.85); }
-    .read-indicator.unread { opacity: .5; }
+    .read-indicator {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: .2px;
+        border-radius: 10px;
+        padding: 2px 7px;
+        background: rgba(255, 255, 255, .18);
+    }
+    .read-indicator.read { color: #7de0b0; background: rgba(0, 138, 78, .2); }
+    .message-own .read-indicator.read { color: #d8fbe9; background: rgba(255,255,255,.18); }
+    .read-indicator.unread { opacity: .75; }
 
     /* Reply preview */
     .reply-preview {
@@ -306,7 +313,12 @@
     .ext-link-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,.75); display: none; align-items: center; justify-content: center; z-index: 2000; }
     .ext-link-overlay.active { display: flex; }
     .ext-link-dialog { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 28px 32px; max-width: 460px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
-    .ext-link-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(255,47,179,.15); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px; }
+    .ext-link-icon {
+        width: 48px; height: 48px; border-radius: 12px; background: rgba(255,47,179,.15);
+        display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+        color: #ff73cb;
+    }
+    .ext-link-icon svg { width: 22px; height: 22px; stroke: currentColor; }
     .ext-link-title { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
     .ext-link-desc { font-size: 14px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px; }
     .ext-link-url { background: var(--bg-hover); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--text-secondary); word-break: break-all; margin-bottom: 20px; font-family: monospace; }
@@ -662,7 +674,13 @@
 <!-- External link warning -->
 <div class="ext-link-overlay" id="ext-link-overlay">
     <div class="ext-link-dialog">
-        <div class="ext-link-icon">&#9888;&#65039;</div>
+        <div class="ext-link-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+        </div>
         <div class="ext-link-title">Переход на внешний сайт</div>
         <div class="ext-link-desc">Вы покидаете корпоративный портал. Убедитесь, что доверяете этой ссылке, прежде чем переходить по ней.</div>
         <div class="ext-link-url" id="ext-link-url"></div>
@@ -806,7 +824,7 @@ function addMessage(msg) {
     let readHtml = '';
     if (isOwn) {
         const isRead = msg.is_read === true;
-        readHtml = `<span class="read-indicator ${isRead ? 'read' : 'unread'}">${isRead ? 'прочитано' : 'не прочитано'}</span>`;
+        readHtml = `<span class="read-indicator ${isRead ? 'read' : 'unread'}">${isRead ? 'прочитано' : 'доставлено'}</span>`;
     }
 
     let html = '';

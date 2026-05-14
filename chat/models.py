@@ -63,7 +63,8 @@ class Conversation(models.Model):
         ).first()
 
         if not last_read or not last_read.last_read_at:
-            return self.messages.count()
+            # For first open, unread means messages from others only.
+            return self.messages.exclude(author=user).count()
 
         return self.messages.filter(
             created_at__gt=last_read.last_read_at
