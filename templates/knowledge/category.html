@@ -49,7 +49,20 @@
         gap: 12px;
     }
 
-    .cat-header .cat-icon { font-size: 32px; }
+    .cat-header .cat-icon {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--magenta);
+    }
+
+    .cat-header .cat-icon svg {
+        width: 24px;
+        height: 24px;
+        stroke: currentColor;
+    }
 
     .cat-desc {
         color: var(--text-secondary);
@@ -138,7 +151,20 @@
         color: var(--text-primary);
     }
 
-    .article-row .pinned-icon { color: var(--magenta); font-size: 14px; }
+    .article-row .pinned-icon {
+        color: var(--magenta);
+        width: 16px;
+        height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .article-row .pinned-icon svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+    }
 
     .article-row .info { flex: 1; }
     .article-row .info h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
@@ -247,7 +273,12 @@
 
 <div class="cat-header">
     <h1>
-        <span class="cat-icon">{{ category.icon|default:"📁" }}</span>
+        <span class="cat-icon">
+            {% if category.icon %}{{ category.icon }}
+            {% else %}
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            {% endif %}
+        </span>
         {{ category.name }}
     </h1>
     <div class="cat-actions">
@@ -269,7 +300,11 @@
 <div class="sub-cats">
     {% for child in children %}
     <a href="{% url 'kb_category' slug=child.slug %}" class="sub-cat-chip">
-        {{ child.icon|default:"📂" }} {{ child.name }}
+        {% if child.icon %}{{ child.icon }}
+        {% else %}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        {% endif %}
+        {{ child.name }}
     </a>
     {% endfor %}
 </div>
@@ -285,7 +320,9 @@
     {% for article in articles %}
     <a href="{% url 'kb_article_detail' slug=article.slug %}" class="article-row">
         {% if article.is_pinned %}
-        <span class="pinned-icon" title="Закреплено">📌</span>
+        <span class="pinned-icon" title="Закреплено">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 3h6l-1 6 4 4v2h-5l-1 6-1-6H6v-2l4-4-1-6z"/></svg>
+        </span>
         {% endif %}
         <div class="info">
             <h3>{{ article.title }}</h3>

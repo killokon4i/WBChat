@@ -190,7 +190,10 @@
                 <div style="margin-top:10px;">
                     {% for att in article.attachments.all %}
                     <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-hover);border-radius:8px;margin-bottom:4px;font-size:13px;">
-                        <span>📎 {{ att.file_name }} ({{ att.file_size|filesizeformat }})</span>
+                        <span style="display:inline-flex;align-items:center;gap:6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.2-9.19a3.5 3.5 0 1 1 4.95 4.95l-9.2 9.2a2 2 0 1 1-2.83-2.83l8.49-8.48"/></svg>
+                            {{ att.file_name }} ({{ att.file_size|filesizeformat }})
+                        </span>
                         <form method="post" action="{% url 'kb_delete_attachment' slug=article.slug attachment_id=att.id %}" style="margin-left:auto;">
                             {% csrf_token %}
                             <button type="submit" style="background:none;border:none;color:var(--error-text);cursor:pointer;font-size:12px;">Удалить</button>

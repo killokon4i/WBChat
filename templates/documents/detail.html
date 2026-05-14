@@ -169,7 +169,12 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
+    }
+
+    .section-icon svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
     }
     
     /* Description */
@@ -273,7 +278,12 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 24px;
+    }
+
+    .file-icon svg {
+        width: 22px;
+        height: 22px;
+        stroke: currentColor;
     }
     
     .file-info {
@@ -361,11 +371,17 @@
     <!-- Header -->
     <div class="doc-header">
         <span class="doc-type-badge">
-            {% if document.document_type == 'order' %}📋 Приказ
-            {% elif document.document_type == 'regulation' %}📘 Регламент
-            {% elif document.document_type == 'instruction' %}📗 Инструкция
-            {% elif document.document_type == 'policy' %}📕 Политика
-            {% else %}📄 {{ document.get_document_type_display }}{% endif %}
+            {% if document.document_type == 'order' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg> Приказ
+            {% elif document.document_type == 'regulation' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Регламент
+            {% elif document.document_type == 'instruction' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h13a3 3 0 0 1 3 3v13H6a3 3 0 0 1-3-3V4z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg> Инструкция
+            {% elif document.document_type == 'policy' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M5 5h6v14H5z"/><path d="M13 7h6v12h-6z"/></svg> Политика
+            {% else %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> {{ document.get_document_type_display }}
+            {% endif %}
         </span>
         
         <h1 class="doc-title">{{ document.title }}</h1>
@@ -411,8 +427,10 @@
         </div>
         
         <span class="doc-status-badge {{ document.status }}">
-            {% if document.status == 'active' %}✓ Актуален
-            {% elif document.status == 'draft' %}📝 Черновик
+            {% if document.status == 'active' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Актуален
+            {% elif document.status == 'draft' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Черновик
             {% else %}{{ document.get_status_display }}{% endif %}
         </span>
         
@@ -444,7 +462,7 @@
             {% if document.description %}
             <div class="section-card">
                 <div class="section-title">
-                    <span class="section-icon">📝</span>
+                    <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
                     Описание
                 </div>
                 <div class="doc-description">{{ document.description|linebreaks }}</div>
@@ -455,11 +473,11 @@
             {% if current_version %}
             <div class="section-card">
                 <div class="section-title">
-                    <span class="section-icon">📎</span>
+                    <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.2-9.19a3.5 3.5 0 1 1 4.95 4.95l-9.2 9.2a2 2 0 1 1-2.83-2.83l8.49-8.48"/></svg></span>
                     Текущий файл
                 </div>
                 <div class="current-file">
-                    <div class="file-icon">📄</div>
+                    <div class="file-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
                     <div class="file-info">
                         <div class="file-name">{{ current_version.file_name }}</div>
                         <div class="file-size">{{ current_version.file_size|filesizeformat }} • Версия {{ current_version.version_number }}</div>
@@ -476,7 +494,7 @@
             <!-- Document info -->
             <div class="section-card">
                 <div class="section-title">
-                    <span class="section-icon">ℹ️</span>
+                    <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>
                     Информация
                 </div>
                 
@@ -519,7 +537,7 @@
             {% if versions %}
             <div class="section-card">
                 <div class="section-title">
-                    <span class="section-icon">📚</span>
+                    <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
                     Версии ({{ versions|length }})
                 </div>
                 <div class="versions-list">

@@ -36,6 +36,20 @@
         letter-spacing: 0.5px;
         margin-bottom: 16px;
     }
+
+    .sidebar-title.icon-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    .sidebar-title.icon-title svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+    }
     
     /* Department tree */
     .dept-tree {
@@ -300,8 +314,23 @@
     }
     
     .empty-icon {
-        font-size: 48px;
+        width: 56px;
+        height: 56px;
         margin-bottom: 16px;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 14px;
+        background: var(--bg-hover);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .empty-icon svg {
+        width: 28px;
+        height: 28px;
+        stroke: currentColor;
     }
     
     .empty-title {
@@ -404,7 +433,10 @@
         <!-- Birthdays widget -->
         {% if upcoming_birthdays %}
         <div class="birthdays-widget">
-            <div class="sidebar-title">🎂 Ближайшие дни рождения</div>
+            <div class="sidebar-title icon-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M2 7h20v5H2z"/><path d="M12 7V4"/><path d="M12 4c0-1.1.9-2 2-2"/><path d="M12 4c0-1.1-.9-2-2-2"/></svg>
+                Ближайшие дни рождения
+            </div>
             {% for b in upcoming_birthdays %}
             <div class="birthday-item">
                 <div class="birthday-avatar">
@@ -478,7 +510,9 @@
         </div>
         {% else %}
         <div class="empty-state">
-            <div class="empty-icon">👥</div>
+            <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
             <div class="empty-title">Сотрудники не найдены</div>
             <div class="empty-text">Попробуйте изменить параметры поиска</div>
         </div>

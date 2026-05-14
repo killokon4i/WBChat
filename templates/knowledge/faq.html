@@ -232,9 +232,18 @@
             <div class="faq-answer-footer">
                 <div class="faq-helpful">
                     <span>Было полезно?</span>
-                    <button class="yes" onclick="faqHelpful({{ faq.id }}, 'yes', this)">👍 Да ({{ faq.helpful_yes }})</button>
-                    <button class="no" onclick="faqHelpful({{ faq.id }}, 'no', this)">👎 Нет ({{ faq.helpful_no }})</button>
-                    <button class="no" onclick="faqEscalate({{ faq.id }})" style="margin-left:8px;" title="Сообщить автору, что ответ не помог">⚠️ Сообщить автору</button>
+                    <button class="yes" onclick="faqHelpful({{ faq.id }}, 'yes', this)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 2 2.24l-1 8A2 2 0 0 1 18.84 22H7V10l4.14-6.9A1.95 1.95 0 0 1 12.8 2c.9 0 1.6.78 1.4 1.66z"/></svg>
+                        Да ({{ faq.helpful_yes }})
+                    </button>
+                    <button class="no" onclick="faqHelpful({{ faq.id }}, 'no', this)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-2-2.24l1-8A2 2 0 0 1 5.16 2H17v12l-4.14 6.9A1.95 1.95 0 0 1 11.2 22c-.9 0-1.6-.78-1.4-1.66z"/></svg>
+                        Нет ({{ faq.helpful_no }})
+                    </button>
+                    <button class="no" onclick="faqEscalate({{ faq.id }})" style="margin-left:8px;" title="Сообщить автору, что ответ не помог">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Сообщить автору
+                    </button>
                 </div>
                 {% if faq.related_article %}
                 <a href="{% url 'kb_article_detail' slug=faq.related_article.slug %}">Подробнее →</a>

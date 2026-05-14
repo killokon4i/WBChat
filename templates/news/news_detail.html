@@ -275,6 +275,13 @@
         color: var(--text-primary);
     }
 
+    .reaction-glyph {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        flex-shrink: 0;
+    }
+
     .reaction-btn.active .count {
         color: var(--magenta);
     }
@@ -869,22 +876,28 @@
     <div class="reactions-section" id="reactions-section">
         <span class="reactions-label">Реакции:</span>
         <button type="button" class="reaction-btn" data-emoji="👍" onclick="toggleReaction('👍')">
-            👍 <span class="count">0</span>
+            <svg class="reaction-glyph" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 2 2.24l-1 8A2 2 0 0 1 18.84 22H7V10l4.14-6.9A1.95 1.95 0 0 1 12.8 2c.9 0 1.6.78 1.4 1.66z"/></svg>
+            <span class="count">0</span>
         </button>
         <button type="button" class="reaction-btn" data-emoji="❤️" onclick="toggleReaction('❤️')">
-            ❤️ <span class="count">0</span>
+            <svg class="reaction-glyph" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21l8.84-8.61a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span class="count">0</span>
         </button>
         <button type="button" class="reaction-btn" data-emoji="🔥" onclick="toggleReaction('🔥')">
-            🔥 <span class="count">0</span>
+            <svg class="reaction-glyph" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M8.5 14.5A5.5 5.5 0 1 0 19 16c0-1.54-.57-3.1-1.71-4.52C15.96 9.83 14 8.5 14 5c-4 2-6 5-6 9.5z"/><path d="M12 18c0-1.2.5-2.4 1.5-3.5"/></svg>
+            <span class="count">0</span>
         </button>
         <button type="button" class="reaction-btn" data-emoji="😂" onclick="toggleReaction('😂')">
-            😂 <span class="count">0</span>
+            <svg class="reaction-glyph" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            <span class="count">0</span>
         </button>
         <button type="button" class="reaction-btn" data-emoji="😮" onclick="toggleReaction('😮')">
-            😮 <span class="count">0</span>
+            <svg class="reaction-glyph" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/><circle cx="12" cy="15" r="2"/></svg>
+            <span class="count">0</span>
         </button>
         <button type="button" class="reaction-btn" data-emoji="😢" onclick="toggleReaction('😢')">
-            😢 <span class="count">0</span>
+            <svg class="reaction-glyph" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/><path d="M16 14c-.8.5-1.2 1.2-1.2 2"/></svg>
+            <span class="count">0</span>
         </button>
         <span class="reactions-total">
             Всего: <strong id="total-reactions">0</strong>
@@ -971,7 +984,9 @@
     {% if request.user.is_comments_banned %}
     <div class="comment-form-card" style="background: rgba(255, 47, 179, 0.12); border-color: rgba(255, 47, 179, 0.35);">
         <div style="display: flex; align-items: center; gap: 12px; color: #ff73cb;">
-            <span style="font-size: 24px;">🚫</span>
+            <span style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            </span>
             <div>
                 <strong>Возможность комментирования заблокирована</strong>
                 <p style="margin: 4px 0 0; font-size: 14px; opacity: 0.9;">
@@ -983,7 +998,10 @@
     {% else %}
     <div class="comment-form-card">
         <div id="moderation-error" style="display: none; padding: 12px 16px; background: var(--warning-bg); border-radius: 10px; margin-bottom: 16px; color: var(--magenta);">
-            <strong>⚠️ <span id="error-message"></span></strong>
+            <strong style="display:inline-flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span id="error-message"></span>
+            </strong>
         </div>
         <form method="post" action="{% url 'add_comment' news_item.pk %}" id="comment-form">
             {% csrf_token %}
@@ -1467,7 +1485,9 @@ if (commentForm) {
                         if (formCard) {
                             formCard.innerHTML = `
                                 <div style="display: flex; align-items: center; gap: 12px; color: #ff73cb;">
-                                    <span style="font-size: 24px;">🚫</span>
+                                    <span style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                    </span>
                                     <div>
                                         <strong>Возможность комментирования заблокирована</strong>
                                         <p style="margin: 4px 0 0; font-size: 14px; opacity: 0.9;">

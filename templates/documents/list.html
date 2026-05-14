@@ -82,6 +82,19 @@
         height: 18px;
         margin-right: 10px;
     }
+
+    .filter-text {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .filter-text svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        flex-shrink: 0;
+    }
     
     .filter-count {
         background: var(--bg-hover);
@@ -210,8 +223,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 24px;
         flex-shrink: 0;
+    }
+
+    .doc-icon svg {
+        width: 22px;
+        height: 22px;
+        stroke: currentColor;
     }
     
     .doc-icon.order { background: var(--error-bg); }
@@ -298,8 +316,23 @@
     }
     
     .empty-icon {
-        font-size: 48px;
+        width: 56px;
+        height: 56px;
         margin-bottom: 16px;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 16px;
+        background: var(--bg-hover);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .empty-icon svg {
+        width: 28px;
+        height: 28px;
+        stroke: currentColor;
     }
     
     .empty-title {
@@ -377,28 +410,43 @@
             <ul class="filter-list">
                 <li class="filter-item">
                     <a href="{% url 'documents_list' %}" class="filter-link {% if not current_type %}active{% endif %}">
-                        <span>📄 Все документы</span>
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            Все документы
+                        </span>
                         <span class="filter-count">{{ total_count|default:0 }}</span>
                     </a>
                 </li>
                 <li class="filter-item">
                     <a href="?type=order" class="filter-link {% if current_type == 'order' %}active{% endif %}">
-                        <span>📋 Приказы</span>
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg>
+                            Приказы
+                        </span>
                     </a>
                 </li>
                 <li class="filter-item">
                     <a href="?type=regulation" class="filter-link {% if current_type == 'regulation' %}active{% endif %}">
-                        <span>📘 Регламенты</span>
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                            Регламенты
+                        </span>
                     </a>
                 </li>
                 <li class="filter-item">
                     <a href="?type=instruction" class="filter-link {% if current_type == 'instruction' %}active{% endif %}">
-                        <span>📗 Инструкции</span>
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 4h13a3 3 0 0 1 3 3v13H6a3 3 0 0 1-3-3V4z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg>
+                            Инструкции
+                        </span>
                     </a>
                 </li>
                 <li class="filter-item">
                     <a href="?type=policy" class="filter-link {% if current_type == 'policy' %}active{% endif %}">
-                        <span>📕 Политики</span>
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 2v20"/><path d="M5 5h6v14H5z"/><path d="M13 7h6v12h-6z"/></svg>
+                            Политики
+                        </span>
                     </a>
                 </li>
             </ul>
@@ -409,17 +457,26 @@
             <ul class="filter-list">
                 <li class="filter-item">
                     <a href="?status=active" class="filter-link {% if current_status == 'active' %}active{% endif %}">
-                        <span>✅ Актуальные</span>
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Актуальные
+                        </span>
                     </a>
                 </li>
                 <li class="filter-item">
                     <a href="?status=draft" class="filter-link {% if current_status == 'draft' %}active{% endif %}">
-                        <span>📝 Черновики</span>
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            Черновики
+                        </span>
                     </a>
                 </li>
                 <li class="filter-item">
                     <a href="?status=archived" class="filter-link {% if current_status == 'archived' %}active{% endif %}">
-                        <span>📦 Архив</span>
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/><path d="M3 8h18"/><path d="M10 12h4"/></svg>
+                            Архив
+                        </span>
                     </a>
                 </li>
             </ul>
@@ -471,11 +528,17 @@
             {% for doc in documents %}
             <a href="{% url 'document_detail' doc.id %}" class="doc-card">
                 <div class="doc-icon {{ doc.document_type }}">
-                    {% if doc.document_type == 'order' %}📋
-                    {% elif doc.document_type == 'regulation' %}📘
-                    {% elif doc.document_type == 'instruction' %}📗
-                    {% elif doc.document_type == 'policy' %}📕
-                    {% else %}📄{% endif %}
+                    {% if doc.document_type == 'order' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg>
+                    {% elif doc.document_type == 'regulation' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    {% elif doc.document_type == 'instruction' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 4h13a3 3 0 0 1 3 3v13H6a3 3 0 0 1-3-3V4z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg>
+                    {% elif doc.document_type == 'policy' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 2v20"/><path d="M5 5h6v14H5z"/><path d="M13 7h6v12h-6z"/></svg>
+                    {% else %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    {% endif %}
                 </div>
                 <div class="doc-info">
                     <div class="doc-title">{{ doc.title }}</div>
@@ -511,7 +574,9 @@
         
         {% else %}
         <div class="empty-state">
-            <div class="empty-icon">📭</div>
+            <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 12v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7"/><path d="M22 12h-5l-2 3h-6l-2-3H2"/><path d="M5 12V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8"/></svg>
+            </div>
             <div class="empty-title">Документы не найдены</div>
             <div class="empty-text">Попробуйте изменить параметры поиска или фильтры</div>
         </div>
