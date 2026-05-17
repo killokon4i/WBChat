@@ -91,6 +91,9 @@
         font-size: 42px;
         font-weight: 600;
         font-family: var(--fontWBSans, inherit);
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: clip;
     }
 
     .manager-avatar .avatar-initials {
@@ -469,8 +472,8 @@
     
     <!-- Header -->
     <div class="employee-header">
-        <div class="employee-avatar-large">
-            {% include 'partials/user_avatar.html' with user=employee alt=employee.get_full_name %}
+        <div class="employee-avatar-large" title="{{ employee.get_full_name }}">
+            {% include 'partials/user_avatar.html' with user=employee %}
         </div>
         
         <div class="employee-header-info">

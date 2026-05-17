@@ -1,6 +1,7 @@
-{% load user_extras %}
-{% if user.avatar %}
-<img src="{{ user.avatar.url }}" alt="{{ alt|default:user.get_full_name }}" class="{{ img_class }}">
+{% if user.has_avatar %}
+<img src="{{ user.avatar.url }}" alt="" class="{{ img_class }}" loading="lazy"
+     data-initials="{{ user.get_avatar_initials }}"
+     onerror="var s=document.createElement('span');s.className='avatar-initials{% if initials_class %} {{ initials_class }}{% endif %}';s.setAttribute('aria-hidden','true');s.textContent=this.dataset.initials||'?';this.replaceWith(s);">
 {% else %}
-<span class="avatar-initials{% if initials_class %} {{ initials_class }}{% endif %}" aria-hidden="true">{{ user|user_initials }}</span>
+<span class="avatar-initials{% if initials_class %} {{ initials_class }}{% endif %}" aria-hidden="true">{{ user.get_avatar_initials }}</span>
 {% endif %}

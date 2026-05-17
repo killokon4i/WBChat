@@ -1,3 +1,7 @@
 # В Railway Dashboard → Volumes: mount path /data/media (иначе аватары пропадут после рестарта)
 [build]
 buildCommand = "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+
+[deploy]
+# ASGI обязателен для WebSocket (чаты, уведомления)
+startCommand = "daphne -b 0.0.0.0 -p ${PORT:-8000} WBChat.asgi:application"

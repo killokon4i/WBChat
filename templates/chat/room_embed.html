@@ -951,7 +951,9 @@ let otherPresence = {{ other_presence_json|safe }};
 let chatSocket = null;
 let typingTimer = null;
 let reconnectAttempts = 0;
-const maxReconnectAttempts = 5;
+const maxReconnectAttempts = 3;
+let wsGiveUp = false;
+let wsConnectInFlight = false;
 
 let replyToId = null;
 let editingMessageId = null;
@@ -1028,31 +1030,77 @@ function startChatHeartbeat() {
 
 function updateConnectionStatus(status) {
     const el = document.getElementById('connection-status');
+    if (!el) return;
+    if (wsGiveUp && status !== 'connecting') {
+        el.style.display = 'none';
+        return;
+    }
     el.className = 'connection-status ' + status;
-    switch(status) {
-        case 'connected': el.textContent = 'Подключено'; el.style.display = 'none'; break;
-        case 'disconnected': el.textContent = 'Отключено. Переподключение...'; el.style.display = 'block'; break;
-        case 'connecting': el.textContent = 'Подключение к чату...'; el.style.display = 'block'; break;
+    switch (status) {
+        case 'connected':
+            el.textContent = 'Подключено';
+            el.style.display = 'none';
+            break;
+        case 'disconnected':
+            el.textContent = 'Переподключение…';
+            el.style.display = reconnectAttempts > 0 ? 'block' : 'none';
+            break;
+        case 'connecting':
+            el.textContent = 'Подключение к чату…';
+            el.style.display = reconnectAttempts === 0 ? 'block' : 'none';
+            break;
     }
 }
 
 function connect() {
-    updateConnectionStatus('connecting');
-    const wsScheme = location.protocol === "https:" ? "wss://" : "ws://";
-    chatSocket = new WebSocket(wsScheme + location.host + "/ws/chat/" + conversationId + "/");
+    if (wsGiveUp || wsConnectInFlight) return;
+    if (chatSocket && (chatSocket.readyState === WebSocket.OPEN || chatSocket.readyState === WebSocket.CONNECTING)) {
+        return;
+    }
+    if (chatSocket) {
+        try { chatSocket.onclose = null; chatSocket.close(); } catch (e) { /* ignore */ }
+        chatSocket = null;
+    }
 
-    chatSocket.onopen = function() {
+    wsConnectInFlight = true;
+    updateConnectionStatus('connecting');
+    const wsScheme = location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const socket = new WebSocket(wsScheme + location.host + '/ws/chat/' + conversationId + '/');
+    chatSocket = socket;
+
+    socket.onopen = function () {
+        wsConnectInFlight = false;
+        if (chatSocket !== socket) return;
         updateConnectionStatus('connected');
         reconnectAttempts = 0;
         markConversationRead();
         startChatHeartbeat();
     };
-    chatSocket.onclose = function() {
+    socket.onclose = function () {
+        wsConnectInFlight = false;
+        if (chatSocket !== socket) return;
+        chatSocket = null;
+        if (wsGiveUp) {
+            updateConnectionStatus('connected');
+            return;
+        }
+        reconnectAttempts += 1;
+        if (reconnectAttempts >= maxReconnectAttempts) {
+            wsGiveUp = true;
+            updateConnectionStatus('connected');
+            return;
+        }
         updateConnectionStatus('disconnected');
-        if (reconnectAttempts < maxReconnectAttempts) { reconnectAttempts++; setTimeout(connect, 3000 * reconnectAttempts); }
+        setTimeout(connect, Math.min(15000, 2000 * reconnectAttempts));
     };
-    chatSocket.onerror = function(e) { console.error('WS error:', e); };
-    chatSocket.onmessage = function(e) { handleMessage(JSON.parse(e.data)); };
+    socket.onerror = function () {
+        wsConnectInFlight = false;
+    };
+    socket.onmessage = function (e) {
+        try {
+            handleMessage(JSON.parse(e.data));
+        } catch (err) { /* ignore */ }
+    };
 }
 
 function handleMessage(data) {

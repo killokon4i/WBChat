@@ -514,3 +514,7 @@ class OnlineStatus(models.Model):
         if conversation:
             self.current_conversation = conversation
         self.save(update_fields=['last_activity_at', 'current_conversation'])
+
+    def touch_activity(self, conversation=None):
+        """Пинг активности без увеличения счётчика соединений (heartbeat)."""
+        self.update_activity(conversation=conversation)

@@ -9,6 +9,8 @@
     var socket = null;
     var reconnectTimer = null;
     var reconnectAttempt = 0;
+    var wsGiveUp = false;
+    var maxReconnectAttempts = 4;
     var pollTimer = null;
     var notifyHeartbeatTimer = null;
     var POLL_MS = 2500;
@@ -215,40 +217,54 @@
     }
 
     function connect() {
+        if (wsGiveUp) return;
         if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
             return;
         }
+        if (socket) {
+            try { socket.onclose = null; socket.close(); } catch (e) { /* ignore */ }
+            socket = null;
+        }
+        var current;
         try {
-            socket = new WebSocket(wsUrl());
+            current = new WebSocket(wsUrl());
+            socket = current;
         } catch (e) {
             scheduleReconnect();
             return;
         }
 
-        socket.onopen = function () {
+        current.onopen = function () {
+            if (socket !== current) return;
             reconnectAttempt = 0;
             startNotificationHeartbeat();
         };
 
-        socket.onmessage = function (e) {
+        current.onmessage = function (e) {
             try {
                 handlePayload(JSON.parse(e.data));
             } catch (err) { /* ignore */ }
         };
 
-        socket.onclose = function () {
+        current.onclose = function () {
+            if (socket !== current) return;
+            socket = null;
             scheduleReconnect();
         };
 
-        socket.onerror = function () {
-            try { socket.close(); } catch (err) { /* ignore */ }
+        current.onerror = function () {
+            try { current.close(); } catch (err) { /* ignore */ }
         };
     }
 
     function scheduleReconnect() {
-        if (reconnectTimer) return;
+        if (wsGiveUp || reconnectTimer) return;
         reconnectAttempt += 1;
-        var delay = Math.min(30000, 2000 * reconnectAttempt);
+        if (reconnectAttempt >= maxReconnectAttempts) {
+            wsGiveUp = true;
+            return;
+        }
+        var delay = Math.min(20000, 2000 * reconnectAttempt);
         reconnectTimer = setTimeout(function () {
             reconnectTimer = null;
             connect();
@@ -300,7 +316,7 @@
     connect();
     document.addEventListener('visibilitychange', function () {
         if (!document.hidden) {
-            connect();
+            if (!wsGiveUp) connect();
             syncInboxFromServer();
         }
     });

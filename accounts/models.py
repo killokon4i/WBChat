@@ -182,6 +182,21 @@ class User(AbstractUser):
             parts.append(f"{self.middle_name[0]}.")
         return ' '.join(parts)
 
+    @property
+    def has_avatar(self):
+        """Фото реально загружено и файл доступен в хранилище."""
+        if not self.avatar or not self.avatar.name:
+            return False
+        try:
+            return self.avatar.storage.exists(self.avatar.name)
+        except Exception:
+            return False
+
+    def get_avatar_initials(self):
+        """До 2 букв для заглушки аватара (имя + фамилия)."""
+        from accounts.avatar_utils import initials_from_user
+        return initials_from_user(self)
+
     def is_on_leave(self):
         """Проверка на отсутствие (отпуск/больничный и т.д.)"""
         return self.status in ['vacation', 'sick_leave', 'business_trip', 'maternity', 'unpaid_leave']

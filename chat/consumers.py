@@ -40,28 +40,36 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        # Join room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
+        self._room_group_joined = False
+        if self.channel_layer:
+            try:
+                await self.channel_layer.group_add(
+                    self.room_group_name,
+                    self.channel_name,
+                )
+                self._room_group_joined = True
+            except Exception as exc:
+                print('WS group_add failed:', exc)
 
         await self.accept()
         print("WebSocket connected successfully")
         await self.update_online_status(online=True)
-        await self.broadcast_presence()
+        await self.broadcast_presence_safe()
 
     async def disconnect(self, close_code):
         """Handle WebSocket disconnection"""
-        # Leave room group
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        if getattr(self, '_room_group_joined', False) and self.channel_layer:
+            try:
+                await self.channel_layer.group_discard(
+                    self.room_group_name,
+                    self.channel_name,
+                )
+            except Exception as exc:
+                print('WS group_discard failed:', exc)
 
         await self.update_online_status(online=False)
         await self.clear_typing_indicator()
-        await self.broadcast_presence()
+        await self.broadcast_presence_safe()
 
     async def receive(self, text_data):
         """Receive message from WebSocket"""
@@ -84,7 +92,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             elif message_type == 'reaction':
                 await self.handle_reaction(data)
             elif message_type == 'heartbeat':
-                await self.update_online_status(online=True)
+                await self.touch_online_activity()
 
         except json.JSONDecodeError:
             await self.send(text_data=json.dumps({
@@ -411,9 +419,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """Update user's online status"""
         from .models import OnlineStatus, Conversation
 
-        status, created = OnlineStatus.objects.get_or_create(
-            user=self.user
-        )
+        status, _ = OnlineStatus.objects.get_or_create(user=self.user)
         if online:
             status.go_online()
             conversation = Conversation.objects.get(id=self.conversation_id)
@@ -421,9 +427,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
         else:
             status.go_offline()
 
+    @database_sync_to_async
+    def touch_online_activity(self):
+        from .models import OnlineStatus, Conversation
+
+        status, _ = OnlineStatus.objects.get_or_create(user=self.user)
+        conversation = Conversation.objects.get(id=self.conversation_id)
+        status.touch_activity(conversation=conversation)
+
+    async def broadcast_presence_safe(self):
+        try:
+            await self.broadcast_presence()
+        except Exception as exc:
+            print('presence broadcast skipped:', exc)
+
     async def broadcast_presence(self):
         from .services.presence import notify_presence_changed, serialize_user_presence
 
+        if not self.channel_layer:
+            return
         presence = await self.get_presence_dict()
         notify_presence_changed(self.user.id)
         await self.channel_layer.group_send(
@@ -584,7 +606,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         except json.JSONDecodeError:
             return
         if data.get('type') == 'heartbeat':
-            await self.update_global_online_status(online=True)
+            await self.touch_global_activity()
 
     @database_sync_to_async
     def update_global_online_status(self, online=True):
@@ -598,6 +620,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         else:
             status.go_offline()
         notify_presence_changed(self.user.id)
+
+    @database_sync_to_async
+    def touch_global_activity(self):
+        from .models import OnlineStatus
+
+        status, _ = OnlineStatus.objects.get_or_create(user=self.user)
+        status.touch_activity()
 
     async def notification(self, event):
         """Send notification to WebSocket"""
