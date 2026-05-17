@@ -38,7 +38,7 @@
         setBadge('chats', counts.messages_unread);
         if (counts.conversations) {
             counts.conversations.forEach(function (c) {
-                updateChatListItem(c.id, { unread_count: c.unread_count });
+                updateChatListItem(c.id, { unread_count: c.unread_count }, false);
             });
         }
     }
@@ -55,7 +55,7 @@
         return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
-    function updateChatListItem(conversationId, data) {
+    function updateChatListItem(conversationId, data, moveToTop) {
         var item = document.querySelector('.chat-item[data-conversation-id="' + conversationId + '"]');
         if (!item) return;
 
@@ -69,28 +69,45 @@
         if (data.updated_at) {
             var timeEl = item.querySelector('.chat-time');
             if (timeEl) timeEl.textContent = formatChatTime(data.updated_at);
+            item.dataset.updatedAt = data.updated_at;
         }
 
-        var unread = parseInt(data.unread_count, 10) || 0;
-        var previewWrap = item.querySelector('.chat-preview');
-        if (previewWrap) {
-            var unreadEl = previewWrap.querySelector('.chat-unread');
-            if (unread > 0) {
-                if (!unreadEl) {
-                    unreadEl = document.createElement('span');
-                    unreadEl.className = 'chat-unread';
-                    previewWrap.appendChild(unreadEl);
+        if (data.unread_count !== undefined && data.unread_count !== null) {
+            var unread = parseInt(data.unread_count, 10) || 0;
+            var previewWrap = item.querySelector('.chat-preview');
+            if (previewWrap) {
+                var unreadEl = previewWrap.querySelector('.chat-unread');
+                if (unread > 0) {
+                    if (!unreadEl) {
+                        unreadEl = document.createElement('span');
+                        unreadEl.className = 'chat-unread';
+                        previewWrap.appendChild(unreadEl);
+                    }
+                    unreadEl.textContent = unread > 99 ? '99+' : String(unread);
+                } else if (unreadEl) {
+                    unreadEl.remove();
                 }
-                unreadEl.textContent = unread > 99 ? '99+' : String(unread);
-            } else if (unreadEl) {
-                unreadEl.remove();
             }
         }
 
-        var list = item.closest('.chat-list');
-        if (list && item.parentNode === list) {
-            list.prepend(item);
+        if (moveToTop) {
+            var list = item.closest('.chat-list');
+            if (list && item.parentNode === list) {
+                list.prepend(item);
+            }
         }
+    }
+
+    /** API отдаёт чаты от новых к старым; appendChild по порядку = новые сверху */
+    function reorderChatList(conversations) {
+        var list = document.querySelector('.chat-list');
+        if (!list || !conversations || !conversations.length) return;
+        conversations.forEach(function (c) {
+            var item = document.querySelector('.chat-item[data-conversation-id="' + c.id + '"]');
+            if (item && item.parentNode === list) {
+                list.appendChild(item);
+            }
+        });
     }
 
     function escapeHtml(text) {
@@ -114,13 +131,15 @@
             .then(function (data) {
                 if (!data.success) return;
                 if (data.counts) applyCounts(data.counts);
-                (data.conversations || []).forEach(function (c) {
+                var convs = data.conversations || [];
+                convs.forEach(function (c) {
                     updateChatListItem(c.id, {
                         unread_count: c.unread_count,
                         preview: c.preview,
                         updated_at: c.updated_at,
-                    });
+                    }, false);
                 });
+                reorderChatList(convs);
             })
             .catch(function () { /* silent */ });
     }
@@ -150,10 +169,10 @@
                         ? data.author_name + ': ' + (data.preview || '')
                         : data.preview,
                     updated_at: data.updated_at,
-                });
+                }, true);
                 break;
             case 'chat_read':
-                updateChatListItem(data.conversation_id, { unread_count: 0 });
+                updateChatListItem(data.conversation_id, { unread_count: 0 }, false);
                 break;
         }
     }
@@ -206,11 +225,11 @@
                 unread_count: d.unread_count,
                 preview: d.preview,
                 updated_at: d.updated_at,
-            });
+            }, true);
             if (d.counts) applyCounts(d.counts);
         }
         if (d.type === 'chat_read') {
-            updateChatListItem(d.conversation_id, { unread_count: 0 });
+            updateChatListItem(d.conversation_id, { unread_count: 0 }, false);
         }
     });
 
