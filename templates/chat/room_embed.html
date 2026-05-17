@@ -92,6 +92,14 @@
         flex-direction: column;
         overflow: hidden;
     }
+    .messages-scroll-wrap {
+        flex: 1;
+        position: relative;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
     .messages-area {
         flex: 1;
         overflow-y: auto;
@@ -100,6 +108,61 @@
         display: flex;
         flex-direction: column;
         gap: 12px;
+    }
+
+    .scroll-to-bottom-btn {
+        position: absolute;
+        right: 18px;
+        bottom: 14px;
+        z-index: 6;
+        width: 44px;
+        height: 44px;
+        border: 1px solid var(--border-color);
+        border-radius: 50%;
+        background: var(--bg-card);
+        color: var(--magenta);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(10px) scale(0.92);
+        transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    }
+
+    .scroll-to-bottom-btn.visible {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateY(0) scale(1);
+    }
+
+    .scroll-to-bottom-btn:hover {
+        background: var(--bg-hover);
+        border-color: var(--magenta);
+    }
+
+    .scroll-to-bottom-btn svg {
+        display: block;
+    }
+
+    .scroll-to-bottom-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 9px;
+        background: var(--magenta);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 18px;
+        text-align: center;
     }
 
     /* Messages */
@@ -731,6 +794,13 @@
             gap: 10px;
         }
 
+        .scroll-to-bottom-btn {
+            right: 12px;
+            bottom: 10px;
+            width: 40px;
+            height: 40px;
+        }
+
         .message {
             max-width: min(85%, 300px);
             padding: 8px 11px;
@@ -847,7 +917,16 @@
             <span class="pinned-banner-text" id="pinned-banner-text"></span>
         </div>
 
-        <div class="messages-area" id="messages"></div>
+        <div class="messages-scroll-wrap">
+            <div class="messages-area" id="messages"></div>
+            <button type="button" class="scroll-to-bottom-btn" id="scroll-to-bottom-btn" hidden
+                    aria-label="К последнему сообщению" title="К последнему сообщению">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                <span class="scroll-to-bottom-badge" id="scroll-to-bottom-badge" hidden></span>
+            </button>
+        </div>
 
         <div class="typing-indicator" id="typing"></div>
 
@@ -961,6 +1040,64 @@ let pinnedMessages = [];
 let allMessages = {};
 let messagePollTimer = null;
 let ctxMenuAnchor = null;
+
+const SCROLL_BOTTOM_THRESHOLD = 72;
+let scrollDownBadgeCount = 0;
+
+function getMessagesEl() {
+    return document.getElementById('messages');
+}
+
+function isNearBottom(el, threshold) {
+    el = el || getMessagesEl();
+    if (!el) return true;
+    threshold = threshold == null ? SCROLL_BOTTOM_THRESHOLD : threshold;
+    return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+}
+
+function scrollToBottom(smooth) {
+    const el = getMessagesEl();
+    if (!el) return;
+    if (smooth && el.scrollTo) {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    } else {
+        el.scrollTop = el.scrollHeight;
+    }
+    scrollDownBadgeCount = 0;
+    updateScrollDownButton();
+}
+
+function updateScrollDownButton() {
+    const btn = document.getElementById('scroll-to-bottom-btn');
+    const badge = document.getElementById('scroll-to-bottom-badge');
+    const el = getMessagesEl();
+    if (!btn || !el) return;
+    const near = isNearBottom(el);
+    btn.classList.toggle('visible', !near);
+    btn.hidden = near;
+    if (badge) {
+        if (!near && scrollDownBadgeCount > 0) {
+            badge.hidden = false;
+            badge.textContent = scrollDownBadgeCount > 99 ? '99+' : String(scrollDownBadgeCount);
+        } else {
+            badge.hidden = true;
+        }
+    }
+}
+
+function initScrollDownButton() {
+    const el = getMessagesEl();
+    const btn = document.getElementById('scroll-to-bottom-btn');
+    if (!el || !btn) return;
+    el.addEventListener('scroll', function () {
+        if (isNearBottom(el)) scrollDownBadgeCount = 0;
+        updateScrollDownButton();
+    }, { passive: true });
+    btn.addEventListener('click', function () {
+        scrollToBottom(true);
+    });
+    updateScrollDownButton();
+}
 
 const textarea = document.getElementById('message-input');
 textarea.addEventListener('input', function() {
@@ -1156,9 +1293,11 @@ function ensureDateSeparator(container, isoString) {
     container.appendChild(sep);
 }
 
-function addMessage(msg, skipParentNotify) {
+function addMessage(msg, skipParentNotify, addOpts) {
+    addOpts = addOpts || {};
     if (document.getElementById('message-' + msg.id)) return;
-    const container = document.getElementById('messages');
+    const container = getMessagesEl();
+    const wasAtBottom = isNearBottom(container);
     const isOwn = msg.author_id === userId;
 
     ensureDateSeparator(container, msg.created_at);
@@ -1221,7 +1360,14 @@ function addMessage(msg, skipParentNotify) {
     div.innerHTML = html;
     container.appendChild(div);
     bindMessageGestures(div, msg);
-    container.scrollTop = container.scrollHeight;
+    if (!addOpts.noAutoScroll) {
+        if (wasAtBottom || isOwn) {
+            scrollToBottom(false);
+        } else {
+            scrollDownBadgeCount += 1;
+            updateScrollDownButton();
+        }
+    }
 
     if (msg.is_pinned) { pinnedMessages.push(msg.id); updatePinnedBanner(); }
     if (!skipParentNotify) notifyParentInbox(msg);
@@ -1315,7 +1461,7 @@ function addSystemMessage(text) {
     div.className = 'message message-system';
     div.textContent = text;
     container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+    if (isNearBottom(container)) scrollToBottom(false);
 }
 
 function updateMessage(msg) {
@@ -2302,7 +2448,12 @@ function loadMessages() {
     fetch(`/chat/api/messages/${conversationId}/`)
         .then(r => r.json())
         .then(data => {
-            if (data.messages) data.messages.forEach(msg => addMessage(msg, true));
+            if (data.messages) {
+                data.messages.forEach(function (msg) {
+                    addMessage(msg, true, { noAutoScroll: true });
+                });
+                scrollToBottom(false);
+            }
             startMessagePolling();
         })
         .catch(err => console.log('Could not load messages:', err));
@@ -2331,6 +2482,7 @@ document.getElementById('chatEmbedBack')?.addEventListener('click', function () 
     window.top.location.href = '/chat/';
 });
 
+initScrollDownButton();
 connect();
 loadMessages();
 startPresencePolling();
