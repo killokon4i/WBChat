@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load user_extras %}
 
 {% block title %}{{ employee.get_full_name }} — WB Bank{% endblock %}
 
@@ -58,8 +59,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 48px;
-        font-weight: 600;
         color: #fff;
         flex-shrink: 0;
         border: 4px solid var(--border-color);
@@ -71,6 +70,37 @@
         height: 100%;
         border-radius: 50%;
         object-fit: cover;
+    }
+
+    .employee-avatar-large .avatar-initials,
+    .manager-avatar .avatar-initials,
+    .subordinate-avatar .avatar-initials {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        line-height: 1;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        user-select: none;
+    }
+
+    .employee-avatar-large .avatar-initials {
+        font-size: 42px;
+        font-weight: 600;
+        font-family: var(--fontWBSans, inherit);
+    }
+
+    .manager-avatar .avatar-initials {
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .subordinate-avatar .avatar-initials {
+        font-size: 12px;
+        font-weight: 600;
     }
     
     .employee-header-info {
@@ -273,8 +303,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 16px;
-        font-weight: 600;
         color: #fff;
         overflow: hidden;
     }
@@ -331,8 +359,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 13px;
-        font-weight: 600;
         color: #fff;
         overflow: hidden;
     }
@@ -380,7 +406,10 @@
         .employee-avatar-large {
             width: 96px;
             height: 96px;
-            font-size: 34px;
+        }
+
+        .employee-avatar-large .avatar-initials {
+            font-size: 30px;
         }
 
         .employee-name-large {
@@ -392,12 +421,14 @@
             margin-bottom: 10px;
         }
 
-        .employee-meta {
+        .employee-page .employee-meta {
             gap: 10px;
+            justify-content: center;
         }
 
-        .meta-item {
+        .employee-page .meta-item {
             font-size: 12px;
+            justify-content: center;
         }
 
         .employee-actions {
@@ -439,11 +470,7 @@
     <!-- Header -->
     <div class="employee-header">
         <div class="employee-avatar-large">
-            {% if employee.avatar %}
-            <img src="{{ employee.avatar.url }}" alt="{{ employee.get_full_name }}">
-            {% else %}
-            {{ employee.first_name|slice:":1" }}{{ employee.last_name|slice:":1" }}
-            {% endif %}
+            {% include 'partials/user_avatar.html' with user=employee alt=employee.get_full_name %}
         </div>
         
         <div class="employee-header-info">
@@ -612,11 +639,7 @@
             
             <a href="{% url 'employee_card' employee.manager.id %}" class="manager-card">
                 <div class="manager-avatar">
-                    {% if employee.manager.avatar %}
-                    <img src="{{ employee.manager.avatar.url }}" alt="">
-                    {% else %}
-                    {{ employee.manager.first_name|slice:":1" }}{{ employee.manager.last_name|slice:":1" }}
-                    {% endif %}
+                    {% include 'partials/user_avatar.html' with user=employee.manager %}
                 </div>
                 <div class="manager-info">
                     <div class="manager-name">{{ employee.manager.get_full_name }}</div>
@@ -638,11 +661,7 @@
                 {% for sub in subordinates %}
                 <a href="{% url 'employee_card' sub.id %}" class="subordinate-item">
                     <div class="subordinate-avatar">
-                        {% if sub.avatar %}
-                        <img src="{{ sub.avatar.url }}" alt="">
-                        {% else %}
-                        {{ sub.first_name|slice:":1" }}{{ sub.last_name|slice:":1" }}
-                        {% endif %}
+                        {% include 'partials/user_avatar.html' with user=sub %}
                     </div>
                     <span class="subordinate-name">{{ sub.get_full_name }}</span>
                 </a>

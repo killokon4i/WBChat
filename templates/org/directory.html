@@ -4,7 +4,7 @@
 {% block title %}Справочник — WB Хаб{% endblock %}
 
 {% block extra_styles %}
-<link rel="stylesheet" href="{% static 'css/wb-directory.css' %}?v=3">
+<link rel="stylesheet" href="{% static 'css/wb-directory.css' %}?v=4">
 {% endblock %}
 
 {% block content %}
@@ -68,11 +68,7 @@
                 {% for b in upcoming_birthdays %}
                 <a href="{% url 'employee_card' b.user.id %}" class="birthday-item" style="text-decoration:none;color:inherit;">
                     <div class="birthday-avatar">
-                        {% if b.user.avatar %}
-                        <img src="{{ b.user.avatar.url }}" alt="">
-                        {% else %}
-                        {{ b.user.first_name|slice:":1" }}{{ b.user.last_name|slice:":1" }}
-                        {% endif %}
+                        {% include 'partials/user_avatar.html' with user=b.user %}
                     </div>
                     <div class="birthday-info">
                         <div class="birthday-name">{{ b.user.get_full_name }}</div>
@@ -120,11 +116,7 @@
                 {% for emp in employees %}
                 <a href="{% url 'employee_card' emp.id %}" class="employee-card">
                     <div class="employee-avatar">
-                        {% if emp.avatar %}
-                        <img src="{{ emp.avatar.url }}" alt="">
-                        {% else %}
-                        {{ emp.first_name|slice:":1" }}{{ emp.last_name|slice:":1" }}
-                        {% endif %}
+                        {% include 'partials/user_avatar.html' with user=emp %}
                     </div>
                     <div class="employee-info">
                         <div class="employee-name">{{ emp.get_full_name|default:emp.username }}</div>
