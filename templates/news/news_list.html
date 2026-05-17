@@ -6,62 +6,18 @@
 <style>
     /* Карусель */
     .news-bank-showcase {
-        display: grid;
-        grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
-        gap: clamp(18px, 3vw, 32px);
-        align-items: stretch;
-    }
-
-    .news-bank-aside {
         display: flex;
         flex-direction: column;
-        gap: 18px;
-        padding: 4px 0;
-    }
-
-    .news-bank-aside-label {
-        font-family: var(--fontWBSans);
-        font-size: 0.6875rem;
-        font-weight: 500;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--text-muted);
-        margin: 0;
-    }
-
-    .news-bank-cta {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 12px 22px;
-        border-radius: 9999px;
-        background: var(--colorBlack500);
-        color: #fff !important;
-        font-weight: 500;
-        font-size: 14px;
-        font-family: var(--fontHauss);
-        text-decoration: none;
-        width: fit-content;
-        border: none;
-        box-shadow: 0 6px 22px rgba(0, 0, 0, 0.15);
-        transition: filter 0.2s ease, transform 0.2s ease;
-    }
-
-    [data-theme="dark"] .news-bank-cta {
-        background: #fff;
-        color: #0a0a0a !important;
-        box-shadow: none;
-    }
-
-    .news-bank-cta:hover {
-        filter: brightness(1.07);
-        transform: translateY(-1px);
+        align-items: stretch;
+        gap: 16px;
+        width: 100%;
     }
 
     .news-bank-nav {
         display: flex;
+        justify-content: center;
         gap: 10px;
-        margin-top: auto;
+        margin: 0;
     }
 
     .news-bank-arrow {
@@ -91,7 +47,9 @@
     }
 
     .news-bank-track-wrap {
+        width: 100%;
         min-width: 0;
+        box-sizing: border-box;
         background: var(--bg-card);
         border: 1px solid var(--border-light);
         border-radius: var(--wb-portal-hero-r);
@@ -114,7 +72,14 @@
         padding: 8px 10px 14px;
         margin: 0;
         -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .news-bank-track::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
     }
 
     .news-bank-track:focus-visible {
@@ -360,24 +325,6 @@
         height: 24px;
     }
 
-    @media (max-width: 900px) {
-        .news-bank-showcase {
-            grid-template-columns: 1fr;
-        }
-
-        .news-bank-aside {
-            flex-direction: row;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .news-bank-nav {
-            margin-top: 0;
-            margin-left: auto;
-        }
-    }
-
     @media (max-width: 520px) {
         .nl-empty {
             padding: 36px 18px 40px;
@@ -411,18 +358,6 @@
     <section class="news-main-flow{% if not news %} news-main-flow--empty{% endif %}" aria-labelledby="news-page-title">
     {% if news %}
         <div class="news-bank-showcase">
-            <div class="news-bank-aside">
-                <p class="news-bank-aside-label">Свайп или стрелки — листать материалы</p>
-                <a href="#news-bank-list-end" class="news-bank-cta">К последним новостям</a>
-                <div class="news-bank-nav" role="group" aria-label="Листать новости">
-                    <button type="button" class="news-bank-arrow" id="news-bank-prev" aria-label="Предыдущие">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-                    </button>
-                    <button type="button" class="news-bank-arrow news-bank-arrow--accent" id="news-bank-next" aria-label="Следующие">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                    </button>
-                </div>
-            </div>
             <div class="news-bank-track-wrap">
                 <div class="news-bank-track" id="news-bank-track" tabindex="0" role="list">
                     {% for item in news %}
@@ -445,8 +380,15 @@
                     {% endfor %}
                 </div>
             </div>
+            <div class="news-bank-nav" role="group" aria-label="Листать новости">
+                <button type="button" class="news-bank-arrow" id="news-bank-prev" aria-label="Предыдущие">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button type="button" class="news-bank-arrow news-bank-arrow--accent" id="news-bank-next" aria-label="Следующие">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>
         </div>
-        <div id="news-bank-list-end" aria-hidden="true"></div>
     {% else %}
     <div class="nl-empty">
         <div class="nl-empty-icon">
