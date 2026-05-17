@@ -964,8 +964,11 @@
                         </div>
                         <span class="dh-quick-text">
                             <span class="dh-quick-label">Чаты</span>
-                            <span class="dh-quick-desc">Переписка</span>
+                            <span class="dh-quick-desc">Переписка{% if unread_messages_count %} · {{ unread_messages_count }} непрочитанных{% endif %}</span>
                         </span>
+                        {% if unread_messages_count %}
+                        <span class="dh-quick-badge" aria-label="Непрочитанных сообщений: {{ unread_messages_count }}">{{ unread_messages_count }}</span>
+                        {% endif %}
                     </a>
                     <a href="{% url 'directory' %}" class="dh-quick">
                         <div class="dh-quick-icon q-dir">
