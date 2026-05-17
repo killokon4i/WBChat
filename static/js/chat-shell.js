@@ -56,6 +56,10 @@
             }, 20000);
         }
 
+        function setMobileChatMode(active) {
+            document.body.classList.toggle('chat-mobile-active', !!active);
+        }
+
         function openChat(id, pushState) {
             if (!id) return;
             id = String(id);
@@ -76,6 +80,7 @@
             frame.classList.add('is-visible');
             empty.classList.add('is-hidden');
             layout.classList.add('chat-has-active');
+            setMobileChatMode(true);
 
             bindFrameLoad(token);
             frame.src = embedUrl(id);
@@ -95,6 +100,7 @@
             frame.src = 'about:blank';
             empty.classList.remove('is-hidden');
             layout.classList.remove('chat-has-active');
+            setMobileChatMode(false);
             document.querySelectorAll('.chat-item.is-active').forEach(function (el) {
                 el.classList.remove('is-active');
             });

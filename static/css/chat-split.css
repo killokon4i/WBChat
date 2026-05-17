@@ -234,6 +234,14 @@
     .chat-page--split {
         padding: 0;
         max-width: none;
+        margin: 0;
+    }
+
+    .chat-page--split .portal-container.container,
+    body.chat-mobile-active .portal-container.container {
+        max-width: none;
+        padding-left: 0;
+        padding-right: 0;
     }
 
     .chat-split-layout {
@@ -254,10 +262,20 @@
         max-height: none;
         border: none;
         border-radius: 0;
+        /* Одна колонка: иначе панель чата садится в узкий левый трек ~280px */
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
     }
 
     .chat-split-layout.chat-has-active .chat-split-sidebar {
         display: none;
+    }
+
+    .chat-split-layout.chat-has-active .chat-split-panel {
+        grid-column: 1;
+        grid-row: 1;
+        width: 100%;
+        min-width: 0;
     }
 
     .chat-split-layout:not(.chat-has-active) .chat-split-panel {
