@@ -296,6 +296,42 @@
     }
     .pending-file-remove:hover { background: rgba(255,47,179,.26); }
 
+    .upload-status-panel {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .upload-status-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    .upload-status-text {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    .upload-progress-track {
+        width: 100%;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--border-color);
+        overflow: hidden;
+    }
+    .upload-progress-fill {
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--colorPink600), #ff73cb);
+        transition: width 0.15s ease;
+    }
+    .upload-status-panel.is-error .upload-progress-fill {
+        background: var(--error-text, #c62828);
+    }
+
     .chat-attach-btn {
         width: 48px; height: 48px; border-radius: 50%;
         background: var(--bg-hover); border: 2px solid var(--border-color);
@@ -320,9 +356,22 @@
     .connection-status.disconnected { background: var(--error-bg); color: var(--error-text); }
     .connection-status.connecting { background: var(--warning-bg); color: var(--warning-text); }
 
-    .date-separator { display: flex; align-items: center; gap: 16px; margin: 16px 0; }
-    .date-separator::before, .date-separator::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
-    .date-separator span { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+    .date-separator {
+        display: flex;
+        justify-content: center;
+        margin: 14px 0 10px;
+        pointer-events: none;
+    }
+    .date-separator span {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        background: var(--bg-hover);
+        border: 1px solid var(--border-light);
+        border-radius: 999px;
+        padding: 5px 14px;
+        line-height: 1.2;
+    }
 
     /* External link dialog */
     .ext-link-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,.75); display: none; align-items: center; justify-content: center; z-index: 2000; }
@@ -850,9 +899,49 @@ function markConversationRead() {
 }
 
 /* ========== Message rendering ========== */
+let lastMessageDayKey = null;
+
+function getMessageDayKey(isoString) {
+    const d = new Date(isoString);
+    if (Number.isNaN(d.getTime())) return '';
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${m}-${day}`;
+}
+
+function formatDateSeparator(isoString) {
+    const d = new Date(isoString);
+    if (Number.isNaN(d.getTime())) return '';
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const sameDay = (a, b) =>
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+    if (sameDay(d, today)) return 'Сегодня';
+    if (sameDay(d, yesterday)) return 'Вчера';
+    const opts = { day: 'numeric', month: 'long' };
+    if (d.getFullYear() !== today.getFullYear()) opts.year = 'numeric';
+    return d.toLocaleDateString('ru-RU', opts);
+}
+
+function ensureDateSeparator(container, isoString) {
+    const key = getMessageDayKey(isoString);
+    if (!key || key === lastMessageDayKey) return;
+    lastMessageDayKey = key;
+    const sep = document.createElement('div');
+    sep.className = 'date-separator';
+    sep.setAttribute('role', 'separator');
+    sep.innerHTML = `<span>${escapeHtml(formatDateSeparator(isoString))}</span>`;
+    container.appendChild(sep);
+}
+
 function addMessage(msg) {
     const container = document.getElementById('messages');
     const isOwn = msg.author_id === userId;
+
+    ensureDateSeparator(container, msg.created_at);
 
     allMessages[msg.id] = msg;
 
@@ -1213,8 +1302,11 @@ function closeForwardModal() {
 
 /* ========== Pending files ========== */
 let pendingFiles = [];
+let isUploading = false;
+let uploadProgress = 0;
 
 function handleFileSelect(input) {
+    if (isUploading) return;
     for (const f of input.files) {
         const id = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
         const entry = { id, file: f, name: f.name, size: f.size, thumbUrl: null };
@@ -1228,6 +1320,7 @@ function handleFileSelect(input) {
 }
 
 function removePendingFile(id) {
+    if (isUploading) return;
     const idx = pendingFiles.findIndex(p => p.id === id);
     if (idx > -1) {
         if (pendingFiles[idx].thumbUrl) URL.revokeObjectURL(pendingFiles[idx].thumbUrl);
@@ -1236,8 +1329,46 @@ function removePendingFile(id) {
     renderPendingFiles();
 }
 
+function setInputLocked(locked) {
+    const sendBtn = document.getElementById('send-btn');
+    const attachBtn = document.querySelector('.chat-attach-btn');
+    const textareaEl = document.getElementById('message-input');
+    if (sendBtn) sendBtn.disabled = !!locked;
+    if (attachBtn) attachBtn.disabled = !!locked;
+    if (textareaEl) textareaEl.disabled = !!locked;
+}
+
+function updateUploadProgressUI(pct, statusText) {
+    uploadProgress = pct;
+    const fill = document.getElementById('upload-progress-fill');
+    const text = document.getElementById('upload-status-text');
+    if (fill) fill.style.width = Math.min(100, Math.max(0, pct)) + '%';
+    if (text) {
+        text.textContent = statusText || (pct >= 100 ? 'Обработка на сервере…' : 'Загрузка… ' + pct + '%');
+    }
+}
+
 function renderPendingFiles() {
     const bar = document.getElementById('pending-files-bar');
+    if (isUploading) {
+        bar.classList.add('active');
+        const count = pendingFiles.length;
+        const names = pendingFiles.slice(0, 2).map(function (p) { return escapeHtml(p.name); }).join(', ');
+        const more = count > 2 ? ' и ещё ' + (count - 2) : '';
+        bar.innerHTML =
+            '<div class="upload-status-panel" id="upload-status-panel">' +
+            '<div class="upload-status-head">' +
+            '<span class="upload-status-text" id="upload-status-text">Загрузка… 0%</span>' +
+            '<span class="upload-status-files">' + count + ' файл(ов)</span>' +
+            '</div>' +
+            '<div class="upload-progress-track"><div class="upload-progress-fill" id="upload-progress-fill"></div></div>' +
+            '<div class="upload-status-head" style="margin-top:2px"><span>' + names + more + '</span></div>' +
+            '</div>';
+        setInputLocked(true);
+        updateUploadProgressUI(uploadProgress);
+        return;
+    }
+    setInputLocked(false);
     if (!pendingFiles.length) {
         bar.classList.remove('active');
         bar.innerHTML = '';
@@ -1250,10 +1381,41 @@ function renderPendingFiles() {
             : `<div class="pending-file-icon">&#128196;</div>`;
         return `<div class="pending-file">
             ${thumb}
-            <span class="pending-file-name">${escapeHtml(p.name)}</span>
-            <button class="pending-file-remove" onclick="removePendingFile('${p.id}')">&times;</button>
+            <span class="pending-file-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
+            <span style="font-size:11px;color:var(--text-secondary);flex-shrink:0">${p.size > 1048576 ? (p.size / 1048576).toFixed(1) + ' МБ' : Math.max(1, Math.round(p.size / 1024)) + ' КБ'}</span>
+            <button type="button" class="pending-file-remove" onclick="removePendingFile('${p.id}')" aria-label="Убрать">&times;</button>
         </div>`;
     }).join('');
+}
+
+function uploadChatFiles(formData, onProgress) {
+    return new Promise(function (resolve, reject) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/chat/api/upload/' + conversationId + '/');
+        xhr.setRequestHeader('X-CSRFToken', csrfToken);
+        xhr.upload.addEventListener('progress', function (e) {
+            if (e.lengthComputable && onProgress) {
+                onProgress(Math.round((e.loaded / e.total) * 100));
+            }
+        });
+        xhr.addEventListener('load', function () {
+            let data;
+            try {
+                data = JSON.parse(xhr.responseText || '{}');
+            } catch (err) {
+                reject(new Error('bad_response'));
+                return;
+            }
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(data);
+            } else {
+                reject(data);
+            }
+        });
+        xhr.addEventListener('error', function () { reject(new Error('network')); });
+        xhr.addEventListener('abort', function () { reject(new Error('abort')); });
+        xhr.send(formData);
+    });
 }
 
 /* ========== Media viewer ========== */
@@ -1285,30 +1447,52 @@ function sendMessage() {
         return;
     }
 
+    if (isUploading) return;
     if (!message && !pendingFiles.length) return;
 
     if (pendingFiles.length > 0) {
         const formData = new FormData();
+        const filesToSend = pendingFiles.slice();
         if (message) formData.append('text', message);
         if (replyToId) formData.append('reply_to', replyToId);
-        pendingFiles.forEach(p => formData.append('files', p.file));
+        filesToSend.forEach(function (p) { formData.append('files', p.file); });
 
-        fetch(`/chat/api/upload/${conversationId}/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': csrfToken },
-            body: formData
-        }).then(r => r.json()).then(data => {
+        const savedText = message;
+        const savedReply = replyToId;
+        input.value = '';
+        input.style.height = 'auto';
+        stopTyping();
+
+        isUploading = true;
+        uploadProgress = 0;
+        renderPendingFiles();
+
+        uploadChatFiles(formData, function (pct) {
+            updateUploadProgressUI(pct);
+        }).then(function (data) {
             if (data.success && data.message) {
                 addMessage(data.message);
             } else if (data.error) {
                 showToast('Ошибка: ' + data.error);
             }
-        }).catch(() => showToast('Ошибка отправки'));
+        }).catch(function (err) {
+            const msg = err && err.error ? err.error : 'Ошибка отправки';
+            showToast(msg);
+            updateUploadProgressUI(uploadProgress, 'Ошибка загрузки');
+            const panel = document.getElementById('upload-status-panel');
+            if (panel) panel.classList.add('is-error');
+        }).finally(function () {
+            filesToSend.forEach(function (p) {
+                if (p.thumbUrl) URL.revokeObjectURL(p.thumbUrl);
+            });
+            pendingFiles = [];
+            isUploading = false;
+            uploadProgress = 0;
+            renderPendingFiles();
+            cancelReply();
+        });
 
-        pendingFiles.forEach(p => { if (p.thumbUrl) URL.revokeObjectURL(p.thumbUrl); });
-        pendingFiles = [];
-        renderPendingFiles();
-        cancelReply();
+        return;
     } else {
         if (!(chatSocket && chatSocket.readyState === WebSocket.OPEN)) return;
         const payload = { type: 'chat_message', message: message };
@@ -1559,6 +1743,7 @@ function removeMember(uid) {
 
 /* ========== Load messages ========== */
 function loadMessages() {
+    lastMessageDayKey = null;
     fetch(`/chat/api/messages/${conversationId}/`)
         .then(r => r.json())
         .then(data => {
