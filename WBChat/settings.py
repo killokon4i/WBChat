@@ -151,12 +151,18 @@ USE_TZ = True
 AUTH_USER_MODEL = 'accounts.User'
 
 
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+USE_S3_MEDIA = False
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    },
+}
 
 # Static files
 STATICFILES_DIRS = [
@@ -171,6 +177,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # В dev — статика из finders (в т.ч. django.contrib.admin); в prod — collectstatic + WhiteNoise
 WHITENOISE_USE_FINDERS = DEBUG
+
+# Media: Railway Volume (/data/media) или S3 — см. .env.example
+from WBChat.media_storage import configure_media
+
+configure_media(globals())
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

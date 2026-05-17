@@ -1,2 +1,3 @@
+# В Railway Dashboard → Volumes: mount path /data/media (иначе аватары пропадут после рестарта)
 [build]
 buildCommand = "pip install -r requirements.txt && python manage.py collectstatic --noinput"

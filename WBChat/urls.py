@@ -1,7 +1,8 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf.urls.static import static
 from django.conf import settings
+from django.views.static import serve
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from accounts.views import register, login_view, profile_view, logout_view, profile_edit, home, dashboard
 from news.views import news_detail, news_list, edit_news, delete_news, create_news, add_comment, delete_comment, edit_comment, mention_autocomplete, toggle_reaction, share_conversations as news_share_conversations, share_news, delete_news_attachment, news_autosave, news_preview, news_personal_dashboard
@@ -78,7 +79,15 @@ if settings.DEBUG:
     from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
     urlpatterns += staticfiles_urlpatterns()
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+if not getattr(settings, 'USE_S3_MEDIA', False):
+    urlpatterns += [
+        re_path(
+            r'^media/(?P<path>.*)$',
+            serve,
+            {'document_root': settings.MEDIA_ROOT},
+        ),
+    ]
 
 handler404 = 'WBChat.error_views.custom_404'
 handler403 = 'WBChat.error_views.custom_403'

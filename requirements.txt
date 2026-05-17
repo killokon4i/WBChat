@@ -12,6 +12,8 @@ channels-redis==4.2.1
 daphne==4.1.2
 gunicorn==21.2.0
 whitenoise==6.9.0
+django-storages[s3]==1.14.4
+boto3>=1.35.0
 # Redis and Celery for real-time features and background tasks
 redis==5.2.1
 celery==5.4.0
