@@ -6,6 +6,7 @@
         const layout = document.getElementById('chatSplitLayout');
         const frame = document.getElementById('chatPanelFrame');
         const empty = document.getElementById('chatPanelEmpty');
+        const loading = document.getElementById('chatPanelLoading');
         const mobileBack = document.getElementById('chatMobileBack');
         if (!layout || !frame || !empty) {
             console.warn(
@@ -13,6 +14,9 @@
             );
             return;
         }
+
+        let loadToken = 0;
+        let currentChatId = frame.dataset.currentChat || '';
 
         function embedUrl(id) {
             return '/chat/' + id + '/?embed=1';
@@ -22,23 +26,71 @@
             return id ? '/chat/?c=' + id : '/chat/';
         }
 
+        function showLoading() {
+            if (loading) {
+                loading.classList.add('is-active');
+            }
+            frame.classList.add('is-loading');
+        }
+
+        function hideLoading() {
+            if (loading) {
+                loading.classList.remove('is-active');
+            }
+            frame.classList.remove('is-loading');
+        }
+
+        function bindFrameLoad(token, onDone) {
+            function finish() {
+                if (token !== loadToken) return;
+                hideLoading();
+                if (typeof onDone === 'function') onDone();
+            }
+
+            frame.addEventListener('load', finish, { once: true });
+
+            window.setTimeout(function () {
+                if (token === loadToken && frame.classList.contains('is-loading')) {
+                    finish();
+                }
+            }, 20000);
+        }
+
         function openChat(id, pushState) {
             if (!id) return;
             id = String(id);
+            if (id === currentChatId && frame.classList.contains('is-visible') && !frame.classList.contains('is-loading')) {
+                return;
+            }
+
             document.querySelectorAll('.chat-item').forEach(function (el) {
                 el.classList.toggle('is-active', el.dataset.conversationId === id);
             });
-            frame.src = embedUrl(id);
+
+            currentChatId = id;
+            frame.dataset.currentChat = id;
+            loadToken += 1;
+            const token = loadToken;
+
+            showLoading();
             frame.classList.add('is-visible');
             empty.classList.add('is-hidden');
             layout.classList.add('chat-has-active');
+
+            bindFrameLoad(token);
+            frame.src = embedUrl(id);
+
             if (pushState !== false) {
                 history.pushState({ chatId: id }, '', listUrl(id));
             }
         }
 
         function closeChat(pushState) {
-            frame.classList.remove('is-visible');
+            loadToken += 1;
+            currentChatId = '';
+            frame.dataset.currentChat = '';
+            hideLoading();
+            frame.classList.remove('is-visible', 'is-loading');
             frame.removeAttribute('src');
             frame.src = 'about:blank';
             empty.classList.remove('is-hidden');
@@ -74,10 +126,22 @@
             }
         });
 
+        if (frame.classList.contains('is-visible') && frame.getAttribute('src')) {
+            const initialId =
+                layout.dataset.initialChat ||
+                new URLSearchParams(window.location.search).get('c');
+            if (initialId) {
+                currentChatId = String(initialId);
+                frame.dataset.currentChat = currentChatId;
+                loadToken += 1;
+                bindFrameLoad(loadToken);
+            }
+        }
+
         const initial =
             layout.dataset.initialChat ||
             new URLSearchParams(window.location.search).get('c');
-        if (initial) {
+        if (initial && !currentChatId) {
             openChat(initial, false);
         }
 

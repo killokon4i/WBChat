@@ -4,7 +4,7 @@
 
 {% block extra_styles %}
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/chat-split.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'css/chat-split.css' %}?v=3">
 <style>
     .chat-list {
         display: flex;
@@ -592,7 +592,15 @@
                 <h2>Выберите чат</h2>
                 <p>Нажмите на беседу слева</p>
             </div>
-            <iframe class="chat-split-frame{% if active_conversation_id %} is-visible{% endif %}"
+            <div class="chat-split-loading{% if active_conversation_id %} is-active{% endif %}"
+                 id="chatPanelLoading"
+                 role="status"
+                 aria-live="polite"
+                 aria-label="Загрузка чата">
+                <div class="chat-split-spinner" aria-hidden="true"></div>
+                <p class="chat-split-loading-text">Загрузка чата…</p>
+            </div>
+            <iframe class="chat-split-frame{% if active_conversation_id %} is-visible is-loading{% endif %}"
                     id="chatPanelFrame"
                     title="Переписка"
                     {% if active_conversation_id %}src="{% url 'chat_room' active_conversation_id %}?embed=1"{% endif %}></iframe>
@@ -937,5 +945,5 @@ function createGroup(e) {
 
 {% block extra_scripts %}
 {% load static %}
-<script src="{% static 'js/chat-shell.js' %}?v=4"></script>
+<script src="{% static 'js/chat-shell.js' %}?v=5"></script>
 {% endblock %}
