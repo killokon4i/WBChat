@@ -24,10 +24,8 @@ def notifications_count(request):
         for conv in conversations:
             messages_count += conv.get_unread_count(request.user)
         
-        total_count = notifications_count + messages_count
-        
         return {
-            'unread_notifications_count': total_count,
+            'unread_notifications_count': notifications_count,
             'unread_notifications_only': notifications_count,
             'unread_messages_count': messages_count,
         }

@@ -608,6 +608,47 @@
         background-color: rgba(228, 0, 175, 0.04);
     }
 
+    [data-theme="dark"] html,
+    [data-theme="dark"] body.chat-embed-body {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+    }
+    [data-theme="dark"] .chat-messages-container,
+    [data-theme="dark"] .chat-header-card,
+    [data-theme="dark"] .pending-file,
+    [data-theme="dark"] .ctx-menu,
+    [data-theme="dark"] .ext-link-dialog,
+    [data-theme="dark"] .forward-dialog,
+    [data-theme="dark"] .chat-info-panel {
+        background: var(--bg-card);
+        border-color: var(--border-color);
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+    }
+    [data-theme="dark"] .message-other {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+    }
+    [data-theme="dark"] .chat-textarea,
+    [data-theme="dark"] .chat-attach-btn {
+        background: var(--bg-hover);
+        border-color: var(--border-color);
+        color: var(--text-primary);
+    }
+    [data-theme="dark"] .date-separator span {
+        background: var(--bg-hover);
+        border-color: var(--border-color);
+        color: var(--text-secondary);
+    }
+    [data-theme="dark"] .reply-bar,
+    [data-theme="dark"] .pending-files-bar {
+        background: var(--bg-hover);
+        border-color: var(--border-color);
+    }
+    [data-theme="dark"] .chat-container.chat-drop-active .chat-messages-container,
+    [data-theme="dark"] .chat-container.chat-drop-active .chat-input-area {
+        background-color: rgba(228, 0, 175, 0.08);
+    }
+
     @media (max-width: 900px) {
         html, body.chat-embed-body {
             height: 100dvh;
@@ -1471,16 +1512,25 @@ function addFilesFromList(fileList) {
     if (isUploading) return;
     const files = Array.from(fileList || []).filter(function (f) { return f && f.size > 0; });
     if (!files.length) return;
+    let added = 0;
     files.forEach(function (f) {
+        const isDup = pendingFiles.some(function (p) {
+            return p.name === (f.name || 'file') &&
+                p.size === f.size &&
+                p.file.lastModified === f.lastModified;
+        });
+        if (isDup) return;
         const id = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
         const entry = { id: id, file: f, name: f.name || 'file', size: f.size, thumbUrl: null };
         if (f.type && f.type.startsWith('image/')) {
             entry.thumbUrl = URL.createObjectURL(f);
         }
         pendingFiles.push(entry);
+        added += 1;
     });
+    if (!added) return;
     renderPendingFiles();
-    showToast(files.length === 1 ? 'Файл прикреплён' : 'Прикреплено файлов: ' + files.length);
+    showToast(added === 1 ? 'Файл прикреплён' : 'Прикреплено файлов: ' + added);
 }
 
 function handleFileSelect(input) {
@@ -1696,40 +1746,41 @@ textarea.addEventListener('keypress', function(e) {
 
 (function initChatFileDropAndPaste() {
     const chatRoot = document.querySelector('.chat-container');
-    const dropTargets = [
-        chatRoot,
-        document.querySelector('.chat-messages-container'),
-        document.querySelector('.chat-input-area'),
-        document.getElementById('message-input')
-    ].filter(Boolean);
+    if (!chatRoot) return;
 
     let dragDepth = 0;
+    let dropHandled = false;
+
     function setDropHighlight(on) {
-        if (chatRoot) chatRoot.classList.toggle('chat-drop-active', on);
+        chatRoot.classList.toggle('chat-drop-active', on);
     }
 
-    dropTargets.forEach(function (zone) {
-        zone.addEventListener('dragenter', function (e) {
-            e.preventDefault();
-            dragDepth += 1;
-            setDropHighlight(true);
-        });
-        zone.addEventListener('dragover', function (e) {
-            e.preventDefault();
-            if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-        });
-        zone.addEventListener('dragleave', function () {
+    chatRoot.addEventListener('dragenter', function (e) {
+        e.preventDefault();
+        dragDepth += 1;
+        setDropHighlight(true);
+    });
+    chatRoot.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    });
+    chatRoot.addEventListener('dragleave', function (e) {
+        if (!chatRoot.contains(e.relatedTarget)) {
             dragDepth = Math.max(0, dragDepth - 1);
             if (dragDepth === 0) setDropHighlight(false);
-        });
-        zone.addEventListener('drop', function (e) {
-            e.preventDefault();
-            dragDepth = 0;
-            setDropHighlight(false);
-            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
-                addFilesFromList(e.dataTransfer.files);
-            }
-        });
+        }
+    });
+    chatRoot.addEventListener('drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragDepth = 0;
+        setDropHighlight(false);
+        if (dropHandled) return;
+        dropHandled = true;
+        setTimeout(function () { dropHandled = false; }, 0);
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+            addFilesFromList(e.dataTransfer.files);
+        }
     });
 
     document.addEventListener('paste', function (e) {
@@ -1739,16 +1790,15 @@ textarea.addEventListener('keypress', function(e) {
         const dt = e.clipboardData;
         if (!dt) return;
         const files = [];
-        if (dt.files && dt.files.length) {
-            Array.from(dt.files).forEach(function (f) { files.push(f); });
-        }
-        if (!files.length && dt.items) {
+        if (dt.items && dt.items.length) {
             Array.from(dt.items).forEach(function (item) {
                 if (item.kind === 'file') {
                     const f = item.getAsFile();
                     if (f) files.push(f);
                 }
             });
+        } else if (dt.files && dt.files.length) {
+            Array.from(dt.files).forEach(function (f) { files.push(f); });
         }
         if (files.length) {
             e.preventDefault();
