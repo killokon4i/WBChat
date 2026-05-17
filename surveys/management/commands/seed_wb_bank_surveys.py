@@ -42,8 +42,10 @@ class Command(BaseCommand):
                 return
         else:
             author = User.objects.filter(is_superuser=True).order_by("id").first()
+            if not author:
+                author = User.objects.filter(is_active=True).order_by("id").first()
         if not author:
-            self.stderr.write(self.style.ERROR("Нет суперпользователя для автора опросов."))
+            self.stderr.write(self.style.ERROR("Нет пользователей для автора опросов."))
             return
 
         created, updated, published = seed_wb_bank_surveys(
