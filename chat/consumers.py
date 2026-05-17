@@ -227,13 +227,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     # WebSocket message handlers (called by group_send)
     async def chat_message(self, event):
-        """Send chat message to WebSocket. Skip sending to author when message was created via HTTP (e.g. file upload) to avoid duplicate."""
-        msg = event['message']
-        if msg.get('author_id') == self.user.id and msg.get('attachments'):
-            return
+        """Send chat message to WebSocket (client deduplicates by message id)."""
         await self.send(text_data=json.dumps({
             'type': 'chat_message',
-            'message': msg,
+            'message': event['message'],
         }))
 
     async def typing_indicator(self, event):
@@ -467,6 +464,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             data['attachments'] = [{
                 'id': a.id,
                 'url': a.file.url,
+                'download_url': f'/chat/api/attachment/{a.id}/download/',
                 'name': a.file_name,
                 'size': a.file_size,
                 'type': a.file_type,

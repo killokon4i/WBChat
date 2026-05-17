@@ -265,6 +265,16 @@
     .ctx-menu-item svg { width: 16px; height: 16px; flex-shrink: 0; }
     .ctx-menu-item.danger { color: #ff73cb; }
     .ctx-menu-sep { height: 1px; background: var(--border-color); margin: 4px 8px; }
+    .msg-attachment { position: relative; }
+    .msg-attachment-dl {
+        position: absolute; top: 8px; right: 8px;
+        width: 32px; height: 32px; border-radius: 50%;
+        background: rgba(0,0,0,.55); color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        text-decoration: none; font-size: 16px; line-height: 1;
+        opacity: 0; transition: opacity .15s;
+    }
+    .msg-attachment:hover .msg-attachment-dl { opacity: 1; }
 
     /* Reply bar */
     .reply-bar {
@@ -945,6 +955,8 @@ let replyToId = null;
 let editingMessageId = null;
 let pinnedMessages = [];
 let allMessages = {};
+let messagePollTimer = null;
+let ctxMenuAnchor = null;
 
 const textarea = document.getElementById('message-input');
 textarea.addEventListener('input', function() {
@@ -1045,7 +1057,7 @@ function ensureDateSeparator(container, isoString) {
     container.appendChild(sep);
 }
 
-function addMessage(msg) {
+function addMessage(msg, skipParentNotify) {
     if (document.getElementById('message-' + msg.id)) return;
     const container = document.getElementById('messages');
     const isOwn = msg.author_id === userId;
@@ -1061,7 +1073,7 @@ function addMessage(msg) {
     div.dataset.authorId = msg.author_id;
     div.dataset.isOwn = isOwn ? '1' : '0';
 
-    div.addEventListener('contextmenu', function(e) { e.preventDefault(); showContextMenu(e, msg); });
+    div.addEventListener('contextmenu', function(e) { e.preventDefault(); showContextMenu(e, msg, div); });
 
     const attsForClass = msg.attachments || (msg.attachment ? [msg.attachment] : []);
     const textOnly = (msg.content || '').trim();
@@ -1111,6 +1123,31 @@ function addMessage(msg) {
     container.scrollTop = container.scrollHeight;
 
     if (msg.is_pinned) { pinnedMessages.push(msg.id); updatePinnedBanner(); }
+    if (!skipParentNotify) notifyParentInbox(msg);
+}
+
+function notifyParentInbox(msg) {
+    try {
+        if (!window.parent || window.parent === window) return;
+        var preview = messagePreviewText(msg);
+        if (msg.author_id !== userId && msg.author_username) {
+            preview = msg.author_username + ': ' + preview;
+        }
+        window.parent.postMessage({
+            source: 'wbchat-embed',
+            type: 'chat_inbox',
+            conversation_id: conversationId,
+            preview: preview,
+            updated_at: msg.created_at,
+            unread_count: 0,
+        }, '*');
+    } catch (err) { /* ignore */ }
+}
+
+function attachmentDownloadUrl(att) {
+    if (att.download_url) return att.download_url;
+    if (att.id) return '/chat/api/attachment/' + att.id + '/download/';
+    return att.url || '#';
 }
 
 function messagePreviewText(msg) {
@@ -1153,17 +1190,19 @@ function buildContentHtml(msg) {
 }
 
 function buildAttachmentHtml(att) {
+    const dl = attachmentDownloadUrl(att);
+    const dlBtn = `<a href="${dl}" class="msg-attachment-dl" title="Скачать" download="${escapeHtml(att.name || 'file')}" onclick="event.stopPropagation()">&#8595;</a>`;
     if (att.type === 'image') {
-        return `<div class="msg-attachment"><img src="${att.url}" alt="${escapeHtml(att.name)}" onclick="openMediaViewer('image','${att.url}')"></div>`;
+        return `<div class="msg-attachment">${dlBtn}<img src="${att.url}" alt="${escapeHtml(att.name)}" onclick="openMediaViewer('image','${att.url}')"></div>`;
     }
     if (att.type === 'video') {
-        return `<div class="msg-attachment"><video src="${att.url}" controls preload="metadata" onclick="event.preventDefault();openMediaViewer('video','${att.url}')"></video></div>`;
+        return `<div class="msg-attachment">${dlBtn}<video src="${att.url}" controls preload="metadata" onclick="event.preventDefault();openMediaViewer('video','${att.url}')"></video></div>`;
     }
     const sizeStr = att.size > 1048576 ? (att.size / 1048576).toFixed(1) + ' МБ' : (att.size / 1024).toFixed(0) + ' КБ';
-    const ext = att.name.split('.').pop().toUpperCase();
+    const ext = (att.name || '').split('.').pop().toUpperCase();
     const icons = { 'PDF': '&#128196;', 'DOC': '&#128196;', 'DOCX': '&#128196;', 'XLS': '&#128200;', 'XLSX': '&#128200;', 'PPT': '&#128202;', 'PPTX': '&#128202;', 'ZIP': '&#128230;', 'RAR': '&#128230;' };
     const icon = icons[ext] || '&#128196;';
-    return `<div class="msg-attachment"><a href="${att.url}" class="msg-attachment-file" download="${escapeHtml(att.name)}">
+    return `<div class="msg-attachment"><a href="${dl}" class="msg-attachment-file" download="${escapeHtml(att.name)}">
         <span class="msg-attachment-file-icon">${icon}</span>
         <div class="msg-attachment-file-info"><div class="msg-attachment-file-name">${escapeHtml(att.name)}</div><div class="msg-attachment-file-size">${sizeStr}</div></div>
     </a></div>`;
@@ -1294,7 +1333,7 @@ function bindMessageGestures(el, msg) {
         pressTimer = setTimeout(function () {
             longPressDone = true;
             if (navigator.vibrate) navigator.vibrate(12);
-            showContextMenu({ clientX: t.clientX, clientY: t.clientY, preventDefault: function () {} }, msg);
+            showContextMenu({ clientX: t.clientX, clientY: t.clientY, preventDefault: function () {} }, msg, el);
         }, 480);
     }, { passive: true });
 
@@ -1334,10 +1373,37 @@ function bindMessageGestures(el, msg) {
 }
 
 /* ========== Context menu ========== */
-function showContextMenu(e, msg) {
+function closeContextMenu() {
+    document.getElementById('ctx-menu').classList.remove('active');
+    ctxMenuAnchor = null;
+}
+
+function positionContextMenu() {
+    const menu = document.getElementById('ctx-menu');
+    if (!menu.classList.contains('active') || !ctxMenuAnchor) return;
+    const rect = ctxMenuAnchor.getBoundingClientRect();
+    const menuW = menu.offsetWidth || 200;
+    const menuH = menu.offsetHeight || 220;
+    let x = rect.right - menuW - 4;
+    if (x < 8) x = Math.max(8, rect.left);
+    let y = rect.top;
+    if (y + menuH > window.innerHeight - 8) y = window.innerHeight - menuH - 8;
+    if (y < 8) y = 8;
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+}
+
+function showContextMenu(e, msg, anchorEl) {
     const menu = document.getElementById('ctx-menu');
     const isOwn = msg.author_id === userId;
+    ctxMenuAnchor = anchorEl || (e.target && e.target.closest('.message')) || document.getElementById('message-' + msg.id);
     let items = '';
+
+    const ctxAtts = msg.attachments || (msg.attachment ? [msg.attachment] : []);
+    if (ctxAtts.length) {
+        const dlLabel = ctxAtts.length > 1 ? 'Скачать файлы' : 'Скачать';
+        items += `<div class="ctx-menu-item" onclick="downloadMsgAttachments(${msg.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${dlLabel}</div>`;
+    }
 
     items += `<div class="ctx-menu-item" onclick="startReply(${msg.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>Ответить</div>`;
     items += `<div class="ctx-menu-item" onclick="startForward(${msg.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>Переслать</div>`;
@@ -1353,27 +1419,51 @@ function showContextMenu(e, msg) {
     menu.innerHTML = items;
     menu.classList.add('active');
     ctxMenuGuardUntil = Date.now() + 400;
-
-    const menuW = 200, menuH = menu.offsetHeight || 250;
-    let x = e.clientX, y = e.clientY;
-    if (x + menuW > window.innerWidth) x = window.innerWidth - menuW - 10;
-    if (y + menuH > window.innerHeight) y = window.innerHeight - menuH - 10;
-    menu.style.left = x + 'px';
-    menu.style.top = y + 'px';
+    requestAnimationFrame(positionContextMenu);
 }
+
+function downloadMsgAttachments(msgId) {
+    closeContextMenu();
+    const msg = allMessages[msgId];
+    if (!msg) return;
+    const atts = msg.attachments || (msg.attachment ? [msg.attachment] : []);
+    atts.forEach(function (att, i) {
+        setTimeout(function () {
+            const a = document.createElement('a');
+            a.href = attachmentDownloadUrl(att);
+            a.download = att.name || 'download';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }, i * 350);
+    });
+}
+
 document.addEventListener('click', function () {
     if (Date.now() < ctxMenuGuardUntil) return;
-    document.getElementById('ctx-menu').classList.remove('active');
+    closeContextMenu();
 });
-document.addEventListener('contextmenu', (e) => {
+document.addEventListener('contextmenu', function (e) {
     if (!e.target.closest('.message') && !e.target.closest('.ctx-menu')) {
-        document.getElementById('ctx-menu').classList.remove('active');
+        closeContextMenu();
     }
 });
+(function () {
+    const messagesBox = document.getElementById('messages');
+    if (messagesBox) {
+        messagesBox.addEventListener('scroll', function () {
+            if (document.getElementById('ctx-menu').classList.contains('active')) {
+                positionContextMenu();
+            }
+        }, { passive: true });
+    }
+    window.addEventListener('resize', positionContextMenu);
+})();
 
 /* ========== Reply ========== */
 function startReply(msgId) {
-    document.getElementById('ctx-menu').classList.remove('active');
+    closeContextMenu();
     cancelEdit();
     const msg = allMessages[msgId];
     if (!msg) return;
@@ -1390,7 +1480,7 @@ function cancelReply() {
 
 /* ========== Edit ========== */
 function startEdit(msgId) {
-    document.getElementById('ctx-menu').classList.remove('active');
+    closeContextMenu();
     cancelReply();
     const msg = allMessages[msgId];
     if (!msg) return;
@@ -1412,7 +1502,7 @@ function cancelEdit() {
 
 /* ========== Delete ========== */
 function deleteMessage(msgId) {
-    document.getElementById('ctx-menu').classList.remove('active');
+    closeContextMenu();
     if (!confirm('Удалить сообщение?')) return;
     if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
         chatSocket.send(JSON.stringify({ type: 'delete_message', message_id: msgId }));
@@ -1421,7 +1511,7 @@ function deleteMessage(msgId) {
 
 /* ========== Pin ========== */
 function togglePin(msgId) {
-    document.getElementById('ctx-menu').classList.remove('active');
+    closeContextMenu();
     if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
         chatSocket.send(JSON.stringify({ type: 'pin_message', message_id: msgId }));
     }
@@ -1429,7 +1519,7 @@ function togglePin(msgId) {
 
 /* ========== Copy ========== */
 function copyMessage(msgId) {
-    document.getElementById('ctx-menu').classList.remove('active');
+    closeContextMenu();
     const msg = allMessages[msgId];
     if (!msg) return;
     let text = msg.content;
@@ -1444,7 +1534,7 @@ function copyMessage(msgId) {
 let forwardingMessageId = null;
 
 function startForward(msgId) {
-    document.getElementById('ctx-menu').classList.remove('active');
+    closeContextMenu();
     forwardingMessageId = msgId;
     const list = document.getElementById('forward-list');
     list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary)">Загрузка...</div>';
@@ -2029,15 +2119,53 @@ function removeMember(uid) {
 }
 
 /* ========== Load messages ========== */
+function getLatestMessageId() {
+    let max = 0;
+    Object.keys(allMessages).forEach(function (id) {
+        max = Math.max(max, parseInt(id, 10) || 0);
+    });
+    return max;
+}
+
+function pollNewMessages() {
+    const since = getLatestMessageId();
+    const url = since
+        ? `/chat/api/messages/${conversationId}/?since_id=${since}`
+        : `/chat/api/messages/${conversationId}/?limit=1`;
+    fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data.messages || !data.messages.length) return;
+            data.messages.forEach(function (msg) {
+                if (!document.getElementById('message-' + msg.id)) {
+                    addMessage(msg);
+                    if (msg.author_id !== userId) markConversationRead();
+                }
+            });
+        })
+        .catch(function () {});
+}
+
+function startMessagePolling() {
+    if (messagePollTimer) return;
+    pollNewMessages();
+    messagePollTimer = setInterval(pollNewMessages, 2000);
+}
+
 function loadMessages() {
     lastMessageDayKey = null;
     fetch(`/chat/api/messages/${conversationId}/`)
         .then(r => r.json())
         .then(data => {
-            if (data.messages) data.messages.forEach(msg => addMessage(msg));
+            if (data.messages) data.messages.forEach(msg => addMessage(msg, true));
+            startMessagePolling();
         })
         .catch(err => console.log('Could not load messages:', err));
 }
+
+document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) pollNewMessages();
+});
 
 document.getElementById('chatEmbedBack')?.addEventListener('click', function () {
     try {

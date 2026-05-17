@@ -3,12 +3,14 @@ import mimetypes
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, Http404, FileResponse
 from django.db.models import Q
 from django.views.decorators.http import require_POST
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.utils import timezone
 from .models import Conversation, Message, UserConversation, Attachment
+from .message_format import build_message_dict, conversation_display_name
+from .realtime import _message_preview, get_unread_summary
 
 User = get_user_model()
 
@@ -146,6 +148,25 @@ def get_messages(request, conversation_id):
     
     if not user_conversation:
         return JsonResponse({'error': 'Access denied'}, status=403)
+
+    since_id = request.GET.get('since_id')
+    if since_id:
+        try:
+            since_id = int(since_id)
+        except (TypeError, ValueError):
+            since_id = None
+    if since_id:
+        new_messages = Message.objects.filter(
+            conversation_id=conversation_id,
+            is_deleted=False,
+            id__gt=since_id,
+        ).select_related(
+            'author', 'reply_to', 'reply_to__author', 'forwarded_from', 'forwarded_from__author'
+        ).prefetch_related('attachments').order_by('created_at')[:100]
+        return JsonResponse({
+            'messages': [build_message_dict(m, request.user) for m in new_messages],
+            'has_more': False,
+        })
     
     # Получаем параметры пагинации
     try:
@@ -164,57 +185,7 @@ def get_messages(request, conversation_id):
     ).select_related('author', 'reply_to', 'reply_to__author', 'forwarded_from', 'forwarded_from__author'
     ).prefetch_related('attachments').order_by('-created_at')[offset:offset + limit]
     
-    messages_data = []
-    for msg in reversed(list(messages)):
-        msg_dict = {
-            'id': msg.id,
-            'author_id': msg.author.id if msg.author else None,
-            'author_username': msg.author.get_full_name() or msg.author.username if msg.author else 'Система',
-            'content': msg.content,
-            'type': msg.type,
-            'created_at': msg.created_at.isoformat(),
-            'is_edited': msg.is_edited,
-            'edited_at': msg.edited_at.isoformat() if msg.edited_at else None,
-            'reply_to_id': msg.reply_to_id,
-            'is_pinned': msg.is_pinned,
-            'forwarded_from_id': msg.forwarded_from_id,
-        }
-
-        atts = list(msg.attachments.all())
-        if atts:
-            msg_dict['attachments'] = [{
-                'id': a.id,
-                'url': a.file.url,
-                'name': a.file_name,
-                'size': a.file_size,
-                'type': a.file_type,
-                'mime': a.mime_type,
-            } for a in atts]
-
-        if msg.reply_to:
-            orig = msg.reply_to
-            msg_dict['reply_to_preview'] = {
-                'author': (orig.author.get_full_name() or orig.author.username) if orig.author else 'Система',
-                'content': (orig.content[:80] + '...') if len(orig.content) > 80 else orig.content,
-            }
-        if msg.forwarded_from:
-            orig = msg.forwarded_from
-            msg_dict['forwarded_from_author'] = (orig.author.get_full_name() or orig.author.username) if orig.author else 'Система'
-
-        messages_data.append(msg_dict)
-    
-    from chat.models import MessageStatus
-    for msg_dict in messages_data:
-        if msg_dict['author_id'] == request.user.id:
-            statuses = MessageStatus.objects.filter(message_id=msg_dict['id'])
-            total = statuses.count()
-            if total == 0:
-                msg_dict['is_read'] = False
-            else:
-                all_read = not statuses.exclude(status='read').exists()
-                msg_dict['is_read'] = all_read
-        else:
-            msg_dict['is_read'] = True
+    messages_data = [build_message_dict(msg, request.user) for msg in reversed(list(messages))]
 
     return JsonResponse({
         'messages': messages_data,
@@ -498,20 +469,81 @@ def api_conversations_list(request):
     )
     items = []
     for conversation in conversations:
-        if conversation.type == 'direct':
-            other_user = conversation.participants.exclude(id=request.user.id).first()
-            if other_user:
-                name = other_user.get_full_name() or other_user.username
-            else:
-                name = 'Удалённый пользователь'
-        else:
-            name = conversation.name or 'Без названия'
         items.append({
             'id': conversation.id,
-            'name': name,
+            'name': conversation_display_name(conversation, request.user),
             'type': conversation.type,
         })
     return JsonResponse({'success': True, 'conversations': items})
+
+
+@login_required
+def api_inbox_sync(request):
+    """Синхронизация списка чатов (polling / real-time fallback)."""
+    conversations = (
+        Conversation.objects.filter(
+            is_active=True,
+            userconversation__user=request.user,
+            userconversation__left_at__isnull=True,
+        )
+        .prefetch_related('participants')
+        .order_by('-updated_at')
+        .distinct()
+    )
+    items = []
+    for conversation in conversations:
+        last_msg = (
+            Message.objects.filter(conversation=conversation, is_deleted=False)
+            .select_related('author')
+            .prefetch_related('attachments')
+            .order_by('-created_at')
+            .first()
+        )
+        preview = _message_preview(last_msg) if last_msg else ''
+        if last_msg and last_msg.author_id != request.user.id:
+            author = last_msg.author.get_full_name() or last_msg.author.username if last_msg.author else ''
+            if author:
+                preview = f'{author}: {preview}'
+        items.append({
+            'id': conversation.id,
+            'name': conversation_display_name(conversation, request.user),
+            'type': conversation.type,
+            'unread_count': conversation.get_unread_count(request.user),
+            'updated_at': conversation.updated_at.isoformat() if conversation.updated_at else None,
+            'preview': preview,
+            'last_message_id': last_msg.id if last_msg else None,
+        })
+    return JsonResponse({
+        'success': True,
+        'conversations': items,
+        'counts': get_unread_summary(request.user),
+    })
+
+
+@login_required
+def download_attachment(request, attachment_id):
+    """Скачать вложение из чата."""
+    attachment = get_object_or_404(
+        Attachment.objects.select_related('message__conversation'),
+        pk=attachment_id,
+    )
+    has_access = UserConversation.objects.filter(
+        user=request.user,
+        conversation=attachment.message.conversation_id,
+        left_at__isnull=True,
+    ).exists()
+    if not has_access:
+        raise Http404
+    if not attachment.file:
+        raise Http404
+    response = FileResponse(
+        attachment.file.open('rb'),
+        as_attachment=True,
+        filename=attachment.file_name or 'download',
+    )
+    if attachment.mime_type:
+        response['Content-Type'] = attachment.mime_type
+    return response
 
 
 @login_required

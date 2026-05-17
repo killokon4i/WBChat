@@ -152,6 +152,10 @@
         }
 
         window.ChatShell = { openChat: openChat, closeChat: closeChat };
+
+        if (window.WBRealtime && typeof window.WBRealtime.syncInbox === 'function') {
+            setInterval(window.WBRealtime.syncInbox, 2500);
+        }
     }
 
     if (document.readyState === 'loading') {

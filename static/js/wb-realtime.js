@@ -1,5 +1,5 @@
 ﻿/**
- * Global WebSocket: notifications, chat badges, chat list sidebar.
+ * Global WebSocket + polling: notifications, chat list, badges.
  */
 (function () {
     if (!document.body || !document.body.classList.contains('portal-body')) {
@@ -9,6 +9,8 @@
     var socket = null;
     var reconnectTimer = null;
     var reconnectAttempt = 0;
+    var pollTimer = null;
+    var POLL_MS = 2500;
 
     function wsUrl() {
         var scheme = location.protocol === 'https:' ? 'wss://' : 'ws://';
@@ -61,7 +63,7 @@
         if (data.preview && previewEl) {
             var badge = previewEl.querySelector('.chat-type-badge');
             var badgeHtml = badge ? badge.outerHTML : '';
-            previewEl.innerHTML = badgeHtml + ' ' + escapeHtml(data.preview);
+            previewEl.innerHTML = badgeHtml + ' <span class="chat-preview-text">' + escapeHtml(data.preview) + '</span>';
         }
 
         if (data.updated_at) {
@@ -97,32 +99,36 @@
         return d.innerHTML;
     }
 
-    function prependNotificationCard(notif) {
-        var container = document.querySelector('.notifications-list');
-        if (!container || !notif) return;
-
-        var empty = document.querySelector('.notifications-container .empty-state');
-        if (empty) empty.remove();
-
-        if (document.querySelector('.notification-card[data-id="' + notif.id + '"]')) {
+    function syncInboxFromServer() {
+        if (!document.querySelector('.chat-split-layout') && !document.querySelector('[data-wb-badge="chats"]')) {
             return;
         }
+        fetch('/chat/api/inbox-sync/', {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' },
+        })
+            .then(function (r) {
+                if (!r.ok) throw new Error('sync');
+                return r.json();
+            })
+            .then(function (data) {
+                if (!data.success) return;
+                if (data.counts) applyCounts(data.counts);
+                (data.conversations || []).forEach(function (c) {
+                    updateChatListItem(c.id, {
+                        unread_count: c.unread_count,
+                        preview: c.preview,
+                        updated_at: c.updated_at,
+                    });
+                });
+            })
+            .catch(function () { /* silent */ });
+    }
 
-        var card = document.createElement('div');
-        card.className = 'notification-card unread';
-        card.dataset.id = notif.id;
-        card.innerHTML =
-            '<div class="notification-icon info">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' +
-            '</div>' +
-            '<div class="notification-content">' +
-            '<div class="notification-title">' + escapeHtml(notif.title || '') + '</div>' +
-            '<div class="notification-text">' + (notif.content || '') + '</div>' +
-            '<div class="notification-meta"><span class="notification-time">С‚РѕР»СЊРєРѕ С‡С‚Рѕ</span></div>' +
-            (notif.link ? '<a href="' + escapeHtml(notif.link) + '" class="notification-link">РџРµСЂРµР№С‚Рё в†’</a>' : '') +
-            '</div></div>' +
-            '<div class="notification-actions"><button type="button" class="btn-mark-read" data-mark-read="' + notif.id + '">РџСЂРѕС‡РёС‚Р°РЅРѕ</button></div>';
-        container.prepend(card);
+    function startPolling() {
+        if (pollTimer) return;
+        syncInboxFromServer();
+        pollTimer = setInterval(syncInboxFromServer, POLL_MS);
     }
 
     function handlePayload(data) {
@@ -136,12 +142,13 @@
             case 'counts_update':
                 break;
             case 'notification':
-                if (data.notification) prependNotificationCard(data.notification);
                 break;
             case 'chat_inbox':
                 updateChatListItem(data.conversation_id, {
                     unread_count: data.unread_count,
-                    preview: data.author_name ? (data.author_name + ': ' + (data.preview || '')) : data.preview,
+                    preview: data.author_name
+                        ? data.author_name + ': ' + (data.preview || '')
+                        : data.preview,
                     updated_at: data.updated_at,
                 });
                 break;
@@ -191,6 +198,22 @@
         }, delay);
     }
 
+    window.addEventListener('message', function (ev) {
+        var d = ev.data;
+        if (!d || d.source !== 'wbchat-embed') return;
+        if (d.type === 'chat_inbox') {
+            updateChatListItem(d.conversation_id, {
+                unread_count: d.unread_count,
+                preview: d.preview,
+                updated_at: d.updated_at,
+            });
+            if (d.counts) applyCounts(d.counts);
+        }
+        if (d.type === 'chat_read') {
+            updateChatListItem(d.conversation_id, { unread_count: 0 });
+        }
+    });
+
     document.addEventListener('click', function (e) {
         var btn = e.target.closest('[data-mark-read]');
         if (!btn) return;
@@ -215,11 +238,19 @@
         return m ? decodeURIComponent(m[1]) : '';
     }
 
+    startPolling();
     connect();
     document.addEventListener('visibilitychange', function () {
-        if (!document.hidden) connect();
+        if (!document.hidden) {
+            connect();
+            syncInboxFromServer();
+        }
     });
 
-    window.WBRealtime = { connect: connect, applyCounts: applyCounts };
+    window.WBRealtime = {
+        connect: connect,
+        applyCounts: applyCounts,
+        updateChatListItem: updateChatListItem,
+        syncInbox: syncInboxFromServer,
+    };
 })();
-
