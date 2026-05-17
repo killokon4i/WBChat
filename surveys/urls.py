@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path("", views.survey_list, name="surveys_list"),
     path("manage/", views.survey_manage_list, name="surveys_manage_list"),
+    path("manage/bulk/", views.survey_manage_bulk, name="surveys_manage_bulk"),
     path("archive/", views.survey_archive_list, name="surveys_archive_list"),
     path("create/", views.survey_create, name="surveys_create"),
     path("<int:pk>/edit/", views.survey_edit, name="surveys_edit"),

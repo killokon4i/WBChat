@@ -11,7 +11,13 @@ from surveys.models import (
     SurveyResponse,
     SurveyTag,
 )
-from surveys.seed_wb_pack import PACK_MARKER, publish_wb_pack_surveys, seed_wb_bank_surveys
+from surveys.seed_wb_pack import (
+    PACK_DEV_MARKER,
+    PACK_MARKER,
+    publish_wb_pack_surveys,
+    seed_wb_bank_surveys,
+    seed_wb_development_surveys,
+)
 from surveys.services import send_survey_invitations
 
 
@@ -131,6 +137,16 @@ class SurveyAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.seed_wb_pack_publish_view),
                 name="surveys_survey_seed_wb_pack_publish",
             ),
+            path(
+                "seed-wb-development/",
+                self.admin_site.admin_view(self.seed_wb_dev_view),
+                name="surveys_survey_seed_wb_dev",
+            ),
+            path(
+                "seed-wb-development/publish/",
+                self.admin_site.admin_view(self.seed_wb_dev_publish_view),
+                name="surveys_survey_seed_wb_dev_publish",
+            ),
         ]
         return custom + urls
 
@@ -160,6 +176,36 @@ class SurveyAdmin(admin.ModelAdmin):
             request,
             f"Пакет «ВБ Банк»: создано {created}, обновлено {updated}, "
             f"опубликовано {published}. Отправлено приглашений: {invited}.",
+            messages.SUCCESS,
+        )
+        return redirect("admin:surveys_survey_changelist")
+
+    def seed_wb_dev_view(self, request):
+        created, updated, _ = seed_wb_development_surveys(
+            author=request.user, publish=False
+        )
+        self.message_user(
+            request,
+            f"Пакет «Развитие»: создано {created}, обновлено {updated} (черновики).",
+            messages.SUCCESS,
+        )
+        return redirect("admin:surveys_survey_changelist")
+
+    def seed_wb_dev_publish_view(self, request):
+        created, updated, published = seed_wb_development_surveys(
+            author=request.user, publish=True
+        )
+        from surveys.models import Survey
+
+        invited = 0
+        for survey in Survey.objects.filter(
+            title__startswith=PACK_DEV_MARKER, status="active"
+        ):
+            invited += send_survey_invitations(survey)
+        self.message_user(
+            request,
+            f"Пакет «Развитие»: создано {created}, обновлено {updated}, "
+            f"опубликовано {published}, приглашений: {invited}.",
             messages.SUCCESS,
         )
         return redirect("admin:surveys_survey_changelist")

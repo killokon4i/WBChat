@@ -5,10 +5,12 @@ import os
 from datetime import datetime, timedelta
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from .forms import SurveyForm
 from .models import (
@@ -242,6 +244,83 @@ def survey_manage_list(request):
             "my_surveys": my_surveys,
         },
     )
+
+
+@login_required
+@require_POST
+def survey_manage_bulk(request):
+    """Массовые действия над выбранными опросами."""
+    if not _user_can_manage_surveys(request.user):
+        return HttpResponseForbidden("Нет прав для управления опросами.")
+
+    action = (request.POST.get("action") or "").strip()
+    raw_ids = request.POST.getlist("survey_ids")
+    try:
+        ids = [int(x) for x in raw_ids if str(x).isdigit()]
+    except (TypeError, ValueError):
+        ids = []
+
+    if not ids:
+        messages.warning(request, "Не выбран ни один опрос.")
+        return redirect("surveys_manage_list")
+
+    surveys = list(
+        Survey.objects.filter(pk__in=ids, author=request.user).order_by("pk")
+    )
+    if not surveys:
+        messages.error(request, "Нет доступных опросов для выбранных ID.")
+        return redirect("surveys_manage_list")
+
+    launched = closed = archived = 0
+    skipped = 0
+
+    if action == "launch":
+        for survey in surveys:
+            if survey.status != "draft":
+                skipped += 1
+                continue
+            survey.status = "active"
+            if not survey.starts_at:
+                survey.starts_at = timezone.now()
+            survey.save(update_fields=["status", "starts_at", "updated_at"])
+            send_survey_invitations(survey)
+            launched += 1
+        messages.success(
+            request,
+            f"Запущено опросов: {launched}."
+            + (f" Пропущено (не черновик): {skipped}." if skipped else ""),
+        )
+    elif action == "close":
+        for survey in surveys:
+            if survey.status != "active":
+                skipped += 1
+                continue
+            survey.status = "closed"
+            survey.closed_at = timezone.now()
+            survey.save(update_fields=["status", "closed_at", "updated_at"])
+            closed += 1
+        messages.success(
+            request,
+            f"Завершено опросов: {closed}."
+            + (f" Пропущено: {skipped}." if skipped else ""),
+        )
+    elif action == "archive":
+        for survey in surveys:
+            if survey.status != "closed":
+                skipped += 1
+                continue
+            survey.status = "archived"
+            survey.save(update_fields=["status", "updated_at"])
+            archived += 1
+        messages.success(
+            request,
+            f"В архив отправлено: {archived}."
+            + (f" Пропущено: {skipped}." if skipped else ""),
+        )
+    else:
+        messages.error(request, "Неизвестное действие.")
+
+    return redirect("surveys_manage_list")
 
 
 @login_required

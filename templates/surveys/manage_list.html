@@ -17,9 +17,27 @@
 
     <section class="manage-main-flow" aria-labelledby="manage-surveys-title">
     {% if my_surveys %}
-    <div class="manage-grid">
+    <form method="post" action="{% url 'surveys_manage_bulk' %}" id="manage-bulk-form" class="manage-bulk-form">
+        {% csrf_token %}
+        <div class="manage-bulk-bar card" id="manage-bulk-bar">
+            <label class="manage-bulk-select-all">
+                <input type="checkbox" id="manage-select-all" aria-label="Выбрать все опросы">
+                <span>Выбрать все</span>
+            </label>
+            <span class="manage-bulk-count" id="manage-bulk-count">Выбрано: 0</span>
+            <div class="manage-bulk-actions">
+                <button type="submit" name="action" value="launch" class="btn btn-primary btn-small" disabled data-bulk-btn>Запустить</button>
+                <button type="submit" name="action" value="close" class="btn btn-secondary btn-small" disabled data-bulk-btn>Завершить</button>
+                <button type="submit" name="action" value="archive" class="btn btn-secondary btn-small" disabled data-bulk-btn>В архив</button>
+            </div>
+        </div>
+
+        <div class="manage-grid">
         {% for item in my_surveys %}
         <article class="card manage-card">
+            <label class="manage-card-check">
+                <input type="checkbox" name="survey_ids" value="{{ item.survey.pk }}" class="manage-survey-cb" aria-label="Выбрать: {{ item.survey.title }}">
+            </label>
             <div class="manage-card-top">
                 <span class="badge badge-primary">{{ item.survey.get_status_display }}</span>
                 <span class="manage-date">{{ item.survey.created_at|date:"d.m.Y H:i" }}</span>
@@ -61,7 +79,8 @@
             </div>
         </article>
         {% endfor %}
-    </div>
+        </div>
+    </form>
     {% else %}
     <div class="card text-center">
         <h2 style="margin:0 0 8px;">Опросов пока нет</h2>
@@ -73,4 +92,93 @@
     {% endif %}
     </section>
 </div>
+
+<style>
+.manage-bulk-form { display: block; }
+.manage-bulk-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    position: sticky;
+    top: 72px;
+    z-index: 20;
+}
+.manage-bulk-select-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    user-select: none;
+}
+.manage-bulk-select-all input { width: 18px; height: 18px; accent-color: var(--magenta); }
+.manage-bulk-count { font-size: 13px; color: var(--text-secondary); min-width: 100px; }
+.manage-bulk-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.manage-card { position: relative; padding-top: 44px !important; }
+.manage-card-check {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 2;
+    cursor: pointer;
+}
+.manage-card-check input { width: 20px; height: 20px; accent-color: var(--magenta); cursor: pointer; }
+.manage-card.is-selected { outline: 2px solid rgba(203, 17, 171, 0.45); outline-offset: 2px; }
+</style>
+
+<script>
+(function () {
+    var form = document.getElementById('manage-bulk-form');
+    if (!form) return;
+    var selectAll = document.getElementById('manage-select-all');
+    var countEl = document.getElementById('manage-bulk-count');
+    var boxes = form.querySelectorAll('.manage-survey-cb');
+    var bulkBtns = form.querySelectorAll('[data-bulk-btn]');
+
+    function updateUI() {
+        var checked = form.querySelectorAll('.manage-survey-cb:checked');
+        var n = checked.length;
+        if (countEl) countEl.textContent = 'Выбрано: ' + n;
+        bulkBtns.forEach(function (btn) { btn.disabled = n === 0; });
+        boxes.forEach(function (cb) {
+            var card = cb.closest('.manage-card');
+            if (card) card.classList.toggle('is-selected', cb.checked);
+        });
+        if (selectAll) {
+            selectAll.indeterminate = n > 0 && n < boxes.length;
+            selectAll.checked = n > 0 && n === boxes.length;
+        }
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            boxes.forEach(function (cb) { cb.checked = selectAll.checked; });
+            updateUI();
+        });
+    }
+    boxes.forEach(function (cb) { cb.addEventListener('change', updateUI); });
+
+    form.addEventListener('submit', function (e) {
+        if (!form.querySelector('.manage-survey-cb:checked')) {
+            e.preventDefault();
+            alert('Выберите хотя бы один опрос.');
+            return;
+        }
+        var btn = e.submitter;
+        if (!btn || !btn.value) return;
+        var labels = { launch: 'запустить', close: 'завершить', archive: 'отправить в архив' };
+        var label = labels[btn.value] || 'выполнить действие';
+        if (!confirm('Вы уверены, что хотите ' + label + ' выбранные опросы (' +
+            form.querySelectorAll('.manage-survey-cb:checked').length + ')?')) {
+            e.preventDefault();
+        }
+    });
+
+    updateUI();
+})();
+</script>
 {% endblock %}

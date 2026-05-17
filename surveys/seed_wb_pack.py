@@ -11,6 +11,7 @@ from surveys.models import Survey, SurveyQuestion, SurveyQuestionOption, SurveyT
 
 # Уникальный префикс в названии — не дублировать при повторном запуске
 PACK_MARKER = "[ВБ Банк]"
+PACK_DEV_MARKER = "[ВБ Банк · Развитие]"
 
 WB_BANK_SURVEYS = [
     {
@@ -223,6 +224,185 @@ WB_BANK_SURVEYS = [
     },
 ]
 
+WB_DEVELOPMENT_SURVEYS = [
+    {
+        "title": f"{PACK_DEV_MARKER} Корпоративное обучение",
+        "description": (
+            "Опрос о тренингах, курсах и платформах обучения ВБ Банка. "
+            "Если вы не участвовали в программе — уточняющие вопросы пропускаются автоматически."
+        ),
+        "tags": ["training-feedback", "hr-processes"],
+        "is_anonymous": True,
+        "questions": [
+            {
+                "client_id": "train-main",
+                "title": (
+                    "Участвовали ли вы в обучающих мероприятиях ВБ Банка "
+                    "(тренинги, вебинары, курсы) за последние 12 месяцев?"
+                ),
+                "question_type": SurveyQuestion.TYPE_SINGLE,
+                "is_required": True,
+                "options": ["Да", "Нет"],
+                "sub_questions": [
+                    {
+                        "title": "Как часто вы участвовали?",
+                        "question_type": SurveyQuestion.TYPE_SINGLE,
+                        "is_required": True,
+                        "parent_triggers": ["Да"],
+                        "options": [
+                            "1–2 раза",
+                            "3–5 раз",
+                            "6 и более",
+                        ],
+                    },
+                    {
+                        "title": "Какой формат обучения был для вас наиболее полезным?",
+                        "question_type": SurveyQuestion.TYPE_SINGLE,
+                        "is_required": True,
+                        "parent_triggers": ["Да"],
+                        "options": [
+                            "Очные тренинги",
+                            "Онлайн-курсы",
+                            "Вебинары",
+                            "Обучение от наставника / коллег",
+                        ],
+                    },
+                    {
+                        "title": "Оцените качество обучения в банке",
+                        "question_type": SurveyQuestion.TYPE_SCALE,
+                        "is_required": True,
+                        "parent_triggers": ["Да"],
+                        "scale_min": 1,
+                        "scale_max": 10,
+                    },
+                    {
+                        "title": "Что бы вы улучшили в программе обучения?",
+                        "question_type": SurveyQuestion.TYPE_TEXT,
+                        "is_required": False,
+                        "parent_triggers": ["Да"],
+                    },
+                ],
+            },
+            {
+                "client_id": "platform-main",
+                "title": "Пользуетесь ли вы внутренней платформой или библиотекой обучения ВБ Банка?",
+                "question_type": SurveyQuestion.TYPE_SINGLE,
+                "is_required": True,
+                "options": ["Да", "Нет"],
+                "sub_questions": [
+                    {
+                        "title": "Как часто вы заходите на платформу обучения?",
+                        "question_type": SurveyQuestion.TYPE_SINGLE,
+                        "is_required": True,
+                        "parent_triggers": ["Да"],
+                        "options": [
+                            "Еженедельно",
+                            "Несколько раз в месяц",
+                            "Реже раза в месяц",
+                        ],
+                    },
+                    {
+                        "title": "Чего не хватает в обучающих материалах банка?",
+                        "question_type": SurveyQuestion.TYPE_TEXT,
+                        "is_required": False,
+                        "parent_triggers": ["Да"],
+                    },
+                ],
+            },
+            {
+                "title": "Что поможет вам развиваться профессиональнее в ВБ Банке?",
+                "question_type": SurveyQuestion.TYPE_MULTIPLE,
+                "is_required": False,
+                "options": [
+                    "Больше очных тренингов",
+                    "Больше онлайн-курсов",
+                    "Индивидуальный план развития",
+                    "Наставник / карьерный партнёр",
+                    "Время на обучение в рабочем графике",
+                    "Другое",
+                ],
+            },
+        ],
+    },
+    {
+        "title": f"{PACK_DEV_MARKER} Наставничество и карьера",
+        "description": (
+            "Обратная связь о наставничестве, карьерных программах и понятности роста в банке. "
+            "Подвопросы появляются только при ответе «Да»."
+        ),
+        "tags": ["training-feedback", "hr-processes"],
+        "is_anonymous": True,
+        "questions": [
+            {
+                "client_id": "mentor-main",
+                "title": "Есть ли у вас наставник или карьерный партнёр в ВБ Банке?",
+                "question_type": SurveyQuestion.TYPE_SINGLE,
+                "is_required": True,
+                "options": ["Да", "Нет"],
+                "sub_questions": [
+                    {
+                        "title": "Насколько наставничество помогает вам в работе?",
+                        "question_type": SurveyQuestion.TYPE_SCALE,
+                        "is_required": True,
+                        "parent_triggers": ["Да"],
+                        "scale_min": 1,
+                        "scale_max": 10,
+                    },
+                    {
+                        "title": "Как часто вы встречаетесь с наставником?",
+                        "question_type": SurveyQuestion.TYPE_SINGLE,
+                        "is_required": True,
+                        "parent_triggers": ["Да"],
+                        "options": [
+                            "Еженедельно",
+                            "Раз в 2–4 недели",
+                            "По необходимости",
+                        ],
+                    },
+                ],
+            },
+            {
+                "client_id": "career-main",
+                "title": (
+                    "Участвуете ли вы в программах карьерного развития "
+                    "(ИПР, оценка компетенций, ротация, talent-программы)?"
+                ),
+                "question_type": SurveyQuestion.TYPE_SINGLE,
+                "is_required": True,
+                "options": ["Да", "Нет"],
+                "sub_questions": [
+                    {
+                        "title": "Что из перечисленного было для вас наиболее полезным?",
+                        "question_type": SurveyQuestion.TYPE_SINGLE,
+                        "is_required": True,
+                        "parent_triggers": ["Да"],
+                        "options": [
+                            "Индивидуальный план развития (ИПР)",
+                            "Оценка компетенций",
+                            "Ротация / смена роли",
+                            "Talent / high-potential программа",
+                        ],
+                    },
+                    {
+                        "title": "Что можно улучшить в программах развития карьеры?",
+                        "question_type": SurveyQuestion.TYPE_TEXT,
+                        "is_required": False,
+                        "parent_triggers": ["Да"],
+                    },
+                ],
+            },
+            {
+                "title": "Насколько вам понятны возможности карьерного роста в ВБ Банке?",
+                "question_type": SurveyQuestion.TYPE_SCALE,
+                "is_required": True,
+                "scale_min": 1,
+                "scale_max": 10,
+                "help_text": "1 — совсем непонятно, 10 — полностью понятно",
+            },
+        ],
+    },
+]
+
 
 def _ensure_tags(slug_list):
     tags = []
@@ -233,6 +413,7 @@ def _ensure_tags(slug_list):
             "culture": "Корпоративная культура",
             "hr-processes": "HR-процессы",
             "services-satisfaction": "Удовлетворённость сервисами",
+            "training-feedback": "Оценка обучения",
         }
         tag, _ = SurveyTag.objects.get_or_create(
             slug=slug,
@@ -242,33 +423,44 @@ def _ensure_tags(slug_list):
     return tags
 
 
+def _create_question_row(survey, order, qd, parent=None, parent_triggers=None):
+    q = SurveyQuestion.objects.create(
+        survey=survey,
+        order=order,
+        title=qd["title"],
+        help_text=qd.get("help_text", ""),
+        question_type=qd["question_type"],
+        is_required=qd.get("is_required", False),
+        scale_min=qd.get("scale_min", 1),
+        scale_max=qd.get("scale_max", 10),
+        parent_question=parent,
+        parent_option_values=list(parent_triggers or []),
+    )
+    if q.question_type in (
+        SurveyQuestion.TYPE_SINGLE,
+        SurveyQuestion.TYPE_MULTIPLE,
+    ):
+        for idx, text in enumerate(qd.get("options") or []):
+            SurveyQuestionOption.objects.create(
+                question=q, order=idx, text=text
+            )
+    return q
+
+
 def _create_questions(survey, questions_data):
     survey.questions.all().delete()
-    for order, qd in enumerate(questions_data):
-        q = SurveyQuestion.objects.create(
-            survey=survey,
-            order=order,
-            title=qd["title"],
-            help_text=qd.get("help_text", ""),
-            question_type=qd["question_type"],
-            is_required=qd.get("is_required", False),
-            scale_min=qd.get("scale_min", 1),
-            scale_max=qd.get("scale_max", 10),
-        )
-        if q.question_type in (
-            SurveyQuestion.TYPE_SINGLE,
-            SurveyQuestion.TYPE_MULTIPLE,
-        ):
-            for idx, text in enumerate(qd.get("options") or []):
-                SurveyQuestionOption.objects.create(
-                    question=q, order=idx, text=text
-                )
+    order = 0
+    for qd in questions_data:
+        parent = _create_question_row(survey, order, qd)
+        order += 1
+        for sub in qd.get("sub_questions") or []:
+            triggers = sub.get("parent_triggers") or ["Да"]
+            _create_question_row(survey, order, sub, parent=parent, parent_triggers=triggers)
+            order += 1
 
 
-def seed_wb_bank_surveys(author, *, publish=False, duration_days=14):
-    """
-    Создать или обновить 5 опросов пакета. Вернуть (создано, обновлено, опубликовано).
-    """
+def _seed_survey_catalog(catalog, author, *, publish=False, duration_days=14):
+    """Создать/обновить опросы из каталога. Вернуть (создано, обновлено, опубликовано)."""
     if author is None:
         raise ValueError("Нужен автор опроса (пользователь).")
 
@@ -278,7 +470,7 @@ def seed_wb_bank_surveys(author, *, publish=False, duration_days=14):
     now = timezone.now()
     ends_at = now + timedelta(days=duration_days)
 
-    for data in WB_BANK_SURVEYS:
+    for data in catalog:
         survey, created = Survey.objects.get_or_create(
             title=data["title"],
             defaults={
@@ -322,6 +514,18 @@ def seed_wb_bank_surveys(author, *, publish=False, duration_days=14):
             published_count += 1
 
     return created_count, updated_count, published_count
+
+
+def seed_wb_bank_surveys(author, *, publish=False, duration_days=14):
+    return _seed_survey_catalog(
+        WB_BANK_SURVEYS, author, publish=publish, duration_days=duration_days
+    )
+
+
+def seed_wb_development_surveys(author, *, publish=False, duration_days=14):
+    return _seed_survey_catalog(
+        WB_DEVELOPMENT_SURVEYS, author, publish=publish, duration_days=duration_days
+    )
 
 
 def publish_wb_pack_surveys(queryset=None):

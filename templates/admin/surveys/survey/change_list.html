@@ -9,7 +9,17 @@
     </li>
     <li>
         <a href="{% url 'admin:surveys_survey_seed_wb_pack_publish' %}" class="viewsitelink">
-            Загрузить и опубликовать пакет
+            Загрузить и опубликовать пакет HR
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'admin:surveys_survey_seed_wb_dev' %}" class="addlink">
+            2 опроса «Развитие» (черновики)
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'admin:surveys_survey_seed_wb_dev_publish' %}" class="viewsitelink">
+            «Развитие» — загрузить и опубликовать
         </a>
     </li>
     {{ block.super }}
