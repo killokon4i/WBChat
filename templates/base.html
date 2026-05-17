@@ -368,7 +368,8 @@
     {% block extra_scripts %}{% endblock %}
     {% if user.is_authenticated %}
     {% load static %}
-    <script src="{% static 'js/wb-realtime.js' %}?v=3"></script>
+    <script src="{% static 'js/chat-time.js' %}?v=1"></script>
+    <script src="{% static 'js/wb-realtime.js' %}?v=4"></script>
     {% endif %}
 </body>
 </html>

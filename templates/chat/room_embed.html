@@ -832,7 +832,7 @@
             <div class="chat-header-status">
                 {% if conversation.type == 'direct' %}
                     <span class="status-dot {% if not other_user_online %}offline{% endif %}" id="status-dot"></span>
-                    <span id="status-text">{% if other_user_online %}Онлайн{% else %}Не в сети{% endif %}</span>
+                    <span id="status-text">{% if other_presence %}{{ other_presence.label|capfirst }}{% else %}Не в сети{% endif %}</span>
                 {% else %}
                     <span>{{ active_participants_count }} участник(ов)</span>
                 {% endif %}
@@ -939,6 +939,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'js/chat-time.js' %}?v=1"></script>
 <script>
 const conversationId = {{ conversation.id }};
 const userId = {{ user.id }};
@@ -946,6 +947,7 @@ const username = "{{ user.username }}";
 const csrfToken = "{{ csrf_token }}";
 const convType = "{{ conversation.type }}";
 const otherUserId = {% if other_user %}{{ other_user.id }}{% else %}null{% endif %};
+let otherPresence = {{ other_presence_json|safe }};
 let chatSocket = null;
 let typingTimer = null;
 let reconnectAttempts = 0;
@@ -963,6 +965,66 @@ textarea.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
 });
+
+function applyPresence(data) {
+    if (!data || convType !== 'direct' || data.user_id !== otherUserId) return;
+    otherPresence = {
+        user_id: data.user_id,
+        is_online: !!data.is_online,
+        label: data.label || '',
+        last_seen_at: data.last_seen_at || null,
+    };
+    const dot = document.getElementById('status-dot');
+    const text = document.getElementById('status-text');
+    if (!dot || !text) return;
+    dot.classList.toggle('offline', !otherPresence.is_online);
+    let label = otherPresence.label;
+    if (!label && window.WBChatTime) {
+        label = WBChatTime.formatPresenceLabel(
+            otherPresence.last_seen_at,
+            otherPresence.is_online
+        );
+    }
+    text.textContent = window.WBChatTime
+        ? WBChatTime.capitalizePresence(label)
+        : (label || 'Не в сети');
+}
+
+function pollPresence() {
+    if (convType !== 'direct' || !otherUserId) return;
+    fetch('/chat/api/presence/' + conversationId + '/', {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+    })
+        .then(function (r) { return r.json(); })
+        .then(applyPresence)
+        .catch(function () {});
+}
+
+let presencePollTimer = null;
+let presenceLabelTimer = null;
+let chatHeartbeatTimer = null;
+
+function startPresencePolling() {
+    if (convType !== 'direct' || !otherUserId) return;
+    pollPresence();
+    if (presencePollTimer) return;
+    presencePollTimer = setInterval(pollPresence, 5000);
+    presenceLabelTimer = setInterval(function () {
+        if (otherPresence && !otherPresence.is_online) applyPresence(otherPresence);
+    }, 30000);
+}
+
+function startChatHeartbeat() {
+    if (chatHeartbeatTimer) return;
+    function ping() {
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ type: 'heartbeat' }));
+        }
+    }
+    ping();
+    chatHeartbeatTimer = setInterval(ping, 60000);
+}
 
 function updateConnectionStatus(status) {
     const el = document.getElementById('connection-status');
@@ -983,6 +1045,7 @@ function connect() {
         updateConnectionStatus('connected');
         reconnectAttempts = 0;
         markConversationRead();
+        startChatHeartbeat();
     };
     chatSocket.onclose = function() {
         updateConnectionStatus('disconnected');
@@ -1003,8 +1066,11 @@ function handleMessage(data) {
             if (data.is_typing && data.user_id !== userId) typing.textContent = `${data.username} печатает...`;
             else typing.textContent = '';
             break;
-        case 'user_join': addSystemMessage(`${data.username} присоединился к чату`); break;
-        case 'user_leave': addSystemMessage(`${data.username} покинул чат`); break;
+        case 'presence_update':
+            if (convType === 'direct' && data.user_id === otherUserId) {
+                applyPresence(data);
+            }
+            break;
         case 'message_edited': updateMessage(data.message); break;
         case 'message_deleted': removeMessage(data.message_id); break;
         case 'message_pinned': handlePinUpdate(data.message_id, data.is_pinned); break;
@@ -1022,28 +1088,13 @@ function markConversationRead() {
 let lastMessageDayKey = null;
 
 function getMessageDayKey(isoString) {
-    const d = new Date(isoString);
-    if (Number.isNaN(d.getTime())) return '';
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${d.getFullYear()}-${m}-${day}`;
+    if (window.WBChatTime) return WBChatTime.getMessageDayKey(isoString);
+    return isoString;
 }
 
 function formatDateSeparator(isoString) {
-    const d = new Date(isoString);
-    if (Number.isNaN(d.getTime())) return '';
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const sameDay = (a, b) =>
-        a.getFullYear() === b.getFullYear() &&
-        a.getMonth() === b.getMonth() &&
-        a.getDate() === b.getDate();
-    if (sameDay(d, today)) return 'Сегодня';
-    if (sameDay(d, yesterday)) return 'Вчера';
-    const opts = { day: 'numeric', month: 'long' };
-    if (d.getFullYear() !== today.getFullYear()) opts.year = 'numeric';
-    return d.toLocaleDateString('ru-RU', opts);
+    if (window.WBChatTime) return WBChatTime.formatDateSeparator(isoString);
+    return isoString;
 }
 
 function ensureDateSeparator(container, isoString) {
@@ -1084,7 +1135,9 @@ function addMessage(msg, skipParentNotify) {
         div.classList.add('message-media-only');
     }
 
-    const time = new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const time = window.WBChatTime
+        ? WBChatTime.formatMessageTime(msg.created_at)
+        : new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     let editedLabel = msg.is_edited ? '<span class="message-edited">(изм.)</span>' : '';
     let pinnedLabel = msg.is_pinned ? '<span class="message-pinned-indicator">&#128204;</span>' : '';
 
@@ -2208,7 +2261,16 @@ function loadMessages() {
 }
 
 document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) pollNewMessages();
+    if (!document.hidden) {
+        pollNewMessages();
+        pollPresence();
+    }
+});
+
+window.addEventListener('message', function (ev) {
+    var d = ev.data;
+    if (!d || d.source !== 'wbchat-parent' || d.type !== 'presence_update') return;
+    applyPresence(d);
 });
 
 document.getElementById('chatEmbedBack')?.addEventListener('click', function () {
@@ -2223,5 +2285,6 @@ document.getElementById('chatEmbedBack')?.addEventListener('click', function () 
 
 connect();
 loadMessages();
+startPresencePolling();
 </script>
 {% endblock %}

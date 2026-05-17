@@ -534,7 +534,8 @@
     <a href="{% url 'chat_index' %}?c={{ conversation.id }}"
        class="chat-item{% if active_conversation_id == conversation.id %} is-active{% endif %}"
        data-conversation-id="{{ conversation.id }}"
-       data-conversation-name="{{ conversation.display_name|escapejs }}">
+       data-conversation-name="{{ conversation.display_name|escapejs }}"
+       data-updated-at="{{ conversation.updated_at.isoformat }}">
         {% if conversation.display_avatar %}
             <img src="{{ conversation.display_avatar.url }}" alt="" class="chat-avatar">
         {% else %}
@@ -550,7 +551,7 @@
                         <span class="chat-position">{{ conversation.display_position }}</span>
                     {% endif %}
                 </span>
-                <span class="chat-time">{{ conversation.updated_at|date:"d.m H:i" }}</span>
+                <span class="chat-time" title="{{ conversation.updated_at|date:'d.m.Y H:i' }}">{{ conversation.updated_at|date:"d.m H:i" }}</span>
             </div>
             <div class="chat-preview">
                 <span class="chat-last-message">

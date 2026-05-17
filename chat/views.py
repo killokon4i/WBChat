@@ -1,3 +1,4 @@
+import json
 import mimetypes
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -12,6 +13,10 @@ from .models import Conversation, Message, UserConversation, Attachment
 from .message_format import build_message_dict, conversation_display_name
 from .realtime import _message_preview, get_unread_summary
 from .services.file_upload import validate_chat_upload_file
+from .services.presence import (
+    get_direct_chat_partner,
+    serialize_user_presence,
+)
 
 User = get_user_model()
 
@@ -72,7 +77,6 @@ def chat_index(request):
 @xframe_options_sameorigin
 def chat_room(request, conversation_id):
     """Страница конкретного чата (полная) или панель для split-view (?embed=1)"""
-    from chat.models import OnlineStatus
     from django.urls import reverse
 
     embed = request.GET.get('embed', '').lower() in ('1', 'true', 'yes')
@@ -105,36 +109,38 @@ def chat_room(request, conversation_id):
         left_at__isnull=True,
     ).count()
     
-    # Для direct чата - получаем собеседника и его статус
-    other_user = None
-    other_user_online = False
-    if conversation.type == 'direct':
-        other_user = conversation.participants.exclude(id=request.user.id).first()
-        if other_user:
-            try:
-                online_status = OnlineStatus.objects.get(user=other_user)
-                stale_threshold = timezone.now() - timezone.timedelta(minutes=5)
-                other_user_online = (
-                    online_status.is_online
-                    and online_status.connection_count > 0
-                    and online_status.last_activity_at
-                    and online_status.last_activity_at > stale_threshold
-                )
-                if online_status.is_online and not other_user_online:
-                    online_status.is_online = False
-                    online_status.connection_count = 0
-                    online_status.last_seen_at = online_status.last_activity_at
-                    online_status.save(update_fields=['is_online', 'connection_count', 'last_seen_at'])
-            except OnlineStatus.DoesNotExist:
-                other_user_online = False
-    
+    # Для direct чата — собеседник и статус присутствия
+    other_user = get_direct_chat_partner(conversation, request.user)
+    other_presence = serialize_user_presence(other_user) if other_user else None
+
     return render(request, 'chat/room_embed.html', {
         'conversation': conversation,
         'user_conversation': user_conversation,
         'other_user': other_user,
-        'other_user_online': other_user_online,
+        'other_user_online': other_presence['is_online'] if other_presence else False,
+        'other_presence': other_presence,
+        'other_presence_json': json.dumps(other_presence) if other_presence else 'null',
         'active_participants_count': active_participants_count,
     })
+
+
+@login_required
+def api_presence(request, conversation_id):
+    """Статус собеседника в личном чате (для polling)."""
+    user_conversation = UserConversation.objects.filter(
+        user=request.user,
+        conversation_id=conversation_id,
+        left_at__isnull=True,
+    ).first()
+    if not user_conversation:
+        return JsonResponse({'error': 'Нет доступа'}, status=403)
+
+    conversation = get_object_or_404(Conversation, id=conversation_id, is_active=True)
+    partner = get_direct_chat_partner(conversation, request.user)
+    if not partner:
+        return JsonResponse({'error': 'Только для личных чатов'}, status=400)
+
+    return JsonResponse(serialize_user_presence(partner))
 
 
 @login_required

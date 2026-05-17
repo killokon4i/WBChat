@@ -14,6 +14,7 @@ urlpatterns = [
     path('api/attachment/<int:attachment_id>/download/', views.download_attachment, name='chat_download_attachment'),
     path('api/forward/<int:conversation_id>/<int:message_id>/', views.forward_message, name='chat_forward'),
     path('api/mark-read/<int:conversation_id>/', views.mark_read, name='chat_mark_read'),
+    path('api/presence/<int:conversation_id>/', views.api_presence, name='chat_presence'),
     path('api/create-group/', views.create_group, name='chat_create_group'),
     path('api/info/<int:conversation_id>/', views.chat_info, name='chat_info'),
     path('api/update/<int:conversation_id>/', views.chat_update, name='chat_update'),

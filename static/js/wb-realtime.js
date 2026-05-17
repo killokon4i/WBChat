@@ -10,6 +10,7 @@
     var reconnectTimer = null;
     var reconnectAttempt = 0;
     var pollTimer = null;
+    var notifyHeartbeatTimer = null;
     var POLL_MS = 2500;
 
     function wsUrl() {
@@ -44,15 +45,14 @@
     }
 
     function formatChatTime(iso) {
+        if (window.WBChatTime) {
+            return WBChatTime.formatChatListTime(iso);
+        }
         if (!iso) return '';
         var d = new Date(iso);
         if (Number.isNaN(d.getTime())) return '';
-        var now = new Date();
         var pad = function (x) { return String(x).padStart(2, '0'); };
-        if (d.toDateString() === now.toDateString()) {
-            return pad(d.getHours()) + ':' + pad(d.getMinutes());
-        }
-        return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        return pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
     function updateChatListItem(conversationId, data, moveToTop) {
@@ -106,6 +106,28 @@
             var item = document.querySelector('.chat-item[data-conversation-id="' + c.id + '"]');
             if (item && item.parentNode === list) {
                 list.appendChild(item);
+            }
+        });
+    }
+
+    function startNotificationHeartbeat() {
+        if (notifyHeartbeatTimer) return;
+        function ping() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'heartbeat' }));
+            }
+        }
+        ping();
+        notifyHeartbeatTimer = setInterval(ping, 60000);
+    }
+
+    function initChatListTimes() {
+        if (!window.WBChatTime) return;
+        document.querySelectorAll('.chat-item[data-updated-at]').forEach(function (item) {
+            var iso = item.getAttribute('data-updated-at');
+            var timeEl = item.querySelector('.chat-time');
+            if (iso && timeEl) {
+                timeEl.textContent = WBChatTime.formatChatListTime(iso);
             }
         });
     }
@@ -174,6 +196,21 @@
             case 'chat_read':
                 updateChatListItem(data.conversation_id, { unread_count: 0 }, false);
                 break;
+            case 'presence_update':
+                try {
+                    var chatFrame = document.querySelector('iframe.chat-split-frame');
+                    if (chatFrame && chatFrame.contentWindow) {
+                        chatFrame.contentWindow.postMessage({
+                            source: 'wbchat-parent',
+                            type: 'presence_update',
+                            user_id: data.user_id,
+                            is_online: data.is_online,
+                            label: data.label,
+                            last_seen_at: data.last_seen_at,
+                        }, '*');
+                    }
+                } catch (err) { /* ignore */ }
+                break;
         }
     }
 
@@ -190,6 +227,7 @@
 
         socket.onopen = function () {
             reconnectAttempt = 0;
+            startNotificationHeartbeat();
         };
 
         socket.onmessage = function (e) {
@@ -257,6 +295,7 @@
         return m ? decodeURIComponent(m[1]) : '';
     }
 
+    initChatListTimes();
     startPolling();
     connect();
     document.addEventListener('visibilitychange', function () {
