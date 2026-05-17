@@ -69,6 +69,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'WBChat.middleware.ForceUTF8HtmlCharsetMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -165,7 +166,11 @@ STATICFILES_DIRS = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# В dev — статика из finders (в т.ч. django.contrib.admin); в prod — collectstatic + WhiteNoise
+WHITENOISE_USE_FINDERS = DEBUG
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
