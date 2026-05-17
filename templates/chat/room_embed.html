@@ -1602,12 +1602,51 @@ let pendingFiles = [];
 let isUploading = false;
 let uploadProgress = 0;
 
+const CHAT_MAX_FILE_BYTES = 50 * 1024 * 1024;
+const CHAT_BLOCKED_EXTS = [
+    '.exe', '.bat', '.cmd', '.com', '.msi', '.scr', '.pif', '.vbs', '.js',
+    '.wsf', '.ps1', '.sh', '.jar', '.dll', '.apk', '.deb', '.rpm'
+];
+
+function chatFileExtension(name) {
+    const n = (name || '').toLowerCase();
+    if (n.endsWith('.tar.gz')) return '.tar.gz';
+    if (n.endsWith('.tar.bz2')) return '.tar.bz2';
+    if (n.endsWith('.tar.xz')) return '.tar.xz';
+    const i = n.lastIndexOf('.');
+    return i >= 0 ? n.slice(i) : '';
+}
+
+function validateChatFile(file) {
+    const name = file.name || 'file';
+    if (!file.size) {
+        return 'Файл «' + name + '» пустой';
+    }
+    if (file.size > CHAT_MAX_FILE_BYTES) {
+        return '«' + name + '» больше 50 МБ';
+    }
+    const ext = chatFileExtension(name);
+    if (CHAT_BLOCKED_EXTS.indexOf(ext) !== -1) {
+        if (ext === '.exe') {
+            return 'Файлы .exe запрещены: «' + name + '»';
+        }
+        return 'Тип ' + ext + ' запрещён: «' + name + '»';
+    }
+    return null;
+}
+
 function addFilesFromList(fileList) {
     if (isUploading) return;
-    const files = Array.from(fileList || []).filter(function (f) { return f && f.size > 0; });
+    const files = Array.from(fileList || []).filter(function (f) { return f && f.size >= 0; });
     if (!files.length) return;
     let added = 0;
+    const rejected = [];
     files.forEach(function (f) {
+        const err = validateChatFile(f);
+        if (err) {
+            rejected.push(err);
+            return;
+        }
         const isDup = pendingFiles.some(function (p) {
             return p.name === (f.name || 'file') &&
                 p.size === f.size &&
@@ -1622,9 +1661,14 @@ function addFilesFromList(fileList) {
         pendingFiles.push(entry);
         added += 1;
     });
+    if (rejected.length) {
+        showToast(rejected[0]);
+    }
     if (!added) return;
     renderPendingFiles();
-    showToast(added === 1 ? 'Файл прикреплён' : 'Прикреплено файлов: ' + added);
+    if (added) {
+        showToast(added === 1 ? 'Файл прикреплён' : 'Прикреплено файлов: ' + added);
+    }
 }
 
 function handleFileSelect(input) {

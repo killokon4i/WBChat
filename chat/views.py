@@ -11,6 +11,7 @@ from django.utils import timezone
 from .models import Conversation, Message, UserConversation, Attachment
 from .message_format import build_message_dict, conversation_display_name
 from .realtime import _message_preview, get_unread_summary
+from .services.file_upload import validate_chat_upload_file
 
 User = get_user_model()
 
@@ -324,14 +325,11 @@ def upload_attachment(request, conversation_id):
     if not files and not text:
         return JsonResponse({'error': 'Нет содержимого'}, status=400)
 
-    DANGEROUS = {'.exe', '.bat', '.cmd', '.com', '.msi', '.scr', '.pif', '.vbs', '.js', '.wsf', '.ps1', '.sh', '.jar'}
-
     for f in files:
-        ext = os.path.splitext(f.name)[1].lower()
-        if ext in DANGEROUS:
-            return JsonResponse({'error': f'Запрещённый тип файла: {ext}'}, status=400)
-        if f.size > 50 * 1024 * 1024:
-            return JsonResponse({'error': f'Файл слишком большой: {f.name} (макс. 50 МБ)'}, status=400)
+        mime = mimetypes.guess_type(f.name)[0]
+        err = validate_chat_upload_file(f.name, f.size, mime)
+        if err:
+            return JsonResponse({'error': err}, status=400)
 
     has_image = any(
         (mimetypes.guess_type(f.name)[0] or '').startswith('image/') for f in files
