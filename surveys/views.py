@@ -260,16 +260,20 @@ def survey_manage_bulk(request):
     except (TypeError, ValueError):
         ids = []
 
+    redirect_to = (request.POST.get("redirect_to") or "surveys_manage_list").strip()
+    if redirect_to not in ("surveys_manage_list", "surveys_archive_list"):
+        redirect_to = "surveys_manage_list"
+
     if not ids:
         messages.warning(request, "Не выбран ни один опрос.")
-        return redirect("surveys_manage_list")
+        return redirect(redirect_to)
 
     surveys = list(
         Survey.objects.filter(pk__in=ids, author=request.user).order_by("pk")
     )
     if not surveys:
         messages.error(request, "Нет доступных опросов для выбранных ID.")
-        return redirect("surveys_manage_list")
+        return redirect(redirect_to)
 
     launched = closed = archived = 0
     skipped = 0
@@ -320,7 +324,59 @@ def survey_manage_bulk(request):
     else:
         messages.error(request, "Неизвестное действие.")
 
-    return redirect("surveys_manage_list")
+    return redirect(redirect_to)
+
+
+@login_required
+@require_POST
+def survey_archive_bulk(request):
+    """Массовые действия над опросами в архиве."""
+    if not _user_can_manage_surveys(request.user):
+        return HttpResponseForbidden("Нет прав для управления опросами.")
+
+    action = (request.POST.get("action") or "").strip()
+    raw_ids = request.POST.getlist("survey_ids")
+    try:
+        ids = [int(x) for x in raw_ids if str(x).isdigit()]
+    except (TypeError, ValueError):
+        ids = []
+
+    if not ids:
+        messages.warning(request, "Не выбран ни один опрос.")
+        return redirect("surveys_archive_list")
+
+    surveys = list(
+        Survey.objects.filter(pk__in=ids, status="archived").order_by("pk")
+    )
+    if not surveys:
+        messages.error(request, "Нет доступных опросов в архиве для выбранных ID.")
+        return redirect("surveys_archive_list")
+
+    restored = deleted = 0
+    skipped = 0
+
+    if action == "restore":
+        for survey in surveys:
+            survey.status = "closed"
+            survey.save(update_fields=["status", "updated_at"])
+            restored += 1
+        messages.success(request, f"Возвращено из архива: {restored} (статус «Завершён»).")
+    elif action == "delete":
+        for survey in surveys:
+            if survey.responses.exists():
+                skipped += 1
+                continue
+            survey.delete()
+            deleted += 1
+        messages.success(
+            request,
+            f"Удалено опросов: {deleted}."
+            + (f" Пропущено (есть ответы): {skipped}." if skipped else ""),
+        )
+    else:
+        messages.error(request, "Неизвестное действие.")
+
+    return redirect("surveys_archive_list")
 
 
 @login_required
