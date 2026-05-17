@@ -1452,31 +1452,34 @@ function startForward(msgId) {
 }
 
 function loadForwardConversations() {
-    fetch('/chat/')
-        .then(r => r.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const items = doc.querySelectorAll('.chat-item');
+    fetch('/chat/api/conversations/', {
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin',
+    })
+        .then(function (r) {
+            if (!r.ok) throw new Error('http_' + r.status);
+            return r.json();
+        })
+        .then(function (data) {
+            const convs = data.conversations || [];
+            const items = convs.map(function (c) {
+                return { cid: c.id, nameText: c.name || 'Чат' };
+            });
             const list = document.getElementById('forward-list');
             list.innerHTML = '';
-            if (items.length === 0) {
-                list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary)">Нет доступных чатов</div>';
+            const filtered = items.filter(function (it) { return it.cid !== conversationId; });
+            if (filtered.length === 0) {
+                list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary)">Нет других чатов для пересылки</div>';
                 return;
             }
-            items.forEach(item => {
-                const href = item.getAttribute('href');
-                const match = href.match(/\/chat\/(\d+)\//);
-                if (!match) return;
-                const cid = parseInt(match[1]);
-                if (cid === conversationId) return;
-                const name = item.querySelector('.chat-name');
-                const nameText = name ? name.textContent.trim().split('\n')[0].trim() : 'Чат';
+            filtered.forEach(function (item) {
+                const cid = item.cid;
+                const nameText = item.nameText;
                 const initial = nameText[0] || 'Ч';
                 const el = document.createElement('div');
                 el.className = 'forward-dialog-item';
                 el.innerHTML = `<div class="fdi-avatar">${initial.toUpperCase()}</div><div class="fdi-name">${escapeHtml(nameText)}</div>`;
-                el.onclick = () => forwardTo(cid);
+                el.onclick = function () { forwardTo(cid); };
                 list.appendChild(el);
             });
         })

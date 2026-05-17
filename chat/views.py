@@ -481,6 +481,37 @@ def pin_message(request, conversation_id, message_id):
 
 
 @login_required
+def api_conversations_list(request):
+    """Список чатов пользователя (для пересылки и др.)."""
+    conversations = (
+        Conversation.objects.filter(
+            is_active=True,
+            userconversation__user=request.user,
+            userconversation__left_at__isnull=True,
+        )
+        .prefetch_related('participants')
+        .order_by('-updated_at')
+        .distinct()
+    )
+    items = []
+    for conversation in conversations:
+        if conversation.type == 'direct':
+            other_user = conversation.participants.exclude(id=request.user.id).first()
+            if other_user:
+                name = other_user.get_full_name() or other_user.username
+            else:
+                name = 'Удалённый пользователь'
+        else:
+            name = conversation.name or 'Без названия'
+        items.append({
+            'id': conversation.id,
+            'name': name,
+            'type': conversation.type,
+        })
+    return JsonResponse({'success': True, 'conversations': items})
+
+
+@login_required
 @require_POST
 def forward_message(request, conversation_id, message_id):
     """Forward a message to another conversation."""

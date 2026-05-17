@@ -9,6 +9,7 @@ urlpatterns = [
     path('api/create/', views.create_conversation, name='create_conversation'),
     path('api/upload/<int:conversation_id>/', views.upload_attachment, name='chat_upload'),
     path('api/pin/<int:conversation_id>/<int:message_id>/', views.pin_message, name='chat_pin'),
+    path('api/conversations/', views.api_conversations_list, name='chat_api_conversations'),
     path('api/forward/<int:conversation_id>/<int:message_id>/', views.forward_message, name='chat_forward'),
     path('api/mark-read/<int:conversation_id>/', views.mark_read, name='chat_mark_read'),
     path('api/create-group/', views.create_group, name='chat_create_group'),
