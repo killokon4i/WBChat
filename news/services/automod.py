@@ -66,27 +66,24 @@ class AutoModerationService:
     def check_text(self, text: str) -> tuple[bool, list[str]]:
         """
         Проверить текст на наличие запрещённых слов.
-        
-        Args:
-            text: Текст для проверки
-            
-        Returns:
-            (is_clean, found_words): Кортеж из флага чистоты и списка найденных слов
+        Сверяем по отдельным словам (fullmatch), чтобы не ловить «небольшой», «ребёнок» и т.п.
         """
         if not text:
             return True, []
-        
-        # Нормализуем текст
+
         normalized = self._normalize_text(text)
-        
+        tokens = re.findall(r'[\w]+', normalized, re.UNICODE) or [normalized]
+
         found_words = []
-        for pattern in self._get_patterns():
-            matches = pattern.findall(normalized)
-            found_words.extend(matches)
-        
-        # Убираем дубликаты
+        for token in tokens:
+            if len(token) < 2:
+                continue
+            for pattern in self._get_patterns():
+                if pattern.fullmatch(token):
+                    found_words.append(token)
+                    break
+
         found_words = list(set(found_words))
-        
         return len(found_words) == 0, found_words
     
     def _normalize_text(self, text: str) -> str:
@@ -128,8 +125,11 @@ class AutoModerationService:
             - warning_number: int - номер предупреждения (если выдано)
             - is_banned: bool - забанен ли теперь пользователь
         """
+        warnings = getattr(user, 'comment_warnings', 0) or 0
+        is_banned = getattr(user, 'is_comments_banned', False)
+
         # Проверяем бан
-        if user.is_comments_banned:
+        if is_banned:
             return {
                 'allowed': False,
                 'reason': 'banned',
@@ -151,11 +151,10 @@ class AutoModerationService:
             }
         
         # Текст содержит мат — выдаём предупреждение
-        user.comment_warnings += 1
+        user.comment_warnings = warnings + 1
         warning_number = user.comment_warnings
-        
+
         if user.comment_warnings >= 3:
-            # Бан
             user.is_comments_banned = True
             user.comments_banned_at = timezone.now()
             user.save(update_fields=['comment_warnings', 'is_comments_banned', 'comments_banned_at'])
@@ -220,7 +219,7 @@ class AutoModerationService:
                 'name': 'Блокировка комментариев',
                 'title_template': 'Возможность комментирования заблокирована',
                 'body_template': '{content}',
-                'priority': 'critical',
+                'priority': 'urgent',
             }
         )
         

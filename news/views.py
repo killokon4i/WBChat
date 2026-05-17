@@ -265,92 +265,117 @@ def create_news(request):
     })
 
 
+def _user_avatar_url(user):
+    if not user or not getattr(user, 'avatar', None):
+        return None
+    try:
+        return user.avatar.url
+    except (ValueError, OSError):
+        return None
+
+
 @login_required(login_url='login')
 @require_POST
 def add_comment(request, pk):
     """Добавить комментарий к новости"""
-    news_item = get_object_or_404(News, pk=pk)
-    
-    if not news_item.allow_comments:
-        return JsonResponse({'error': 'Комментарии отключены'}, status=403)
-    
-    content = request.POST.get('content', '').strip()
-    parent_id = request.POST.get('parent_id')
-    
-    if not content:
-        return JsonResponse({'error': 'Комментарий не может быть пустым'}, status=400)
-    
-    # === АВТОМОДЕРАЦИЯ ===
-    automod = AutoModerationService()
-    moderation_result = automod.process_comment(request.user, content)
-    
-    if not moderation_result['allowed']:
-        # Комментарий не прошёл модерацию
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'error': moderation_result['message'],
-                'is_banned': moderation_result['is_banned'],
-                'warning_number': moderation_result['warning_number'],
-            }, status=403)
-        else:
-            from django.contrib import messages
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    def json_error(message, status=400, **extra):
+        payload = {'success': False, 'error': message, **extra}
+        return JsonResponse(payload, status=status)
+
+    try:
+        news_item = get_object_or_404(News, pk=pk)
+
+        if not news_item.allow_comments:
+            return json_error('Комментарии отключены', status=403)
+
+        content = request.POST.get('content', '').strip()
+        parent_id = request.POST.get('parent_id')
+
+        if not content:
+            return json_error('Комментарий не может быть пустым', status=400)
+
+        automod = AutoModerationService()
+        moderation_result = automod.process_comment(request.user, content)
+
+        if not moderation_result['allowed']:
+            if is_ajax:
+                return json_error(
+                    moderation_result['message'],
+                    status=403,
+                    is_banned=moderation_result['is_banned'],
+                    warning_number=moderation_result['warning_number'],
+                )
             messages.error(request, moderation_result['message'])
             return redirect('news_detail', pk=pk)
-    
-    # Создаём комментарий
-    parent_comment = None
-    if parent_id:
-        parent_comment = NewsComment.objects.filter(pk=parent_id).first()
-    
-    comment = NewsComment.objects.create(
-        news=news_item,
-        author=request.user,
-        content=content,
-        parent=parent_comment
-    )
-    # Обновляем счётчик комментариев (учитываются только не удалённые)
-    news_item.recompute_comments_count()
-    
-    # Обрабатываем упоминания через MentionService
-    mention_service = MentionService()
-    mentioned_users = mention_service.process_comment(comment)
-    
-    # Уведомление автору родительского комментария (ответ)
-    if parent_comment and parent_comment.author != request.user:
-        from notifications.models import Notification, NotificationType
-        notification_type, _ = NotificationType.objects.get_or_create(
-            code='comment_reply',
-            defaults={
-                'name': 'Ответ на комментарий',
-                'title_template': '{author} ответил на ваш комментарий',
-                'body_template': '{content}',
-                'priority': 'normal',
-            }
+
+        parent_comment = None
+        if parent_id:
+            parent_comment = NewsComment.objects.filter(pk=parent_id, news=news_item).first()
+
+        comment = NewsComment.objects.create(
+            news=news_item,
+            author=request.user,
+            content=content,
+            parent=parent_comment,
         )
-        Notification.objects.create(
-            user=parent_comment.author,
-            notification_type=notification_type,
-            title=f'{request.user.get_full_name() or request.user.username} ответил на ваш комментарий',
-            content=content[:200],
-            link=f'/news/{news_item.id}/#comment-{comment.id}'
-        )
-    
-    # Если это AJAX запрос - возвращаем JSON
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({
-            'success': True,
-            'comment': {
-                'id': comment.id,
-                'author': comment.author.get_full_name() or comment.author.username,
-                'author_avatar': comment.author.avatar.url if comment.author.avatar else None,
-                'content': mention_service.highlight_mentions(comment.content),
-                'created_at': comment.created_at.strftime('%d.%m.%Y %H:%M'),
-                'mentioned_count': len(mentioned_users),
-            }
-        })
-    
-    return redirect('news_detail', pk=pk)
+        news_item.recompute_comments_count()
+
+        mention_service = MentionService()
+        try:
+            mentioned_users = mention_service.process_comment(comment)
+        except Exception:
+            mentioned_users = []
+
+        if parent_comment and parent_comment.author_id != request.user.id:
+            try:
+                from notifications.models import Notification, NotificationType
+
+                notification_type, _ = NotificationType.objects.get_or_create(
+                    code='comment_reply',
+                    defaults={
+                        'name': 'Ответ на комментарий',
+                        'title_template': '{author} ответил на ваш комментарий',
+                        'body_template': '{content}',
+                        'priority': 'normal',
+                    },
+                )
+                Notification.objects.create(
+                    user=parent_comment.author,
+                    notification_type=notification_type,
+                    title=f'{request.user.get_full_name() or request.user.username} ответил на ваш комментарий',
+                    content=content[:200],
+                    link=f'/news/{news_item.id}/#comment-{comment.id}',
+                )
+            except Exception:
+                pass
+
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'comment': {
+                    'id': comment.id,
+                    'author': comment.author.get_full_name() or comment.author.username,
+                    'author_avatar': _user_avatar_url(comment.author),
+                    'content': mention_service.highlight_mentions(comment.content),
+                    'created_at': comment.created_at.strftime('%d.%m.%Y %H:%M'),
+                    'mentioned_count': len(mentioned_users),
+                },
+            })
+
+        return redirect('news_detail', pk=pk)
+
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).exception('add_comment failed: %s', exc)
+        if is_ajax:
+            return json_error(
+                'Не удалось сохранить комментарий. Попробуйте ещё раз или обновите страницу.',
+                status=500,
+            )
+        messages.error(request, 'Не удалось сохранить комментарий.')
+        return redirect('news_detail', pk=pk)
 
 
 @login_required(login_url='login')
