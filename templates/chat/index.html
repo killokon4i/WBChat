@@ -5,6 +5,7 @@
 {% block extra_styles %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/chat-split.css' %}?v=6">
+<link rel="stylesheet" href="{% static 'css/avatar-initials.css' %}?v=1">
 <style>
     .chat-list {
         display: flex;
@@ -536,13 +537,7 @@
        data-conversation-id="{{ conversation.id }}"
        data-conversation-name="{{ conversation.display_name|escapejs }}"
        data-updated-at="{{ conversation.updated_at.isoformat }}">
-        {% if conversation.display_avatar %}
-            <img src="{{ conversation.display_avatar.url }}" alt="" class="chat-avatar">
-        {% else %}
-            <div class="chat-avatar-placeholder">
-                {{ conversation.display_name|slice:":1"|upper }}
-            </div>
-        {% endif %}
+        {% include 'partials/avatar_slot.html' with has_avatar=conversation.display_has_avatar avatar_url=conversation.display_avatar_url initials=conversation.display_initials slot_class='avatar-slot--chat-list' %}
         <div class="chat-info">
             <div class="chat-header">
                 <span class="chat-name">
@@ -696,15 +691,20 @@ function renderUsers(users) {
     
     userList.innerHTML = filteredUsers.map(user => {
         const fullName = [user.last_name, user.first_name].filter(Boolean).join(' ') || user.username;
-        const initial = (user.first_name || user.username || '?')[0].toUpperCase();
         const position = user.position_name || '';
-        const avatarHtml = user.avatar 
-            ? `<img src="${user.avatar}" alt="">` 
-            : initial;
-        
+        const initials = user.avatar_initials || (window.WBAvatar && WBAvatar.initialsFromName(fullName)) || '?';
+        const avatarHtml = window.WBAvatar
+            ? WBAvatar.slotHtml({
+                hasAvatar: user.has_avatar,
+                url: user.avatar,
+                initials: initials,
+                slotClass: 'avatar-slot--user-list',
+            })
+            : initials;
+
         return `
             <a href="/chat/start/${user.id}/" class="user-list-item">
-                <div class="user-list-avatar">${avatarHtml}</div>
+                ${avatarHtml}
                 <div class="user-list-info">
                     <div class="user-list-name">${fullName}</div>
                     ${position ? `<div class="user-list-position">${position}</div>` : ''}
@@ -951,6 +951,7 @@ function createGroup(e) {
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
 {% load static %}
 <script src="{% static 'js/chat-shell.js' %}?v=8"></script>
 {% endblock %}

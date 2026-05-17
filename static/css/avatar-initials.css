@@ -1,0 +1,60 @@
+/* Заглушки аватаров: инициалы вместо битого изображения */
+.avatar-slot {
+    position: relative;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, var(--magenta, #e400af), #c4009a);
+    color: #fff;
+}
+
+.avatar-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.avatar-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    line-height: 1;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 600;
+    user-select: none;
+}
+
+.avatar-slot--nav {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 13px;
+}
+
+.avatar-slot--chat-list {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    font-size: 18px;
+}
+
+.avatar-slot--chat-header {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    font-size: 16px;
+}
+
+.avatar-slot--user-list {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 15px;
+}

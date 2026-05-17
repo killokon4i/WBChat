@@ -1,0 +1,13 @@
+{% comment %}
+  Универсальный аватар: фото или инициалы (2 буквы).
+  Параметры: has_avatar, avatar_url, initials, img_class, slot_class
+{% endcomment %}
+<div class="avatar-slot{% if slot_class %} {{ slot_class }}{% endif %}">
+{% if has_avatar and avatar_url %}
+<img src="{{ avatar_url }}" alt="" class="{{ img_class }}" loading="lazy"
+     data-initials="{{ initials }}"
+     onerror="this.onerror=null;var s=document.createElement('span');s.className='avatar-initials';s.setAttribute('aria-hidden','true');s.textContent=this.dataset.initials||'?';this.replaceWith(s);">
+{% else %}
+<span class="avatar-initials" aria-hidden="true">{{ initials }}</span>
+{% endif %}
+</div>

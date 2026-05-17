@@ -64,6 +64,8 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     department_name = serializers.CharField(source='department.name', read_only=True)
     position_name = serializers.CharField(source='position.name', read_only=True)
     avatar = serializers.SerializerMethodField()
+    has_avatar = serializers.SerializerMethodField()
+    avatar_initials = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -72,13 +74,19 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'full_name',
             'department', 'department_name',
             'position', 'position_name',
-            'status', 'avatar'
+            'status', 'avatar', 'has_avatar', 'avatar_initials',
         ]
 
     def get_avatar(self, obj):
-        if obj.avatar:
+        if obj.has_avatar:
             return obj.avatar.url
         return None
+
+    def get_has_avatar(self, obj):
+        return obj.has_avatar
+
+    def get_avatar_initials(self, obj):
+        return obj.get_avatar_initials()
 
 
 class EmployeeDetailSerializer(serializers.ModelSerializer):

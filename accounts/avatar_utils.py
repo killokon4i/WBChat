@@ -1,6 +1,27 @@
 """Инициалы для заглушки аватара."""
 
 
+def file_field_has_image(field):
+    if not field or not getattr(field, 'name', None):
+        return False
+    try:
+        return field.storage.exists(field.name)
+    except Exception:
+        return False
+
+
+def initials_from_name(name):
+    name = (name or '').strip()
+    if not name:
+        return '?'
+    words = name.split()
+    if len(words) >= 2:
+        return (words[0][0] + words[-1][0]).upper()
+    if len(name) >= 2:
+        return name[:2].upper()
+    return name[0].upper()
+
+
 def initials_from_user(user):
     if not user:
         return '?'

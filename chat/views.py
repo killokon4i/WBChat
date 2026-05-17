@@ -13,6 +13,7 @@ from .models import Conversation, Message, UserConversation, Attachment
 from .message_format import build_message_dict, conversation_display_name
 from .realtime import _message_preview, get_unread_summary
 from .services.file_upload import validate_chat_upload_file
+from .services.avatar_display import attach_conversation_display
 from .services.presence import (
     get_direct_chat_partner,
     serialize_user_presence,
@@ -47,16 +48,14 @@ def chat_index(request):
                 conversation.other_user = other_user
                 conversation.display_name = other_user.get_full_name() or other_user.username
                 conversation.display_position = other_user.position.name if other_user.position else ''
-                conversation.display_avatar = other_user.avatar if other_user.avatar else None
             else:
                 conversation.display_name = "Удалённый пользователь"
                 conversation.display_position = ''
-                conversation.display_avatar = None
         else:
             conversation.display_name = conversation.name or "Без названия"
             conversation.display_position = ''
-            conversation.display_avatar = conversation.avatar
-        
+
+        attach_conversation_display(conversation, request.user)
         conversations_with_unread.append(conversation)
 
     active_id = request.GET.get('c') or request.GET.get('chat')
@@ -112,6 +111,7 @@ def chat_room(request, conversation_id):
     # Для direct чата — собеседник и статус присутствия
     other_user = get_direct_chat_partner(conversation, request.user)
     other_presence = serialize_user_presence(other_user) if other_user else None
+    attach_conversation_display(conversation, request.user)
 
     return render(request, 'chat/room_embed.html', {
         'conversation': conversation,
@@ -714,15 +714,22 @@ def chat_info(request, conversation_id):
             'id': u.id,
             'name': u.get_full_name() or u.username,
             'position': u.position.name if u.position else '',
-            'avatar': u.avatar.url if u.avatar else None,
+            'has_avatar': u.has_avatar,
+            'avatar': u.avatar.url if u.has_avatar else None,
+            'initials': u.get_avatar_initials(),
             'role': m_uc.role,
         })
+
+    from accounts.avatar_utils import file_field_has_image, initials_from_name
+    conv_has_avatar = file_field_has_image(conv.avatar)
 
     return JsonResponse({
         'id': conv.id,
         'name': conv.name or '',
         'type': conv.type,
-        'avatar': conv.avatar.url if conv.avatar else None,
+        'has_avatar': conv_has_avatar,
+        'avatar': conv.avatar.url if conv_has_avatar else None,
+        'initials': initials_from_name(conv.name or 'Группа'),
         'created_by_id': conv.created_by_id,
         'members': members,
         'my_role': uc.role,

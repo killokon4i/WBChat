@@ -11,6 +11,7 @@
         <link rel="stylesheet" href="{% static 'css/wb-portal-skin.css' %}?v=authflow1">
     <link rel="stylesheet" href="{% static 'css/wb-portal-editor-auth.css' %}?v=5">
     <link rel="stylesheet" href="{% static 'css/wb-marketing-public.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'css/avatar-initials.css' %}?v=1">
     {% block extra_styles %}{% endblock %}
 </head>
 <body{% if user.is_authenticated %} class="portal-body"{% endif %}>
@@ -235,10 +236,10 @@
                 </a>
                 <a href="{% url 'profile' %}" class="nav-user">
                     <div class="nav-avatar">
-                        {% if user.avatar %}
-                        <img src="{{ user.avatar.url }}" alt="{{ user.get_full_name }}">
+                        {% if user.has_avatar %}
+                        {% include 'partials/avatar_slot.html' with has_avatar=True avatar_url=user.avatar.url initials=user.get_avatar_initials slot_class='avatar-slot--nav' %}
                         {% else %}
-                        {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+                        {% include 'partials/avatar_slot.html' with has_avatar=False avatar_url='' initials=user.get_avatar_initials slot_class='avatar-slot--nav' %}
                         {% endif %}
                     </div>
                     <span class="nav-user-name">{{ user.first_name|default:user.username }}</span>
@@ -368,6 +369,7 @@
     {% block extra_scripts %}{% endblock %}
     {% if user.is_authenticated %}
     {% load static %}
+    <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
     <script src="{% static 'js/chat-time.js' %}?v=1"></script>
     <script src="{% static 'js/wb-realtime.js' %}?v=5"></script>
     {% endif %}
