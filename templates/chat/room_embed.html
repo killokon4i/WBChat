@@ -36,15 +36,19 @@
         gap: 16px;
     }
     .chat-back-btn {
-        display: flex;
+        display: none;
         align-items: center;
         justify-content: center;
-        width: 40px; height: 40px;
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
         border-radius: 16px;
+        border: none;
         background: var(--bg-hover);
         color: var(--text-primary);
         text-decoration: none;
-        transition: all .3s;
+        cursor: pointer;
+        transition: background 0.2s ease;
     }
     .chat-back-btn:hover { background: var(--border-color); }
     .chat-header-avatar {
@@ -506,14 +510,26 @@
             width: 100%;
             max-width: none !important;
             margin: 0 !important;
-            padding: 8px 8px 10px;
+            padding: 6px 6px 8px;
             height: 100% !important;
             min-height: 0 !important;
+        }
+
+        .chat-back-btn {
+            display: flex;
+        }
+
+        .chat-header-card {
+            margin-bottom: 8px;
+            padding: 10px 12px;
+            gap: 10px;
+            border-radius: 16px;
         }
 
         .chat-messages-container {
             width: 100%;
             min-width: 0;
+            border-radius: 16px;
         }
 
         .message {
@@ -622,6 +638,9 @@
 {% block content %}
 <div class="chat-container wb-portal-marketing">
     <div class="chat-header-card">
+        <button type="button" class="chat-back-btn" id="chatEmbedBack" aria-label="К списку чатов">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
         <div class="chat-header-avatar">
             {% if conversation.type == 'direct' and other_user %}
                 {% if other_user.avatar %}
@@ -1547,6 +1566,16 @@ function loadMessages() {
         })
         .catch(err => console.log('Could not load messages:', err));
 }
+
+document.getElementById('chatEmbedBack')?.addEventListener('click', function () {
+    try {
+        if (window.parent && window.parent.ChatShell) {
+            window.parent.ChatShell.closeChat();
+            return;
+        }
+    } catch (e) { /* cross-origin */ }
+    window.top.location.href = '/chat/';
+});
 
 connect();
 loadMessages();

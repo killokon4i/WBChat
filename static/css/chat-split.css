@@ -231,6 +231,22 @@
 }
 
 @media (max-width: 900px) {
+    body.chat-mobile-active {
+        overflow: hidden;
+        background: var(--bg-card);
+    }
+
+    body.chat-mobile-active .navbar,
+    body.chat-mobile-active .portal-footer {
+        display: none !important;
+    }
+
+    body.chat-mobile-active .portal-shell,
+    body.chat-mobile-active .portal-page {
+        padding: 0;
+        min-height: 0;
+    }
+
     .chat-page--split {
         padding: 0;
         max-width: none;
@@ -240,8 +256,7 @@
     .chat-page--split .portal-container.container,
     body.chat-mobile-active .portal-container.container {
         max-width: none;
-        padding-left: 0;
-        padding-right: 0;
+        padding: 0;
     }
 
     .chat-split-layout {
@@ -256,12 +271,16 @@
     .chat-split-layout.chat-has-active {
         position: fixed;
         inset: 0;
-        z-index: 200;
+        z-index: 1100;
         width: 100%;
         height: 100dvh;
         max-height: none;
         border: none;
         border-radius: 0;
+        background: var(--bg-card);
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        box-sizing: border-box;
         /* Одна колонка: иначе панель чата садится в узкий левый трек ~280px */
         grid-template-columns: 1fr;
         grid-template-rows: 1fr;
@@ -287,12 +306,12 @@
         min-height: 0;
         display: flex;
         flex-direction: column;
+        background: var(--bg-card);
     }
 
+  /* «Назад» — в шапке чата внутри iframe */
     .chat-split-layout.chat-has-active .chat-split-mobile-back {
-        display: inline-flex;
-        flex-shrink: 0;
-        margin: 8px 10px 0;
+        display: none !important;
     }
 
     .chat-split-layout.chat-has-active .chat-split-frame {
