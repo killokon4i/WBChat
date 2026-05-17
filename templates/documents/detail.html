@@ -1,0 +1,564 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ document.title }} — WB Bank{% endblock %}
+
+{% block content %}
+<style>
+    .doc-detail-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    /* Back link */
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+    
+    .back-link:hover {
+        color: var(--magenta);
+    }
+    
+    /* Header */
+    .doc-header {
+        background: var(--bg-body);
+        border-radius: 24px;
+        padding: 32px;
+        margin-bottom: 24px;
+    }
+    
+    .doc-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        background: rgba(228, 0, 175, 0.16);
+        color: var(--magenta);
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 16px;
+    }
+    
+    .doc-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 16px;
+        line-height: 1.3;
+    }
+    
+    .doc-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        margin-bottom: 20px;
+    }
+    
+    .doc-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text-muted);
+    }
+    
+    .doc-meta-icon {
+        color: var(--magenta);
+    }
+    
+    .doc-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .doc-status-badge.active {
+        background: rgba(0, 138, 78, 0.2);
+        color: #19cf7f;
+    }
+    
+    .doc-status-badge.draft {
+        background: rgba(234, 179, 8, 0.15);
+        color: var(--warning-text);
+    }
+    
+    /* Actions */
+    .doc-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+    
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 16px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+    
+    .btn-primary {
+        background: var(--magenta);
+        color: #fff;
+    }
+    
+    .btn-primary:hover {
+        background: var(--colorPink600);
+    }
+    
+    .btn-secondary {
+        background: var(--bg-hover);
+        color: #fff;
+    }
+    
+    .btn-secondary:hover {
+        background: var(--border-color);
+    }
+    
+    /* Content sections */
+    .doc-sections {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 24px;
+    }
+    
+    @media (max-width: 900px) {
+        .doc-sections {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .section-card {
+        background: var(--bg-body);
+        border-radius: 24px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .section-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: rgba(228, 0, 175, 0.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .section-icon svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+    }
+    
+    /* Description */
+    .doc-description {
+        font-size: 15px;
+        color: #ccc;
+        line-height: 1.7;
+    }
+    
+    /* Info rows */
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--bg-hover);
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-size: 14px;
+        color: var(--text-muted);
+    }
+    
+    .info-value {
+        font-size: 14px;
+        color: #fff;
+    }
+    
+    /* Versions list */
+    .versions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .version-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--bg-hover);
+        border-radius: 16px;
+    }
+    
+    .version-number {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(228, 0, 175, 0.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--magenta);
+    }
+    
+    .version-info {
+        flex: 1;
+    }
+    
+    .version-name {
+        font-size: 13px;
+        color: #fff;
+        margin-bottom: 2px;
+    }
+    
+    .version-meta {
+        font-size: 11px;
+        color: #666;
+    }
+    
+    .version-download {
+        color: var(--magenta);
+        text-decoration: none;
+        font-size: 13px;
+    }
+    
+    .version-download:hover {
+        text-decoration: underline;
+    }
+    
+    /* Current file */
+    .current-file {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        background: var(--bg-hover);
+        border-radius: 20px;
+    }
+    
+    .file-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        background: rgba(228, 0, 175, 0.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .file-icon svg {
+        width: 22px;
+        height: 22px;
+        stroke: currentColor;
+    }
+    
+    .file-info {
+        flex: 1;
+    }
+    
+    .file-name {
+        font-size: 14px;
+        color: #fff;
+        margin-bottom: 4px;
+    }
+    
+    .file-size {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    @media (max-width: 480px) {
+        .doc-header,
+        .section-card {
+            padding: 14px;
+            border-radius: 20px;
+        }
+
+        .doc-title {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .doc-meta-row {
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .doc-meta-item {
+            font-size: 12px;
+        }
+
+        .doc-actions {
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .doc-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .current-file {
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 12px;
+        }
+
+        .current-file .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .info-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .info-value {
+            word-break: break-word;
+        }
+
+        .version-item {
+            padding: 10px;
+        }
+    }
+</style>
+
+<div class="doc-detail-container wb-portal-marketing">
+    <a href="{% url 'documents_list' %}" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Вернуться к документам
+    </a>
+    
+    <!-- Header -->
+    <div class="doc-header">
+        <span class="doc-type-badge">
+            {% if document.document_type == 'order' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg> Приказ
+            {% elif document.document_type == 'regulation' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Регламент
+            {% elif document.document_type == 'instruction' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h13a3 3 0 0 1 3 3v13H6a3 3 0 0 1-3-3V4z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg> Инструкция
+            {% elif document.document_type == 'policy' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M5 5h6v14H5z"/><path d="M13 7h6v12h-6z"/></svg> Политика
+            {% else %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> {{ document.get_document_type_display }}
+            {% endif %}
+        </span>
+        
+        <h1 class="doc-title">{{ document.title }}</h1>
+        
+        <div class="doc-meta-row">
+            {% if document.document_number %}
+            <div class="doc-meta-item">
+                <svg class="doc-meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+                № {{ document.document_number }}
+            </div>
+            {% endif %}
+            
+            {% if document.document_date %}
+            <div class="doc-meta-item">
+                <svg class="doc-meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                {{ document.document_date|date:"d.m.Y" }}
+            </div>
+            {% endif %}
+            
+            <div class="doc-meta-item">
+                <svg class="doc-meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                {{ document.author.get_full_name|default:"—" }}
+            </div>
+            
+            <div class="doc-meta-item">
+                <svg class="doc-meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                {{ document.views_count }} просмотров
+            </div>
+        </div>
+        
+        <span class="doc-status-badge {{ document.status }}">
+            {% if document.status == 'active' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Актуален
+            {% elif document.status == 'draft' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Черновик
+            {% else %}{{ document.get_status_display }}{% endif %}
+        </span>
+        
+        <!-- Actions -->
+        <div class="doc-actions">
+            {% if permissions.download and current_version %}
+            <a href="{% url 'document_download' document.id %}" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7,10 12,15 17,10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Скачать
+            </a>
+            {% endif %}
+            
+            {% if document.tezis_link %}
+            <a href="{{ document.tezis_link }}" target="_blank" class="btn btn-secondary">
+                Открыть в Тезис
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Content sections -->
+    <div class="doc-sections">
+        <div class="main-content">
+            <!-- Description -->
+            {% if document.description %}
+            <div class="section-card">
+                <div class="section-title">
+                    <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+                    Описание
+                </div>
+                <div class="doc-description">{{ document.description|linebreaks }}</div>
+            </div>
+            {% endif %}
+            
+            <!-- Current file -->
+            {% if current_version %}
+            <div class="section-card">
+                <div class="section-title">
+                    <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.2-9.19a3.5 3.5 0 1 1 4.95 4.95l-9.2 9.2a2 2 0 1 1-2.83-2.83l8.49-8.48"/></svg></span>
+                    Текущий файл
+                </div>
+                <div class="current-file">
+                    <div class="file-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                    <div class="file-info">
+                        <div class="file-name">{{ current_version.file_name }}</div>
+                        <div class="file-size">{{ current_version.file_size|filesizeformat }} • Версия {{ current_version.version_number }}</div>
+                    </div>
+                    {% if permissions.download %}
+                    <a href="{% url 'document_download' document.id %}" class="btn btn-secondary">Скачать</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="sidebar-content">
+            <!-- Document info -->
+            <div class="section-card">
+                <div class="section-title">
+                    <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>
+                    Информация
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Категория</span>
+                    <span class="info-value">{{ document.category.name|default:"—" }}</span>
+                </div>
+                
+                {% if document.effective_date %}
+                <div class="info-row">
+                    <span class="info-label">Вступает в силу</span>
+                    <span class="info-value">{{ document.effective_date|date:"d.m.Y" }}</span>
+                </div>
+                {% endif %}
+                
+                {% if document.expiry_date %}
+                <div class="info-row">
+                    <span class="info-label">Действует до</span>
+                    <span class="info-value">{{ document.expiry_date|date:"d.m.Y" }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="info-row">
+                    <span class="info-label">Конфиденциальность</span>
+                    <span class="info-value">{{ document.get_confidentiality_display }}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Создано</span>
+                    <span class="info-value">{{ document.created_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Обновлено</span>
+                    <span class="info-value">{{ document.updated_at|date:"d.m.Y H:i" }}</span>
+                </div>
+            </div>
+            
+            <!-- Versions -->
+            {% if versions %}
+            <div class="section-card">
+                <div class="section-title">
+                    <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+                    Версии ({{ versions|length }})
+                </div>
+                <div class="versions-list">
+                    {% for v in versions %}
+                    <div class="version-item">
+                        <span class="version-number">v{{ v.version_number }}</span>
+                        <div class="version-info">
+                            <div class="version-name">{{ v.file_name }}</div>
+                            <div class="version-meta">{{ v.uploaded_at|date:"d.m.Y" }} • {{ v.file_size|filesizeformat }}</div>
+                        </div>
+                        {% if permissions.download %}
+                        <a href="{% url 'document_download_version' document.id v.version_number %}" class="version-download">↓</a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

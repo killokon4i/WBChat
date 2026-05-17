@@ -1,0 +1,1181 @@
+{% extends 'base.html' %}
+{% load knowledge_tags %}
+
+{% block title %}{{ article.title }} — База знаний{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .breadcrumbs {
+        display: flex; align-items: center; font-size: 14px;
+        color: var(--text-muted); margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .breadcrumbs a { color: var(--text-secondary); text-decoration: none; }
+    .breadcrumbs a:hover { color: var(--magenta); }
+    .breadcrumbs .bc-sep { margin: 0 8px; color: var(--text-muted); }
+    .breadcrumbs span:last-child { color: var(--text-primary); font-weight: 500; }
+
+    .article-layout {
+        display: grid;
+        grid-template-columns: 1fr 240px;
+        gap: 32px;
+        align-items: start;
+    }
+
+    .article-main { min-width: 0; }
+
+    .article-sidebar {
+        position: sticky;
+        top: 80px;
+    }
+
+    .article-header {
+        margin-bottom: 28px;
+    }
+
+    .article-header h1 {
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1.3;
+        margin-bottom: 16px;
+    }
+
+    .article-header-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .article-header-meta .type-badge {
+        background: rgba(228, 0, 175, 0.14);
+        color: var(--magenta);
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-badge.needs-review {
+        background: var(--warning-bg);
+        color: var(--warning-text);
+    }
+
+    .status-badge.draft {
+        background: var(--info-bg);
+        color: var(--info-text);
+    }
+
+    .article-content {
+        font-size: 15px;
+        line-height: 1.8;
+        color: var(--text-primary);
+    }
+
+    .article-content h2 {
+        font-size: 22px;
+        font-weight: 600;
+        margin: 28px 0 12px;
+        scroll-margin-top: 90px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .article-content h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 24px 0 10px;
+        scroll-margin-top: 90px;
+    }
+
+    .article-content p { margin-bottom: 14px; }
+
+    .article-content img {
+        max-width: 100%;
+        border-radius: 8px;
+        margin: 12px 0;
+    }
+
+    .article-content pre {
+        background: var(--bg-hover);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px;
+        overflow-x: auto;
+        font-size: 13px;
+    }
+
+    .article-content code {
+        background: var(--bg-hover);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .article-content pre code {
+        background: none;
+        padding: 0;
+    }
+
+    .article-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+    }
+
+    .article-content table th,
+    .article-content table td {
+        padding: 10px 14px;
+        border: 1px solid var(--border-color);
+        text-align: left;
+    }
+
+    .article-content table th {
+        background: var(--bg-hover);
+        font-weight: 600;
+    }
+
+    .article-content blockquote {
+        border-left: 4px solid var(--magenta);
+        padding: 12px 20px;
+        margin: 16px 0;
+        background: var(--bg-hover);
+        border-radius: 0 8px 8px 0;
+        color: var(--text-secondary);
+    }
+
+    .article-content ul, .article-content ol {
+        padding-left: 24px;
+        margin-bottom: 14px;
+    }
+
+    .article-content li { margin-bottom: 6px; }
+
+    /* TOC */
+    .article-toc {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 20px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .article-toc h4 {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+    }
+
+    .toc-link {
+        display: block;
+        padding: 4px 0;
+        font-size: 13px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        line-height: 1.5;
+    }
+
+    .toc-link:hover {
+        color: var(--magenta);
+    }
+
+    /* Actions */
+    .article-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .article-actions .btn {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+
+    /* NPA warning */
+    .npa-warning {
+        background: var(--warning-bg);
+        border: 1px solid var(--warning-border);
+        border-radius: 16px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        color: var(--warning-text);
+    }
+
+    /* Related docs */
+    .related-docs {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 20px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .related-docs h4 {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+    }
+
+    .related-docs a {
+        display: block;
+        padding: 6px 0;
+        font-size: 13px;
+        color: var(--text-secondary);
+        text-decoration: none;
+    }
+
+    .related-docs a:hover { color: var(--magenta); }
+
+    /* Tags */
+    .article-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 20px 0;
+    }
+
+    .article-tags a {
+        padding: 4px 12px;
+        background: var(--bg-hover);
+        border-radius: 24px;
+        font-size: 12px;
+        color: var(--text-secondary);
+        text-decoration: none;
+    }
+
+    .article-tags a:hover {
+        background: rgba(228, 0, 175, 0.14);
+        color: var(--magenta);
+    }
+
+    /* Rating */
+    .rating-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 22px;
+        padding: 24px;
+        text-align: center;
+        margin: 28px 0;
+    }
+
+    .rating-section h3 {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    .star-rating {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .star-rating .star {
+        font-size: 28px;
+        cursor: pointer;
+        color: var(--text-muted);
+        transition: color 0.15s;
+    }
+
+    .star-rating .star.active {
+        color: var(--warning-text);
+    }
+
+    .rating-info {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    /* Comments - unified with news style */
+    .comments-section {
+        margin-top: 32px;
+    }
+
+    .comments-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .comments-count {
+        background: var(--magenta);
+        color: white;
+        font-size: 14px;
+        padding: 4px 10px;
+        border-radius: 28px;
+    }
+
+    .comment-form-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .comment-textarea {
+        width: 100%;
+        min-height: 80px;
+        padding: 14px 16px;
+        background: var(--bg-hover);
+        border: 2px solid var(--border-color);
+        border-radius: 20px;
+        font-size: 15px;
+        color: var(--text-primary);
+        resize: vertical;
+        transition: all 0.3s ease;
+        font-family: inherit;
+        box-sizing: border-box;
+    }
+
+    .comment-textarea:focus {
+        outline: none;
+        border-color: var(--magenta);
+        box-shadow: 0 0 0 4px rgba(228, 0, 175, 0.15);
+    }
+
+    .comment-textarea::placeholder {
+        color: var(--text-muted);
+    }
+
+    .comment-form-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 12px;
+    }
+
+    .comments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .comment-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 16px 20px;
+    }
+
+    .comment-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .comment-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--colorPink600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .comment-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .comment-meta {
+        flex: 1;
+    }
+
+    .comment-author {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 15px;
+    }
+
+    .comment-date {
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .comment-content {
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--text-primary);
+    }
+
+    .comment-actions {
+        display: flex;
+        gap: 16px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .comment-action-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 13px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: color 0.2s ease;
+        padding: 0;
+        text-decoration: none;
+    }
+
+    .comment-action-btn:hover {
+        color: var(--magenta);
+    }
+
+    .comment-action-btn.delete:hover {
+        color: var(--error-text);
+    }
+
+    .comment-replies {
+        margin-left: 52px;
+        margin-top: 12px;
+        padding-left: 16px;
+        border-left: 2px solid var(--border-color);
+    }
+
+    .reply-card {
+        background: var(--bg-hover);
+        border-radius: 20px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+    }
+
+    .reply-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .reply-card .comment-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+    }
+
+    .no-comments {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-muted);
+    }
+
+    @media (max-width: 900px) {
+        .article-layout { grid-template-columns: 1fr; }
+        .article-sidebar { position: static; order: -1; }
+    }
+
+    @media (max-width: 480px) {
+        .breadcrumbs {
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+
+        .article-header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .article-header-meta {
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .article-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .article-content {
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .article-content h2 {
+            font-size: 18px;
+            margin: 20px 0 10px;
+        }
+
+        .article-content h3 {
+            font-size: 16px;
+            margin: 16px 0 8px;
+        }
+
+        .article-content table {
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
+        }
+
+        .rating-section,
+        .article-toc,
+        .related-docs {
+            padding: 14px;
+            border-radius: 20px;
+        }
+
+        .comment-form-card,
+        .comment-card {
+            padding: 14px;
+        }
+
+        .comment-form-actions {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .comment-replies {
+            margin-left: 10px;
+            padding-left: 10px;
+        }
+
+        .comment-actions {
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% breadcrumbs article.category %}
+
+<div class="article-layout wb-portal-marketing">
+    <div class="article-main">
+        <div class="article-header">
+            <h1>{{ article.title }}</h1>
+            <div class="article-header-meta">
+                <span class="type-badge">{{ article.get_article_type_display }}</span>
+                <span>{{ article.author.get_full_name|default:article.author.username }}</span>
+                <span>{{ article.published_at|date:"d.m.Y"|default:article.created_at|date:"d.m.Y" }}</span>
+                <span>{{ article.views_count }} просм.</span>
+                <span>v{{ article.current_version }}</span>
+                {% if article.status != 'published' %}
+                <span class="status-badge draft">{{ article.get_status_display }}</span>
+                {% endif %}
+                {% if article.needs_actualization %}
+                <span class="status-badge needs-review">Требует актуализации</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if can_edit %}
+        <div class="article-actions">
+            <a href="{% url 'kb_article_edit' slug=article.slug %}" class="btn btn-secondary">Редактировать</a>
+            <a href="{% url 'kb_article_versions' slug=article.slug %}" class="btn btn-secondary">История (v{{ article.current_version }})</a>
+            {% if article.status == 'draft' or article.status == 'review' %}
+            <form method="post" action="{% url 'kb_article_publish' slug=article.slug %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="published">
+                <button type="submit" class="btn btn-primary">Опубликовать</button>
+            </form>
+            {% endif %}
+            <a href="{% url 'kb_article_delete' slug=article.slug %}" class="btn" style="background:rgba(255,47,179,0.14);color:#ff73cb;border:1px solid rgba(255,47,179,0.28);">Удалить</a>
+        </div>
+        {% endif %}
+
+        {% if article.needs_actualization %}
+        <div class="npa-warning">
+            Связанный нормативный документ был обновлён — статья может быть неактуальной.
+        </div>
+        {% endif %}
+
+        <div class="article-content">
+            {{ content|safe }}
+        </div>
+
+        {% if article.tags.exists %}
+        <div class="article-tags">
+            {% for tag in article.tags.all %}
+            <a href="{% url 'kb_tag' slug=tag.slug %}">#{{ tag.name }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Рейтинг -->
+        <div class="rating-section">
+            <h3>Оцените материал</h3>
+            <div class="star-rating" id="star-rating">
+                {% for i in "12345" %}
+                <span class="star {% if user_rating and user_rating.score >= forloop.counter %}active{% endif %}"
+                      data-score="{{ forloop.counter }}"
+                      onclick="rateArticle({{ forloop.counter }})">★</span>
+                {% endfor %}
+            </div>
+            <div class="rating-info">
+                {% if article.avg_rating %}
+                    Средняя оценка: {{ article.avg_rating }} из 5 ({{ article.ratings_count }} голосов)
+                {% else %}
+                    Ещё нет оценок
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Вложения -->
+        {% if attachments %}
+        <div style="margin-bottom:24px;">
+            <h3 style="color:var(--text-primary);font-size:16px;margin-bottom:12px;">Вложения</h3>
+            {% for att in attachments %}
+            <a href="{{ att.file.url }}" target="_blank" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-hover);border-radius:10px;margin-bottom:6px;text-decoration:none;color:var(--text-primary);font-size:14px;">
+                <span style="width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;color:var(--magenta);">
+                    {% if 'image' in att.mime_type %}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    {% elif 'pdf' in att.mime_type %}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    {% elif 'zip' in att.mime_type or 'rar' in att.mime_type %}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/><path d="M3 8h18"/><path d="M10 12h4"/></svg>
+                    {% else %}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.2-9.19a3.5 3.5 0 1 1 4.95 4.95l-9.2 9.2a2 2 0 1 1-2.83-2.83l8.49-8.48"/></svg>
+                    {% endif %}
+                </span>
+                <span style="flex:1;">{{ att.file_name }}</span>
+                <span style="color:var(--text-muted);font-size:12px;">{{ att.file_size|filesizeformat }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Действия -->
+        <div style="text-align: center; margin-bottom: 28px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="openShareModal()" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                Поделиться
+            </button>
+            {% if article.status == 'published' %}
+            <a href="{% url 'kb_suggest_edit' slug=article.slug %}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; text-decoration:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                Предложить правку
+            </a>
+            {% endif %}
+            {% if can_edit %}
+            <a href="{% url 'kb_suggested_edits' slug=article.slug %}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; text-decoration:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg>
+                Предложения ({{ article.suggested_edits.count }})
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Комментарии -->
+        <div class="comments-section">
+            <h2 class="comments-title">
+                Комментарии
+                <span class="comments-count">{{ article.comments_count }}</span>
+            </h2>
+
+            {% if request.user.is_authenticated %}
+                {% if not request.user.is_comments_banned %}
+                <div class="comment-form-card">
+                    <form method="post" action="{% url 'kb_add_comment' slug=article.slug %}">
+                        {% csrf_token %}
+                        <textarea name="content" class="comment-textarea"
+                            placeholder="Напишите комментарий..." required></textarea>
+                        <div class="comment-form-actions">
+                            <button type="submit" class="btn btn-primary">Отправить</button>
+                        </div>
+                    </form>
+                </div>
+                {% else %}
+                <div class="comment-form-card">
+                    <p style="color: var(--warning-text); margin: 0;">Возможность комментирования заблокирована за неоднократное нарушение правил.</p>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            <div class="comments-list">
+                {% for comment in comments %}
+                <div class="comment-card" id="comment-{{ comment.id }}">
+                    <div class="comment-header">
+                        <div class="comment-avatar">
+                            {% if comment.author.avatar %}
+                            <img src="{{ comment.author.avatar.url }}" alt="">
+                            {% else %}
+                            {{ comment.author.first_name|slice:":1"|default:comment.author.username|slice:":1"|upper }}
+                            {% endif %}
+                        </div>
+                        <div class="comment-meta">
+                            <div class="comment-author">{{ comment.author.get_full_name|default:comment.author.username }}</div>
+                            <div class="comment-date">{{ comment.created_at|date:"d.m.Y H:i" }}{% if comment.is_edited %} (изменено){% endif %}</div>
+                        </div>
+                    </div>
+                    <div class="comment-content">{{ comment.content }}</div>
+                    <div class="comment-actions">
+                        <button class="comment-action-btn" onclick="showReplyForm({{ comment.id }})">Ответить</button>
+                        {% if comment.author == request.user %}
+                        <button class="comment-action-btn" onclick="editComment({{ comment.id }}, '{{ comment.content|escapejs }}')">Редактировать</button>
+                        {% endif %}
+                        {% if comment.author == request.user or request.user.isModerator %}
+                        <a href="{% url 'kb_delete_comment' slug=article.slug comment_id=comment.id %}"
+                           class="comment-action-btn delete"
+                           onclick="return confirm('Удалить комментарий?')">Удалить</a>
+                        {% endif %}
+                    </div>
+
+                    <!-- Форма ответа -->
+                    <div id="reply-form-{{ comment.id }}" style="display: none; margin-top: 12px; margin-left: 52px;">
+                        <form method="post" action="{% url 'kb_add_comment' slug=article.slug %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                            <textarea name="content" class="comment-textarea" rows="2"
+                                style="min-height: 60px; font-size: 14px;"
+                                placeholder="Ответить..." required></textarea>
+                            <div class="comment-form-actions">
+                                <button type="submit" class="btn btn-primary" style="padding:6px 16px; font-size:13px;">Ответить</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Ответы -->
+                    {% if comment.processed_replies %}
+                    <div class="comment-replies">
+                        {% for reply in comment.processed_replies %}
+                        <div class="reply-card" id="comment-{{ reply.id }}">
+                            <div class="comment-header">
+                                <div class="comment-avatar">
+                                    {% if reply.author.avatar %}
+                                    <img src="{{ reply.author.avatar.url }}" alt="">
+                                    {% else %}
+                                    {{ reply.author.first_name|slice:":1"|default:reply.author.username|slice:":1"|upper }}
+                                    {% endif %}
+                                </div>
+                                <div class="comment-meta">
+                                    <div class="comment-author">{{ reply.author.get_full_name|default:reply.author.username }}</div>
+                                    <div class="comment-date">{{ reply.created_at|date:"d.m.Y H:i" }}{% if reply.is_edited %} (изменено){% endif %}</div>
+                                </div>
+                            </div>
+                            <div class="comment-content">{{ reply.content }}</div>
+                            <div class="comment-actions" style="border-top: 1px solid var(--border-color); margin-top: 8px; padding-top: 8px;">
+                                {% if reply.author == request.user %}
+                                <button class="comment-action-btn" onclick="editComment({{ reply.id }}, '{{ reply.content|escapejs }}')">Редактировать</button>
+                                {% endif %}
+                                {% if reply.author == request.user or request.user.isModerator %}
+                                <a href="{% url 'kb_delete_comment' slug=article.slug comment_id=reply.id %}"
+                                   class="comment-action-btn delete"
+                                   onclick="return confirm('Удалить?')">Удалить</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="no-comments">
+                    <p>Комментариев пока нет. Будьте первым!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="article-sidebar">
+        {% article_toc article.content %}
+
+        {% if related_docs %}
+        <div class="related-docs">
+            <h4>Связанные НПА</h4>
+            {% for doc in related_docs %}
+            <a href="{% url 'document_detail' document_id=doc.id %}">{{ doc.title }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div style="margin-bottom: 16px;">
+            <button class="btn-subscribe {% if is_subscribed %}active{% endif %}" style="width: 100%;"
+                    onclick="toggleSubscription('article', {{ article.id }}, this)">
+                {% if is_subscribed %}Вы подписаны{% else %}Подписаться на обновления{% endif %}
+            </button>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 12px; padding: 16px; font-size: 13px; color: var(--text-muted);">
+            <div style="margin-bottom: 8px;"><strong>Автор:</strong> {{ article.author.get_full_name|default:article.author.username }}</div>
+            <div style="margin-bottom: 8px;"><strong>Создано:</strong> {{ article.created_at|date:"d.m.Y" }}</div>
+            <div style="margin-bottom: 8px;"><strong>Обновлено:</strong> {{ article.updated_at|date:"d.m.Y" }}</div>
+            <div><strong>Просмотров:</strong> {{ article.views_count }}</div>
+        </div>
+    </aside>
+</div>
+
+<!-- Share Modal -->
+<div class="edit-modal" id="share-modal">
+    <div class="edit-modal-content">
+        <div class="edit-modal-title">Поделиться статьёй</div>
+        <div id="share-conversations-list" style="max-height: 300px; overflow-y: auto;">
+            <p style="color: var(--text-muted); text-align: center; padding: 20px;">Загрузка...</p>
+        </div>
+        <div class="edit-modal-actions" style="margin-top: 16px;">
+            <button class="btn" style="background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-color);" onclick="closeShareModal()">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Comment Modal -->
+<div class="edit-modal" id="edit-modal">
+    <div class="edit-modal-content">
+        <div class="edit-modal-title">Редактирование комментария</div>
+        <textarea class="edit-modal-textarea" id="edit-textarea"></textarea>
+        <div class="edit-modal-actions">
+            <button class="btn" style="background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-color);" onclick="closeEditModal()">Отмена</button>
+            <button class="btn btn-primary" onclick="saveEdit()">Сохранить</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+    .edit-modal {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .edit-modal.active { display: flex; }
+    .edit-modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 24px;
+        width: 90%;
+        max-width: 500px;
+    }
+    .edit-modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+    }
+    .edit-modal-textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 12px;
+        background: var(--bg-hover);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-family: inherit;
+        resize: vertical;
+        margin-bottom: 16px;
+        box-sizing: border-box;
+    }
+    .edit-modal-textarea:focus {
+        outline: none;
+        border-color: var(--magenta);
+    }
+    .edit-modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+    .share-conv-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .share-conv-item:hover {
+        background: var(--bg-hover);
+    }
+    .share-conv-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--colorPink600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+    .share-conv-name {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+    .share-conv-type {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+    .share-sent {
+        color: var(--brand-green);
+        font-size: 13px;
+        font-weight: 500;
+    }
+    .btn-subscribe {
+        padding: 8px 18px;
+        border-radius: 16px;
+        border: 1px solid var(--magenta);
+        background: transparent;
+        color: var(--magenta);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-subscribe:hover, .btn-subscribe.active {
+        background: var(--magenta);
+        color: white;
+    }
+</style>
+<script>
+function showReplyForm(commentId) {
+    const form = document.getElementById('reply-form-' + commentId);
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+// Star rating hover
+(function() {
+    const stars = document.querySelectorAll('#star-rating .star');
+    stars.forEach(function(star, idx) {
+        star.addEventListener('mouseenter', function() {
+            stars.forEach(function(s, i) {
+                s.style.color = i <= idx ? 'var(--warning-text)' : '';
+            });
+        });
+    });
+    document.getElementById('star-rating').addEventListener('mouseleave', function() {
+        stars.forEach(function(s) {
+            s.style.color = '';
+        });
+    });
+})();
+
+function rateArticle(score) {
+    fetch('{% url "kb_rate_article" slug=article.slug %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'score=' + score
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.querySelectorAll('#star-rating .star').forEach((star, i) => {
+                star.classList.toggle('active', i < data.user_score);
+            });
+            document.querySelector('.rating-info').textContent =
+                `Средняя оценка: ${data.avg_rating} из 5 (${data.ratings_count} голосов)`;
+        }
+    });
+}
+
+// Comment editing
+let editingCommentId = null;
+
+function editComment(commentId, content) {
+    editingCommentId = commentId;
+    document.getElementById('edit-textarea').value = content;
+    document.getElementById('edit-modal').classList.add('active');
+}
+
+function closeEditModal() {
+    editingCommentId = null;
+    document.getElementById('edit-modal').classList.remove('active');
+}
+
+async function saveEdit() {
+    if (!editingCommentId) return;
+    const newContent = document.getElementById('edit-textarea').value.trim();
+    if (!newContent) { alert('Комментарий не может быть пустым'); return; }
+    try {
+        const response = await fetch(`/knowledge/article/{{ article.slug }}/comment/${editingCommentId}/edit/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'content=' + encodeURIComponent(newContent)
+        });
+        if (response.ok) {
+            const commentEl = document.getElementById('comment-' + editingCommentId);
+            if (commentEl) {
+                const contentEl = commentEl.querySelector('.comment-content');
+                if (contentEl) contentEl.textContent = newContent;
+                const dateEl = commentEl.querySelector('.comment-date');
+                if (dateEl && !dateEl.textContent.includes('изменено')) {
+                    dateEl.textContent += ' (изменено)';
+                }
+            }
+            closeEditModal();
+        } else {
+            alert('Ошибка при сохранении');
+        }
+    } catch (err) {
+        alert('Ошибка при сохранении');
+    }
+}
+
+document.getElementById('edit-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+
+// Share
+function openShareModal() {
+    document.getElementById('share-modal').classList.add('active');
+    fetch('/knowledge/share/conversations/')
+    .then(r => r.json())
+    .then(data => {
+        const list = document.getElementById('share-conversations-list');
+        if (!data.conversations || data.conversations.length === 0) {
+            list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">Нет доступных чатов</p>';
+            return;
+        }
+        list.innerHTML = '';
+        data.conversations.forEach(function(conv) {
+            const div = document.createElement('div');
+            div.className = 'share-conv-item';
+            div.id = 'share-conv-' + conv.id;
+            const typeLabel = conv.type === 'direct' ? 'Личный' : conv.type === 'group' ? 'Группа' : 'Канал';
+            div.innerHTML = '<div class="share-conv-icon">' + conv.name.charAt(0).toUpperCase() + '</div>'
+                + '<div style="flex:1"><div class="share-conv-name">' + conv.name + '</div>'
+                + '<div class="share-conv-type">' + typeLabel + '</div></div>';
+            div.addEventListener('click', function() { shareToConversation(conv.id, div); });
+            list.appendChild(div);
+        });
+    });
+}
+
+function closeShareModal() {
+    document.getElementById('share-modal').classList.remove('active');
+}
+
+function shareToConversation(convId, el) {
+    fetch('{% url "kb_share_article" slug=article.slug %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'conversation_id=' + convId
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            el.innerHTML = '<div class="share-conv-icon" style="background:var(--brand-green);">✓</div>'
+                + '<div class="share-sent">Отправлено!</div>';
+            el.style.pointerEvents = 'none';
+        }
+    });
+}
+
+document.getElementById('share-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeShareModal();
+});
+
+function toggleSubscription(type, id, btn) {
+    fetch(`/knowledge/subscribe/${type}/${id}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (type === 'article') {
+            btn.textContent = data.subscribed ? 'Вы подписаны' : 'Подписаться на обновления';
+        } else {
+            btn.textContent = data.subscribed ? 'Подписан' : 'Подписаться';
+        }
+        btn.classList.toggle('active', data.subscribed);
+    });
+}
+
+// Time tracking
+let startTime = Date.now();
+window.addEventListener('beforeunload', function() {
+    let seconds = Math.round((Date.now() - startTime) / 1000);
+    if (seconds > 3) {
+        navigator.sendBeacon(
+            '{% url "kb_track_time" slug=article.slug %}',
+            new URLSearchParams({
+                'seconds': seconds,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            })
+        );
+    }
+});
+
+// @mention autocomplete in comments
+document.querySelectorAll('.comment-textarea').forEach(function(textarea) {
+    let dropdown = null;
+    textarea.addEventListener('input', function() {
+        const val = this.value;
+        const cursor = this.selectionStart;
+        const beforeCursor = val.slice(0, cursor);
+        const mentionMatch = beforeCursor.match(/@(\w*)$/);
+        if (mentionMatch && mentionMatch[1].length >= 1) {
+            fetch('/knowledge/mentions/autocomplete/?q=' + encodeURIComponent(mentionMatch[1]))
+            .then(r => r.json())
+            .then(data => {
+                if (dropdown) dropdown.remove();
+                if (!data.users || data.users.length === 0) return;
+                dropdown = document.createElement('div');
+                dropdown.className = 'mention-dropdown';
+                dropdown.style.cssText = 'position:absolute;background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:4px;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.3);max-height:200px;overflow-y:auto;';
+                data.users.forEach(function(u) {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:14px;color:var(--text-primary);border-radius:8px;';
+                    item.textContent = u.name + ' (@' + u.username + ')';
+                    item.addEventListener('mouseenter', function(){ this.style.background='var(--bg-hover)'; });
+                    item.addEventListener('mouseleave', function(){ this.style.background=''; });
+                    item.addEventListener('click', function() {
+                        const before = val.slice(0, cursor - mentionMatch[1].length);
+                        const after = val.slice(cursor);
+                        textarea.value = before + u.username + ' ' + after;
+                        textarea.focus();
+                        dropdown.remove();
+                        dropdown = null;
+                    });
+                    dropdown.appendChild(item);
+                });
+                textarea.parentElement.style.position = 'relative';
+                textarea.parentElement.appendChild(dropdown);
+            });
+        } else {
+            if (dropdown) { dropdown.remove(); dropdown = null; }
+        }
+    });
+});
+</script>
+{% endblock %}

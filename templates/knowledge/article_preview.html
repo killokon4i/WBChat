@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Предпросмотр — WB Bank{% endblock %}
+{% block extra_styles %}
+<style>
+    .preview-content {
+        color: var(--text-secondary);
+        line-height: 1.7;
+    }
+    .preview-title {
+        font-size: clamp(1.25rem, 3vw, 1.75rem);
+        margin: 0 0 16px;
+    }
+    .preview-head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 8px;
+    }
+    .preview-head .auth-welcome {
+        text-align: left !important;
+        margin-bottom: 0 !important;
+        flex: 1;
+        min-width: 200px;
+    }
+    @media (max-width: 480px) {
+        .preview-head { flex-direction: column; align-items: stretch; }
+        .preview-head .btn-secondary { width: 100%; justify-content: center; }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="wb-portal-form-page wb-editor-auth wb-editor-auth--article">
+    <div class="wb-editor-auth__card">
+        <div class="preview-head">
+            <div class="auth-welcome">
+                <h2 id="kb-preview-title">Предпросмотр</h2>
+                <p>Так материал будет выглядеть после сохранения.</p>
+            </div>
+            <button type="button" onclick="window.close()" class="btn-secondary">Закрыть</button>
+        </div>
+        <h1 class="preview-title">{{ title }}</h1>
+        <div class="article-content preview-content">{{ content|safe }}</div>
+    </div>
+</div>
+{% endblock %}

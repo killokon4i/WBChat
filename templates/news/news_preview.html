@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Предпросмотр: {{ title }} — Новости{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .news-preview-wrap {
+        max-width: 900px;
+        margin: 24px auto;
+    }
+
+    .news-preview-close {
+        color: var(--text-secondary);
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 16px;
+    }
+
+    .news-preview-card {
+        padding: 24px;
+    }
+
+    .news-preview-title {
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+        word-break: break-word;
+    }
+
+    .news-preview-excerpt {
+        font-size: 15px;
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+    }
+
+    .news-preview-content {
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--text-primary);
+    }
+
+    @media (max-width: 480px) {
+        .news-preview-wrap {
+            margin: 0;
+        }
+
+        .news-preview-card {
+            padding: 14px;
+        }
+
+        .news-preview-title {
+            font-size: 21px;
+            margin-bottom: 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container news-preview-wrap">
+    <a href="javascript:window.close()" class="news-preview-close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Закрыть предпросмотр
+    </a>
+
+    <div class="card news-preview-card">
+        <h1 class="news-preview-title">{{ title }}</h1>
+        {% if excerpt %}
+        <p class="news-preview-excerpt">{{ excerpt }}</p>
+        {% endif %}
+        <div class="content news-preview-content">
+            {{ content|safe }}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

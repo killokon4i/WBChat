@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+
+{% block title %}Редактирование профиля — WB Хаб{% endblock %}
+
+{% block extra_styles %}
+<style>
+.portal-body .wb-editor-auth--profile.wb-portal-form-page {
+    max-width: 640px;
+}
+
+.portal-body .wb-editor-auth--profile form {
+    display: block;
+    width: 100%;
+}
+
+.portal-body .wb-editor-auth--profile .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.portal-body .wb-editor-auth--profile .form-group {
+    margin-bottom: 16px;
+}
+
+.portal-body .wb-editor-auth--profile .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+}
+
+.portal-body .wb-editor-auth--profile .form-actions .btn-primary {
+    flex: 1;
+    min-width: 160px;
+}
+
+.portal-body .wb-editor-auth--profile .pe-avatar-row > .pe-avatar-preview {
+    flex-shrink: 0;
+}
+
+.portal-body .wb-editor-auth--profile .input-wrapper {
+    position: relative;
+}
+
+.portal-body .wb-editor-auth--profile .input-wrapper .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.portal-body .wb-editor-auth--profile .input-wrapper:has(.input-icon) .form-control {
+    padding-left: 48px;
+    padding-right: 16px;
+}
+
+.portal-body .wb-editor-auth--profile .input-wrapper:has(.input-suffix) .form-control {
+    padding-left: 16px;
+    padding-right: 44px;
+}
+
+.portal-body .wb-editor-auth--profile .input-wrapper .input-suffix {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--colorPink600);
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.portal-body .wb-editor-auth--profile .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 768px) {
+    .portal-body .wb-editor-auth--profile .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 520px) {
+    .portal-body .wb-editor-auth--profile .form-actions {
+        flex-direction: column;
+    }
+
+    .portal-body .wb-editor-auth--profile .form-actions .btn-primary,
+    .portal-body .wb-editor-auth--profile .form-actions .btn-secondary {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wb-portal-form-page wb-portal-form-page--profile wb-editor-auth wb-editor-auth--profile">
+    <a href="{% url 'profile' %}" class="wb-portal-form-back wb-editor-auth__back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Назад к профилю
+    </a>
+
+    <div class="wb-editor-auth__card">
+        <div class="auth-welcome">
+            <h2 id="profile-edit-title">Редактирование профиля</h2>
+            <p>Обновите фото, контакты и пароль.</p>
+        </div>
+
+        {% if form.errors %}
+        <div class="alert alert-error">
+            <strong>Ошибка сохранения</strong>
+            <ul>
+                {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+                {% for field in form %}
+                    {% for error in field.errors %}
+                    <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <p class="pe-section-label">Фото</p>
+            <div class="pe-avatar-row">
+                <div class="pe-avatar-slot" id="avatar-slot">
+                {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" alt="" class="pe-avatar-preview" id="avatar-preview">
+                {% else %}
+                <div class="pe-avatar-preview" id="avatar-placeholder">{{ user.username|slice:":1"|upper }}</div>
+                {% endif %}
+                </div>
+                <div class="pe-avatar-col">
+                    <span class="form-label">Фото профиля</span>
+                    <span class="form-helptext">JPG, PNG или WebP до 5 МБ</span>
+                    <div class="pe-upload-btns">
+                        <label for="id_avatar" class="file-upload-label">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Загрузить фото
+                        </label>
+                        <button type="button" class="pe-btn-text" id="avatar-remove-btn" onclick="removeAvatar()"{% if not user.avatar %} hidden{% endif %}>Удалить</button>
+                        <input type="hidden" name="remove_avatar" id="remove_avatar" value="">
+                    </div>
+                    <input type="file"
+                           name="avatar"
+                           id="id_avatar"
+                           accept="image/jpeg,image/png,image/webp"
+                           class="visually-hidden"
+                           onchange="previewAvatar(this)">
+                </div>
+            </div>
+
+            <hr class="pe-hr">
+
+            <p class="pe-section-label">Учётные данные</p>
+            <div class="form-group">
+                <label class="form-label" for="id_username">Имя пользователя (ник)</label>
+                <div class="input-wrapper">
+                    <input type="text"
+                           name="username"
+                           id="id_username"
+                           class="form-control with-icon"
+                           value="{{ form.username.value|default:'' }}"
+                           placeholder="username"
+                           required>
+                    <span class="input-suffix">@</span>
+                </div>
+                <span class="form-helptext">Используется для входа и упоминаний (@username)</span>
+            </div>
+
+            <hr class="pe-hr">
+
+            <p class="pe-section-label">Личная информация</p>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="id_last_name">Фамилия</label>
+                    <input type="text"
+                           name="last_name"
+                           id="id_last_name"
+                           class="form-control"
+                           value="{{ form.last_name.value|default:'' }}"
+                           placeholder="Введите фамилию">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="id_first_name">Имя</label>
+                    <input type="text"
+                           name="first_name"
+                           id="id_first_name"
+                           class="form-control"
+                           value="{{ form.first_name.value|default:'' }}"
+                           placeholder="Введите имя">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_middle_name">Отчество</label>
+                <input type="text"
+                       name="middle_name"
+                       id="id_middle_name"
+                       class="form-control"
+                       value="{{ form.middle_name.value|default:'' }}"
+                       placeholder="Введите отчество (при наличии)">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_email">Email</label>
+                <div class="input-wrapper">
+                    <input type="email"
+                           name="email"
+                           id="id_email"
+                           class="form-control with-icon"
+                           value="{{ form.email.value|default:'' }}"
+                           placeholder="example@wildberries.ru">
+                    <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                </div>
+            </div>
+
+            <hr class="pe-hr">
+
+            <p class="pe-section-label">Смена пароля</p>
+            <div class="password-panel">
+                <span class="form-helptext">Оставьте поля пустыми, если не хотите менять пароль</span>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_old_password">Текущий пароль</label>
+                    <input type="password"
+                           name="old_password"
+                           id="id_old_password"
+                           class="form-control"
+                           placeholder="Введите текущий пароль"
+                           autocomplete="current-password">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="id_new_password">Новый пароль</label>
+                        <input type="password"
+                               name="new_password"
+                               id="id_new_password"
+                               class="form-control"
+                               placeholder="Введите новый пароль"
+                               autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="id_confirm_password">Подтверждение</label>
+                        <input type="password"
+                               name="confirm_password"
+                               id="id_confirm_password"
+                               class="form-control"
+                               placeholder="Повторите пароль"
+                               autocomplete="new-password">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'profile' %}" class="btn btn-secondary">Отмена</a>
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    var initial = '{{ user.username|slice:":1"|upper|escapejs }}';
+
+    function setAvatarPreview(src) {
+        var slot = document.getElementById('avatar-slot');
+        if (!slot) return;
+        slot.innerHTML = '';
+        if (src) {
+            var img = document.createElement('img');
+            img.id = 'avatar-preview';
+            img.className = 'pe-avatar-preview';
+            img.alt = '';
+            img.src = src;
+            slot.appendChild(img);
+        } else {
+            var ph = document.createElement('div');
+            ph.id = 'avatar-placeholder';
+            ph.className = 'pe-avatar-preview';
+            ph.textContent = initial;
+            slot.appendChild(ph);
+        }
+        var rmBtn = document.getElementById('avatar-remove-btn');
+        if (rmBtn) rmBtn.hidden = !src;
+    }
+
+    window.previewAvatar = function (input) {
+        if (!input.files || !input.files[0]) return;
+        var file = input.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Файл слишком большой. Максимум 5 МБ.');
+            input.value = '';
+            return;
+        }
+        if (['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) === -1) {
+            alert('Допустимы только JPG, PNG и WebP.');
+            input.value = '';
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            setAvatarPreview(e.target.result);
+            var removeField = document.getElementById('remove_avatar');
+            if (removeField) removeField.value = '';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.removeAvatar = function () {
+        var fileInput = document.getElementById('id_avatar');
+        var removeField = document.getElementById('remove_avatar');
+        if (fileInput) fileInput.value = '';
+        setAvatarPreview(null);
+        if (removeField) removeField.value = '1';
+    };
+})();
+</script>
+{% endblock %}

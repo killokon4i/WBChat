@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}{{ target_user_display }} — Ответы по «{{ survey.title }}»{% endblock %}
+
+{% block content %}
+<div class="container container--narrow wb-portal-marketing">
+    <a href="{% url 'surveys_results' survey.pk %}" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Назад к результатам
+    </a>
+
+    <div class="card user-results-head">
+        <div class="user-results-avatar">
+            {% if target_user.avatar %}
+            <img src="{{ target_user.avatar.url }}" alt="">
+            {% else %}
+            {{ target_user.first_name|slice:":1" }}{{ target_user.last_name|slice:":1" }}
+            {% endif %}
+        </div>
+        <div class="user-results-info">
+            <h1 class="page-title" style="margin:0;">{{ target_user_display }}</h1>
+            <div class="user-results-meta">
+                {% if target_user.department %}<span>{{ target_user.department.name }}</span>{% endif %}
+                {% if target_user.position %}<span>{{ target_user.position }}</span>{% endif %}
+                {% if target_user.email %}<span>{{ target_user.email }}</span>{% endif %}
+            </div>
+            <div class="user-results-survey">
+                <span class="text-secondary">Опрос:</span> <b>{{ survey.title }}</b>
+                {% if response and response.submitted_at %}
+                <span class="badge badge-success">Прошёл · {{ response.submitted_at|date:"d.m.Y H:i" }}</span>
+                {% else %}
+                <span class="badge badge-warning">Не прошёл</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if response %}
+    <div class="user-answers-list">
+        {% for it in items %}
+        <div class="card user-answer-card{% if it.is_sub_question %} user-answer-card--sub{% endif %}">
+            <div class="ua-head">
+                <span class="ua-num">{{ it.number_label|default:forloop.counter }}</span>
+                <div>
+                    <h3 class="ua-q">{{ it.question.title }}</h3>
+                    <div class="ua-meta">
+                        <span>{{ it.question.get_question_type_display }}</span>
+                        {% if it.is_sub_question %}<span class="ua-sub">подвопрос</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if it.answer %}
+                {% if it.question.question_type == 'single_choice' or it.question.question_type == 'multiple_choice' %}
+                <div class="ua-values">
+                    {% for v in it.value_parts %}
+                    <span class="ua-value-chip">{{ v }}</span>
+                    {% empty %}
+                    <span class="ua-value-text">{{ it.display|default:"—" }}</span>
+                    {% endfor %}
+                </div>
+                {% elif it.question.question_type == 'scale' %}
+                <div class="ua-scale">
+                    <span class="ua-scale-value">{{ it.display }}</span>
+                    <span class="ua-scale-of">/ {{ it.question.scale_max }}</span>
+                </div>
+                {% else %}
+                <div class="ua-free">{{ it.display|linebreaksbr }}</div>
+                {% endif %}
+            {% else %}
+                <div class="text-muted ua-empty">— ответ не дан (вопрос мог быть скрыт условием) —</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card text-center">
+        <p class="text-muted">Этот сотрудник пока не прошёл опрос.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.container--narrow { max-width: 880px; margin-left: auto; margin-right: auto; }
+.back-link { display:inline-flex; align-items:center; gap:6px; color:var(--text-secondary); text-decoration:none; margin-bottom:18px; }
+.back-link svg { width:18px; height:18px; }
+
+.user-results-head { display:flex; gap: 18px; align-items: center; margin-bottom: 18px; }
+.user-results-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--colorPink600); color: #fff; display:flex; align-items:center; justify-content:center; font-size: 24px; font-weight: 700; flex-shrink: 0; overflow:hidden; }
+.user-results-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.user-results-info { flex: 1; min-width: 0; }
+.user-results-meta { display:flex; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+.user-results-survey { margin-top: 10px; display:flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; color: var(--text-primary); }
+
+.user-answers-list { display:flex; flex-direction: column; gap: 12px; }
+.user-answer-card { padding: 16px 18px; }
+.user-answer-card--sub { border-left: 4px solid var(--brand-green); }
+.ua-head { display:flex; gap: 10px; align-items: flex-start; }
+.ua-num { background: var(--magenta); color: #fff; min-width: 26px; height: 26px; border-radius: 999px; padding: 0 8px; display:inline-flex; align-items:center; justify-content:center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.user-answer-card--sub .ua-num { background: var(--brand-green); }
+.ua-q { font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0; }
+.ua-meta { display:flex; gap: 10px; font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+.ua-sub { padding: 1px 8px; border-radius: 999px; background: rgba(0,138,78,.18); color: var(--brand-green); font-size: 11px; font-weight: 600; }
+
+.ua-values, .ua-free, .ua-scale, .ua-empty { margin-top: 10px; padding-left: 36px; }
+.ua-values { display:flex; flex-wrap: wrap; gap: 6px; }
+.ua-value-chip, .ua-value-text { display:inline-block; padding: 6px 12px; background: rgba(203,17,171,.12); color: var(--text-primary); border: 1px solid rgba(203,17,171,.25); border-radius: 999px; font-size: 13px; }
+.ua-scale-value { font-size: 24px; font-weight: 700; color: var(--magenta); }
+.ua-scale-of { color: var(--text-muted); margin-left: 4px; font-size: 14px; }
+.ua-free { background: var(--bg-hover); border-left: 3px solid var(--magenta); padding: 10px 14px; border-radius: 8px; font-size: 14px; color: var(--text-primary); margin-left: 36px; }
+.ua-empty { font-style: italic; }
+</style>
+{% endblock %}

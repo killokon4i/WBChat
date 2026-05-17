@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block title %}Личный кабинет по новостям — WB Bank{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .news-dash-container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    .news-dash-header { display:flex; flex-direction:column; align-items:flex-start; margin-bottom: 20px; }
+    .news-dash-header h1 { color: var(--text-primary); font-size: 24px; margin-bottom: 8px; }
+    .news-dash-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .news-dash-stat { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 22px; padding: 20px; text-align: center; }
+    .news-dash-stat-value { font-size: 26px; font-weight: 700; color: var(--magenta); }
+    .news-dash-stat-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .news-dash-section { margin-bottom: 32px; }
+    .news-dash-section h2 { color: var(--text-primary); font-size: 18px; margin-bottom: 16px; }
+    .news-dash-table { width: 100%; border-collapse: collapse; }
+    .news-dash-table th,
+    .news-dash-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color); }
+    .news-dash-table th { color: var(--text-muted); font-size: 12px; text-transform: uppercase; font-weight: 600; }
+    .news-dash-table td { color: var(--text-primary); font-size: 14px; }
+    .news-dash-table tr:hover { background: var(--bg-hover); }
+    .news-dash-table a { color: var(--magenta); text-decoration: none; font-size: 13px; }
+    .news-dash-table a:hover { text-decoration: underline; }
+    .news-badge-draft { background: var(--bg-hover); color: var(--text-muted); padding: 3px 10px; border-radius: 20px; font-size: 11px; margin-left: 8px; }
+    .news-dash-actions { display:flex; gap:8px; align-items:center; }
+
+    .news-dash-btn,
+    .news-dash-btn:link,
+    .news-dash-btn:visited {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 12px;
+        min-width: 130px;
+        border-radius: 999px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        font-size: 12px;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .news-dash-btn:hover,
+    .news-dash-btn:active {
+        background: var(--bg-hover);
+        text-decoration: none !important;
+    }
+
+    .news-dash-btn-edit,
+    .news-dash-btn-edit:link,
+    .news-dash-btn-edit:visited {
+        background: var(--colorPink600);
+        border-color: transparent;
+        color: #ffffff;
+    }
+
+    .news-dash-btn-edit:hover,
+    .news-dash-btn-edit:active {
+        background: var(--colorPink600);
+        border-color: transparent;
+        color: #ffffff;
+        text-decoration: none !important;
+    }
+
+    .news-dash-btn-danger,
+    .news-dash-btn-danger:link,
+    .news-dash-btn-danger:visited {
+        background: var(--error-text);
+        border-color: var(--error-text);
+        color: #ffffff;
+    }
+
+    .news-dash-btn-danger:hover,
+    .news-dash-btn-danger:active {
+        background: #dc2626;
+        border-color: #dc2626;
+        color: #fff;
+        text-decoration: none !important;
+    }
+
+    @media (max-width: 480px) {
+        .news-dash-container {
+            padding: 0;
+        }
+
+        .news-dash-header h1 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .news-dash-cards {
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .news-dash-stat {
+            padding: 14px;
+        }
+
+        .news-dash-table {
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="news-dash-container wb-portal-marketing">
+    <div class="news-dash-header">
+        <h1>Личный кабинет по новостям</h1>
+        <a href="{% url 'news_list' %}" class="news-dash-btn">Назад к новостям</a>
+    </div>
+
+    <div class="news-dash-cards">
+        <div class="news-dash-stat">
+            <div class="news-dash-stat-value">{{ published_count }}</div>
+            <div class="news-dash-stat-label">Опубликованные новости</div>
+        </div>
+        <div class="news-dash-stat">
+            <div class="news-dash-stat-value">{{ drafts_count }}</div>
+            <div class="news-dash-stat-label">Черновики</div>
+        </div>
+        <div class="news-dash-stat">
+            <div class="news-dash-stat-value">{{ total_views }}</div>
+            <div class="news-dash-stat-label">Всего просмотров</div>
+        </div>
+    </div>
+
+    {% if my_drafts %}
+    <div class="news-dash-section">
+        <h2>Черновики новостей</h2>
+        <table class="news-dash-table">
+            <thead>
+            <tr>
+                <th>Заголовок</th>
+                <th>Обновлено</th>
+                <th></th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for n in my_drafts %}
+            <tr>
+                <td>
+                    {{ n.title|default:"(без заголовка)" }}
+                    <span class="news-badge-draft">Черновик</span>
+                </td>
+                <td>{{ n.updated_at|date:"d.m.Y H:i" }}</td>
+                <td class="news-dash-actions">
+                    <a href="{% url 'news_edit' n.pk %}" class="news-dash-btn news-dash-btn-edit">Редактировать</a>
+                </td>
+                <td class="news-dash-actions">
+                    <a href="{% url 'news_delete' n.pk %}" class="news-dash-btn news-dash-btn-danger">Удалить</a>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="news-dash-section">
+        <p style="color:var(--text-muted);font-size:14px;">Черновиков пока нет. Создайте новость и сохраните её как черновик.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

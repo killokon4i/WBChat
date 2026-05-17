@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Архив опросов — WB Хаб{% endblock %}
+
+{% block content %}
+<div class="wb-portal-mesh-page wb-portal-marketing wb-list-page archive-page">
+    <a href="{% url 'surveys_manage_list' %}" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Назад к управлению
+    </a>
+    <header class="wb-portal-hero" aria-labelledby="archive-surveys-title">
+        <div class="wb-portal-hero-text">
+            <p class="wb-portal-kicker">Опросы</p>
+            <h1 class="wb-portal-hero-title" id="archive-surveys-title">Архив опросов</h1>
+            <p class="wb-portal-hero-sub">Завершённые опросы WB&nbsp;Хаб. Всего в архиве: {{ surveys|length }}.</p>
+        </div>
+    </header>
+
+    <section class="archive-main-flow" aria-labelledby="archive-surveys-title">
+    {% if surveys %}
+    <div class="archive-grid">
+        {% for item in surveys %}
+        <article class="card archive-card">
+            <div class="archive-card-top">
+                <span class="badge badge-primary">Архив</span>
+                <span class="archive-date">{{ item.survey.closed_at|date:"d.m.Y H:i"|default:"—" }}</span>
+            </div>
+            <h2 class="archive-title">{{ item.survey.title }}</h2>
+            <p class="archive-desc">{{ item.survey.description|default:"Описание не заполнено."|truncatewords:22 }}</p>
+            <div class="archive-metrics">
+                <div><b>{{ item.progress.total }}</b><span>Аудитория</span></div>
+                <div><b>{{ item.progress.submitted }}</b><span>Прошли</span></div>
+                <div><b>{{ item.questions_count }}</b><span>Вопросов</span></div>
+                <div><b>{{ item.progress.percent }}%</b><span>Конверсия</span></div>
+            </div>
+            <div class="archive-actions">
+                <a href="{% url 'surveys_results' item.survey.pk %}" class="btn btn-primary btn-small">Открыть результаты</a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card text-center">
+        <h2 style="margin:0 0 8px;">Архив пуст</h2>
+        <p class="text-secondary">Завершённые опросы будут появляться здесь.</p>
+    </div>
+    {% endif %}
+    </section>
+</div>
+{% endblock %}

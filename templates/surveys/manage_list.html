@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Мои опросы — WB Хаб{% endblock %}
+
+{% block content %}
+<div class="wb-portal-mesh-page wb-portal-marketing wb-list-page manage-page">
+    <header class="wb-portal-hero" aria-labelledby="manage-surveys-title">
+        <div class="wb-portal-hero-text">
+            <p class="wb-portal-kicker">Управление</p>
+            <h1 class="wb-portal-hero-title" id="manage-surveys-title">Мои опросы</h1>
+            <p class="wb-portal-hero-sub">Запуск, прохождение и аналитика опросов WB&nbsp;Хаб.</p>
+        </div>
+        <div class="wb-portal-hero-actions">
+            <a href="{% url 'surveys_archive_list' %}" class="wb-portal-pill-btn wb-portal-pill-btn--ghost">Архив</a>
+            <a href="{% url 'surveys_create' %}" class="wb-portal-pill-btn wb-portal-pill-btn--primary">Создать опрос</a>
+        </div>
+    </header>
+
+    <section class="manage-main-flow" aria-labelledby="manage-surveys-title">
+    {% if my_surveys %}
+    <div class="manage-grid">
+        {% for item in my_surveys %}
+        <article class="card manage-card">
+            <div class="manage-card-top">
+                <span class="badge badge-primary">{{ item.survey.get_status_display }}</span>
+                <span class="manage-date">{{ item.survey.created_at|date:"d.m.Y H:i" }}</span>
+            </div>
+            <h2 class="manage-title">{{ item.survey.title }}</h2>
+            <p class="manage-desc">{{ item.survey.description|default:"Описание не заполнено."|truncatewords:24 }}</p>
+
+            <div class="manage-metrics">
+                <div>
+                    <div class="manage-metric-value">{{ item.progress.total }}</div>
+                    <div class="manage-metric-label">В аудитории</div>
+                </div>
+                <div>
+                    <div class="manage-metric-value">{{ item.progress.submitted }}</div>
+                    <div class="manage-metric-label">Прошли</div>
+                </div>
+                <div>
+                    <div class="manage-metric-value">{{ item.questions_count }}</div>
+                    <div class="manage-metric-label">Вопросов</div>
+                </div>
+            </div>
+            <div class="manage-progress">
+                <div class="manage-progress-bar">
+                    <div class="manage-progress-fill" style="width: {{ item.progress.percent }}%;"></div>
+                </div>
+                <div class="manage-progress-text">{{ item.progress.percent }}% прохождения</div>
+            </div>
+
+            <div class="manage-card-actions">
+                <a href="{% url 'surveys_edit' item.survey.pk %}" class="btn btn-secondary btn-small">Редактировать</a>
+                {% if item.survey.status == 'draft' %}
+                <a href="{% url 'surveys_launch' item.survey.pk %}" class="btn btn-primary btn-small">Запустить</a>
+                {% elif item.survey.status == 'active' %}
+                <a href="{% url 'surveys_close' item.survey.pk %}" class="btn btn-secondary btn-small">Завершить</a>
+                {% elif item.survey.status == 'closed' %}
+                <a href="{% url 'surveys_archive' item.survey.pk %}" class="btn btn-secondary btn-small">В архив</a>
+                {% endif %}
+                <a href="{% url 'surveys_results' item.survey.pk %}" class="btn btn-secondary btn-small">Результаты</a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card text-center">
+        <h2 style="margin:0 0 8px;">Опросов пока нет</h2>
+        <p class="text-secondary">Создайте первый опрос, чтобы запустить сбор обратной связи.</p>
+        <div style="margin-top:14px;">
+            <a href="{% url 'surveys_create' %}" class="btn btn-primary">Создать опрос</a>
+        </div>
+    </div>
+    {% endif %}
+    </section>
+</div>
+{% endblock %}

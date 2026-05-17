@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    {% load static %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#e400af">
+    {% include 'partials/favicon.html' %}
+    <title>{% block title %}Чат — WB Хаб{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/wb-bank-portal.css' %}">
+    <link rel="stylesheet" href="{% static 'css/wb-portal-skin.css' %}?v=authflow1">
+    {% block extra_styles %}{% endblock %}
+</head>
+<body class="portal-body chat-embed-body">
+{% block content %}{% endblock %}
+{% block extra_scripts %}{% endblock %}
+<script>
+(function () {
+    try {
+        var parentTheme = window.parent && window.parent.document.documentElement.getAttribute('data-theme');
+        if (parentTheme) {
+            document.documentElement.setAttribute('data-theme', parentTheme);
+        }
+    } catch (e) { /* cross-origin */ }
+})();
+</script>
+</body>
+</html>

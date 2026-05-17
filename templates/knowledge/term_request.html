@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Заявка на термин — WB Хаб{% endblock %}
+{% block content %}
+<div class="wb-portal-form-page wb-editor-auth wb-editor-auth--profile">
+    <a href="{% url 'kb_home' %}" class="wb-portal-form-back wb-editor-auth__back">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        К базе знаний
+    </a>
+    <div class="wb-editor-auth__card">
+        <div class="auth-welcome">
+            <h2 id="term-request-title">Новый термин</h2>
+            <p>Предложите термин или тег для контролируемого словаря.</p>
+        </div>
+        <form method="post" class="term-form">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                <label class="form-label">{{ field.label }}</label>
+                {{ field }}
+            </div>
+            {% endfor %}
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Отправить заявку</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

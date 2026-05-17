@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Справочник — WB Хаб{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{% static 'css/wb-directory.css' %}?v=3">
+{% endblock %}
+
+{% block content %}
+<div class="wb-portal-mesh-page wb-portal-mesh-page--wide wb-portal-marketing dir-page">
+    <header class="wb-portal-hero dir-hero" aria-labelledby="directory-page-title">
+        <div class="wb-portal-hero-text">
+            <p class="wb-portal-kicker">Команда</p>
+            <h1 class="wb-portal-hero-title" id="directory-page-title">Справочник</h1>
+            <p class="wb-portal-hero-sub">Найдите коллегу по имени, должности или подразделению — контакты и структура WB&nbsp;Хаб.</p>
+        </div>
+    </header>
+
+    <div class="directory-container">
+        <aside class="directory-sidebar" aria-label="Подразделения">
+            <div class="sidebar-title">Подразделения</div>
+            <ul class="dept-tree">
+                <li class="dept-item">
+                    <a href="{% url 'directory' %}{% if query %}?q={{ query|urlencode }}{% endif %}"
+                       class="dept-link {% if not selected_department %}active{% endif %}">
+                        <span>Все сотрудники</span>
+                    </a>
+                </li>
+                {% for dept in departments %}
+                {% if dept.level == 0 %}
+                <li class="dept-item">
+                    <a href="{% url 'directory' %}?department={{ dept.id }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}"
+                       class="dept-link {% if selected_department == dept.id %}active{% endif %}">
+                        <span>{{ dept.name }}</span>
+                        <span class="dept-count">{{ dept.employee_count }}</span>
+                    </a>
+                    {% if dept.children.exists %}
+                    <ul class="dept-children">
+                        {% for child in departments %}
+                        {% if child.parent_id == dept.id %}
+                        <li class="dept-item">
+                            <a href="{% url 'directory' %}?department={{ child.id }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}"
+                               class="dept-link {% if selected_department == child.id %}active{% endif %}">
+                                <span>{{ child.name }}</span>
+                                <span class="dept-count">{{ child.employee_count }}</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+
+            {% if upcoming_birthdays %}
+            <div class="birthdays-widget">
+                <div class="sidebar-title icon-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+                        <path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/>
+                        <path d="M2 7h20v5H2z"/>
+                        <path d="M12 7V4"/>
+                    </svg>
+                    Дни рождения
+                </div>
+                {% for b in upcoming_birthdays %}
+                <a href="{% url 'employee_card' b.user.id %}" class="birthday-item" style="text-decoration:none;color:inherit;">
+                    <div class="birthday-avatar">
+                        {% if b.user.avatar %}
+                        <img src="{{ b.user.avatar.url }}" alt="">
+                        {% else %}
+                        {{ b.user.first_name|slice:":1" }}{{ b.user.last_name|slice:":1" }}
+                        {% endif %}
+                    </div>
+                    <div class="birthday-info">
+                        <div class="birthday-name">{{ b.user.get_full_name }}</div>
+                        <div class="birthday-date">{{ b.date|date:"d E" }}</div>
+                    </div>
+                    {% if b.days_until == 0 %}
+                    <span class="birthday-badge">Сегодня</span>
+                    {% elif b.days_until == 1 %}
+                    <span class="birthday-badge">Завтра</span>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </aside>
+
+        <main class="directory-main">
+            <div class="dir-toolbar">
+                <p class="dir-results-count">
+                    <strong>{{ employees|length }}</strong>
+                    {% if employees|length == 1 %}сотрудник{% elif employees|length >= 2 and employees|length <= 4 %}сотрудника{% else %}сотрудников{% endif %}
+                    {% if query %} · поиск «{{ query }}»{% endif %}
+                </p>
+                <div class="search-container">
+                    <form method="get" action="{% url 'directory' %}">
+                        {% if selected_department %}
+                        <input type="hidden" name="department" value="{{ selected_department }}">
+                        {% endif %}
+                        <div class="search-input-wrapper">
+                            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <input type="search" name="q" value="{{ query }}"
+                                   class="search-input"
+                                   placeholder="Имя, должность, email…"
+                                   autocomplete="off">
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if employees %}
+            <div class="employees-grid">
+                {% for emp in employees %}
+                <a href="{% url 'employee_card' emp.id %}" class="employee-card">
+                    <div class="employee-avatar">
+                        {% if emp.avatar %}
+                        <img src="{{ emp.avatar.url }}" alt="">
+                        {% else %}
+                        {{ emp.first_name|slice:":1" }}{{ emp.last_name|slice:":1" }}
+                        {% endif %}
+                    </div>
+                    <div class="employee-info">
+                        <div class="employee-name">{{ emp.get_full_name|default:emp.username }}</div>
+                        <div class="employee-position">{{ emp.position.name|default:"Должность не указана" }}</div>
+                        {% if emp.department %}
+                        <div class="employee-dept">{{ emp.department.name }}</div>
+                        {% endif %}
+                        <div class="employee-meta">
+                            <span class="employee-status {% if emp.status == 'active' %}active{% elif emp.status == 'vacation' %}vacation{% else %}sick{% endif %}">
+                                <span class="status-dot"></span>
+                                {% if emp.status == 'active' %}На работе
+                                {% elif emp.status == 'vacation' %}В отпуске
+                                {% elif emp.status == 'sick_leave' %}На больничном
+                                {% else %}{{ emp.get_status_display }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <svg class="employee-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div class="empty-title">Сотрудники не найдены</div>
+                <p class="empty-text">Измените запрос или выберите другое подразделение</p>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="utf-8">
+    {% load static %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#e400af">
+    {% include 'partials/favicon.html' %}
+    <title>500 — Ошибка сервера</title>
+    <link rel="stylesheet" href="{% static 'css/wb-bank-portal.css' %}">
+    <style>
+        body { margin: 0; min-height: 100vh; }
+        .err-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 40px 20px; }
+        .err-code { font-size: 120px; line-height: 1; font-weight: 500; font-family: var(--fontWBSans); background: linear-gradient(135deg, var(--colorPink600), var(--colorPink700)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 16px; }
+        .err-wrap h1 { font-size: 24px; margin-bottom: 12px; font-family: var(--fontWBSans); font-weight: 500; color: var(--text-primary); }
+        .err-wrap p { color: var(--text-muted); font-size: 15px; max-width: 440px; margin-bottom: 32px; font-family: var(--fontHauss); }
+        .err-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+        .err-btns a { padding: 12px 28px; border-radius: 9999px; font-weight: 500; font-size: 15px; font-family: var(--fontWBSans); text-decoration: none; }
+        .err-btn-main { background: var(--colorPink600); color: #fff; }
+        .err-btn-back { background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-color); }
+        @media (max-width: 480px) {
+            .err-wrap { min-height: 60vh; padding: 20px 12px; }
+            .err-code { font-size: 84px; margin-bottom: 10px; }
+            .err-wrap h1 { font-size: 20px; }
+            .err-btns { width: 100%; }
+            .err-btns a { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="err-wrap">
+        <div class="err-code">500</div>
+        <h1>Ошибка сервера</h1>
+        <p>Что-то пошло не так. Мы уже разбираемся. Попробуйте обновить страницу или вернуться позже.</p>
+        <div class="err-btns">
+            <a href="/" class="err-btn-main">На главную</a>
+            <a href="javascript:history.back()" class="err-btn-back">Назад</a>
+        </div>
+    </div>
+</body>
+</html>

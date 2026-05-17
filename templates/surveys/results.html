@@ -1,0 +1,484 @@
+{% extends 'base.html' %}
+{% block title %}Результаты опроса — {{ survey.title }}{% endblock %}
+
+{% block content %}
+<div class="container results-container wb-portal-marketing">
+    <a href="{% url 'surveys_manage_list' %}" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Назад к опросам
+    </a>
+
+    <div class="results-header">
+        <div>
+            <h1 class="results-title">{{ survey.title }}</h1>
+            <div class="results-meta">
+                <span class="badge badge-primary">{{ survey.get_status_display }}</span>
+                {% if survey.is_anonymous %}<span class="badge badge-warning">Анонимный</span>{% endif %}
+                <span class="results-meta-item">Автор: {{ survey.author.last_name|default:survey.author.username }} {{ survey.author.first_name|default:'' }}</span>
+                {% if survey.starts_at %}<span class="results-meta-item">с {{ survey.starts_at|date:"d.m.Y H:i" }}</span>{% endif %}
+                {% if survey.ends_at %}<span class="results-meta-item">по {{ survey.ends_at|date:"d.m.Y H:i" }}</span>{% endif %}
+            </div>
+            {% if survey.description %}
+            <p class="text-secondary" style="margin-top:10px;">{{ survey.description }}</p>
+            {% endif %}
+        </div>
+        <div class="results-export">
+            <span class="export-label">Экспорт:</span>
+            <a href="?format=xlsx" class="btn btn-secondary btn-export">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="16 13 8 13"/></svg>
+                XLSX
+            </a>
+            <a href="?format=docx" class="btn btn-secondary btn-export">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+                DOCX
+            </a>
+            <a href="?format=pdf" class="btn btn-secondary btn-export">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="12" cy="15" r="2"/></svg>
+                PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="metrics-grid">
+        <div class="metric-card metric-card--main">
+            <div class="metric-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="metric-body">
+                <div class="metric-value">{{ summary.total }}</div>
+                <div class="metric-label">В аудитории</div>
+            </div>
+        </div>
+        <div class="metric-card metric-card--success">
+            <div class="metric-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="metric-body">
+                <div class="metric-value">{{ summary.submitted }}</div>
+                <div class="metric-label">Прошли опрос</div>
+            </div>
+        </div>
+        <div class="metric-card metric-card--warning">
+            <div class="metric-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="metric-body">
+                <div class="metric-value">{{ summary.pending }}</div>
+                <div class="metric-label">Не прошли</div>
+            </div>
+        </div>
+        <div class="metric-card metric-card--accent">
+            <div class="metric-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </div>
+            <div class="metric-body">
+                <div class="metric-value">{{ summary.percent }}%</div>
+                <div class="metric-label">Процент прохождения</div>
+            </div>
+        </div>
+    </div>
+
+    <section class="card completion-card">
+        <div class="completion-head">
+            <h2 class="card-title">Статистика прохождения</h2>
+            <span class="completion-percent">{{ summary.percent }}%</span>
+        </div>
+        <div class="completion-body">
+            <div class="completion-chart" id="completionChart"></div>
+            <div class="completion-legend">
+                <div class="completion-legend-row">
+                    <span class="qsc-legend-dot" style="background:#008a4e;"></span>
+                    <span>Прошли</span>
+                    <b>{{ summary.submitted }}</b>
+                </div>
+                <div class="completion-legend-row">
+                    <span class="qsc-legend-dot" style="background:#ff2fb3;"></span>
+                    <span>Не прошли</span>
+                    <b>{{ summary.pending }}</b>
+                </div>
+            </div>
+        </div>
+        <script type="application/json" id="completion-chart-data">{{ summary.chart_data_json|safe }}</script>
+    </section>
+
+    <div class="results-grid">
+        <!-- Левая колонка: участники -->
+        <section class="card participants-card">
+            <div class="card-head">
+                <h2 class="card-title">Сотрудники аудитории</h2>
+                <div class="participants-filter">
+                    <button type="button" class="chip is-active" data-filter="all">Все <span class="chip-count">{{ summary.total }}</span></button>
+                    <button type="button" class="chip" data-filter="submitted">Прошли <span class="chip-count">{{ summary.submitted }}</span></button>
+                    <button type="button" class="chip" data-filter="pending">Не прошли <span class="chip-count">{{ summary.pending }}</span></button>
+                </div>
+            </div>
+            <div class="participants-search">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="participantsSearch" placeholder="Поиск по ФИО или подразделению…">
+            </div>
+            <ul class="participants-list" id="participantsList">
+                {% for row in participants %}
+                <li class="participant-row {% if row.is_submitted %}is-submitted{% else %}is-pending{% endif %}"
+                    data-status="{% if row.is_submitted %}submitted{% else %}pending{% endif %}"
+                    data-search="{{ row.display|lower }} {{ row.department|lower }}">
+                    <div class="participant-avatar">
+                        {% if row.user.avatar %}
+                        <img src="{{ row.user.avatar.url }}" alt="">
+                        {% else %}
+                        {{ row.user.first_name|slice:":1" }}{{ row.user.last_name|slice:":1" }}
+                        {% endif %}
+                    </div>
+                    <div class="participant-info">
+                        <div class="participant-name">{{ row.display }}</div>
+                        <div class="participant-sub">{{ row.department|default:"—" }}{% if row.submitted_at %} · {{ row.submitted_at|date:"d.m.Y H:i" }}{% endif %}</div>
+                    </div>
+                    {% if row.is_submitted %}
+                    <span class="status-pill status-pill--ok">Прошёл</span>
+                    {% if not survey.is_anonymous %}
+                    <a href="{% url 'surveys_results_user' survey.pk row.user.pk %}" class="btn-icon-link" title="Посмотреть ответы">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </a>
+                    {% endif %}
+                    {% else %}
+                    <span class="status-pill status-pill--bad">Не прошёл</span>
+                    {% endif %}
+                </li>
+                {% empty %}
+                <li class="text-muted" style="padding:14px;">В аудитории нет сотрудников.</li>
+                {% endfor %}
+            </ul>
+            {% if survey.is_anonymous %}
+            <div class="anon-hint">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Опрос анонимный: индивидуальные ответы не показываются.
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Правая колонка: вопросы и графики -->
+        <section class="questions-column">
+            {% for item in stats %}
+            <div class="card question-stats-card {% if item.is_sub_question %}question-stats-card--sub{% endif %}">
+                <div class="qsc-head">
+                    <div class="qsc-num">{{ item.number_label|default:forloop.counter }}</div>
+                    <div class="qsc-title">
+                        <h3>{{ item.question.title }}</h3>
+                        <div class="qsc-meta">
+                            <span>{{ item.question.get_question_type_display }}</span>
+                            {% if item.is_sub_question %}
+                            <span class="qsc-sub-badge">подвопрос</span>
+                            {% endif %}
+                            <span>Ответов: <b>{{ item.answers|length }}</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if item.is_sub_question and item.parent_triggers %}
+                <div class="qsc-trigger-info">
+                    Показывался при выборе: {% for t in item.parent_triggers %}<span class="trigger-mini">{{ t }}</span>{% endfor %}
+                </div>
+                {% endif %}
+
+                {% if item.question.question_type == 'free_text' %}
+                    {% if item.answer_texts %}
+                    <div class="free-text-list">
+                        {% for t in item.answer_texts %}
+                        <div class="free-text-item">{{ t }}</div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-muted">Ответов нет.</div>
+                    {% endif %}
+                {% elif item.chart_data_json %}
+                    <div class="qsc-chart-wrap">
+                        <div class="qsc-chart" id="chart-{{ forloop.counter }}"></div>
+                        <div class="qsc-legend">
+                            {% for lbl in item.chart_data.labels %}
+                            <div class="qsc-legend-row">
+                                <span class="qsc-legend-dot"></span>
+                                <span class="qsc-legend-label" title="{{ lbl }}">{{ lbl }}</span>
+                                <span class="qsc-legend-pct"></span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <script type="application/json" id="chart-data-{{ forloop.counter }}">{{ item.chart_data_json|safe }}</script>
+                    <script type="application/json" id="chart-kind-{{ forloop.counter }}">"{{ item.chart_kind|default:'bar' }}"</script>
+                {% else %}
+                    <div class="text-muted">Нет данных для отображения.</div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="card"><p class="text-muted">У опроса пока нет вопросов.</p></div>
+            {% endfor %}
+        </section>
+    </div>
+</div>
+
+<style>
+.results-container { max-width: 1400px; }
+.back-link { display:inline-flex; align-items:center; gap:6px; color:var(--text-secondary); text-decoration:none; margin-bottom:18px; }
+.back-link svg { width:18px; height:18px; }
+
+.results-header { display:flex; justify-content:space-between; align-items:flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 22px; }
+.results-meta { display:flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; align-items:center; }
+.results-meta-item { font-size: 13px; color: var(--text-muted); }
+.results-export { display:flex; align-items:center; gap: 8px; flex-wrap: wrap; }
+.export-label { color: var(--text-secondary); font-size: 13px; }
+.btn-export { padding: 8px 14px; font-size: 13px; }
+.btn-export svg { width:16px; height:16px; }
+
+.metrics-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.metric-card { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 24px; padding: 18px; display:flex; align-items:center; gap: 14px; transition: transform .2s ease, box-shadow .2s ease; }
+.metric-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.metric-icon { width: 44px; height: 44px; border-radius: 20px; display:flex; align-items:center; justify-content:center; flex-shrink: 0; color:#fff; }
+.metric-card--main .metric-icon { background: var(--colorPink600); }
+.metric-card--success .metric-icon { background: var(--colorGreen500); }
+.metric-card--warning .metric-icon { background: var(--colorPink700); }
+.metric-card--accent .metric-icon { background: var(--colorGreen500); }
+.metric-value { font-size: 26px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+.metric-label { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+
+.completion-card { margin-bottom: 22px; padding: 18px 20px; }
+.completion-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 10px; }
+.completion-percent { font-size: 22px; font-weight: 700; color: var(--magenta); }
+.completion-body { display:grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 16px; align-items:center; }
+.completion-chart { min-height: 180px; }
+.completion-legend { display:flex; flex-direction: column; gap: 8px; max-width: 260px; }
+.completion-legend-row { display:flex; align-items:center; gap: 8px; color: var(--text-secondary); font-size: 13px; }
+.completion-legend-row span:nth-child(2) { flex: 1; }
+.completion-legend-row b { color: var(--text-primary); }
+
+.results-grid { display:grid; grid-template-columns: 380px 1fr; gap: 22px; align-items: start; }
+.participants-card { padding: 18px; }
+.card-head { display:flex; justify-content:space-between; align-items:center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.card-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0; }
+.participants-filter { display:flex; gap: 6px; flex-wrap: wrap; }
+.chip { background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-secondary); padding: 6px 10px; border-radius: 999px; font-size: 12px; cursor: pointer; transition: all .15s ease; display:inline-flex; align-items:center; gap: 6px; }
+.chip:hover { color: var(--text-primary); }
+.chip.is-active { background: var(--magenta); color: #fff; border-color: var(--magenta); }
+.chip-count { font-weight: 700; opacity: .85; }
+.participants-search { position: relative; margin-bottom: 12px; }
+.participants-search svg { position:absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+.participants-search input { width: 100%; padding: 9px 12px 9px 36px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 16px; color: var(--text-primary); font-size: 13px; }
+.participants-search input:focus { outline:none; border-color: var(--magenta); box-shadow: 0 0 0 3px rgba(203,17,171,.15); }
+
+.participants-list { list-style: none; padding: 0; margin: 0; max-height: 560px; overflow-y: auto; }
+.participant-row { display:flex; align-items:center; gap: 10px; padding: 10px 6px; border-bottom: 1px solid var(--border-light); }
+.participant-row:last-child { border-bottom: none; }
+.participant-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--colorPink600); color: #fff; display:flex; align-items:center; justify-content:center; font-size: 12px; font-weight: 600; flex-shrink: 0; overflow:hidden; }
+.participant-avatar img { width:100%; height:100%; object-fit: cover; }
+.participant-info { flex: 1; min-width: 0; }
+.participant-name { font-size: 13px; color: var(--text-primary); font-weight: 500; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
+.participant-sub { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
+.status-pill { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+.status-pill--ok { background: rgba(0,138,78,.2); color: #12c976; }
+.status-pill--bad { background: rgba(255,47,179,.15); color: #ff73cb; }
+.btn-icon-link { color: var(--text-secondary); padding: 4px; border-radius: 6px; flex-shrink: 0; display:inline-flex; align-items:center; justify-content:center; }
+.btn-icon-link:hover { background: var(--bg-hover); color: var(--magenta); }
+
+.anon-hint { margin-top: 14px; padding: 10px 12px; background: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning-text); font-size: 12px; border-radius: 16px; display:flex; align-items:center; gap: 8px; }
+
+.questions-column { display:flex; flex-direction: column; gap: 16px; }
+.question-stats-card { padding: 20px; }
+.question-stats-card--sub { border-left: 4px solid #008a4e; }
+.qsc-head { display:flex; gap: 12px; align-items: flex-start; }
+.qsc-num { background: var(--magenta); color: #fff; min-width: 28px; height: 28px; border-radius: 999px; padding: 0 8px; display:inline-flex; align-items:center; justify-content:center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.question-stats-card--sub .qsc-num { background: #008a4e; }
+.qsc-title h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0; line-height: 1.4; }
+.qsc-meta { display:flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 4px; font-size: 12px; color: var(--text-muted); align-items: center; }
+.qsc-sub-badge { padding: 1px 8px; border-radius: 999px; background: rgba(0,138,78,.18); color: var(--brand-green); font-weight: 600; font-size: 11px; }
+.qsc-trigger-info { font-size: 12px; color: var(--text-muted); margin: 10px 0 0; padding-left: 40px; }
+.trigger-mini { display:inline-block; padding: 1px 8px; border-radius: 999px; background: var(--bg-hover); color: var(--text-secondary); margin-right: 4px; font-size: 11px; }
+.qsc-chart-wrap { display:grid; grid-template-columns: 1fr 220px; gap: 18px; margin-top: 16px; align-items: center; }
+.qsc-chart { height: 260px; min-width: 0; }
+.inline-chart-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.inline-chart-svg--donut { max-width: 360px; margin: 0 auto; }
+.chart-axis { stroke: var(--border-color); stroke-width: 1; }
+.chart-value { fill: var(--text-primary); font-size: 13px; font-weight: 700; }
+.chart-label { fill: var(--text-secondary); font-size: 11px; }
+.chart-total { fill: var(--text-primary); font-size: 32px; font-weight: 800; }
+.chart-total-label { fill: var(--text-muted); font-size: 13px; }
+.qsc-legend { display:flex; flex-direction: column; gap: 8px; }
+.qsc-legend-row { display:flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+.qsc-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.qsc-legend-label { flex: 1; min-width: 0; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; color: var(--text-primary); }
+.qsc-legend-pct { font-weight: 600; color: var(--text-primary); }
+
+.free-text-list { display:flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.free-text-item { background: var(--bg-hover); border-left: 3px solid var(--magenta); padding: 10px 12px; border-radius: 8px; font-size: 13px; color: var(--text-primary); }
+
+@media (max-width: 1200px) {
+    .completion-body { grid-template-columns: 1fr; }
+    .results-grid { grid-template-columns: 1fr; }
+    .qsc-chart-wrap { grid-template-columns: 1fr; }
+    .qsc-chart { height: 220px; }
+}
+@media (max-width: 768px) {
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+
+<script>
+(function(){
+    var PALETTE = ['#ff2fb3','#008a4e','#ca1d91','#00a35c','#ff75cb','#005f3a','#db3aa5','#7de0b0','#d4d4d0','#8f8f89'];
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function(c) {
+            return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c];
+        });
+    }
+
+    function polarToCartesian(cx, cy, r, angle) {
+        var rad = (angle - 90) * Math.PI / 180.0;
+        return { x: cx + (r * Math.cos(rad)), y: cy + (r * Math.sin(rad)) };
+    }
+
+    function describeArc(cx, cy, outerR, innerR, startAngle, endAngle) {
+        var startOuter = polarToCartesian(cx, cy, outerR, endAngle);
+        var endOuter = polarToCartesian(cx, cy, outerR, startAngle);
+        var startInner = polarToCartesian(cx, cy, innerR, startAngle);
+        var endInner = polarToCartesian(cx, cy, innerR, endAngle);
+        var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+        return [
+            "M", startOuter.x, startOuter.y,
+            "A", outerR, outerR, 0, largeArcFlag, 0, endOuter.x, endOuter.y,
+            "L", startInner.x, startInner.y,
+            "A", innerR, innerR, 0, largeArcFlag, 1, endInner.x, endInner.y,
+            "Z"
+        ].join(" ");
+    }
+
+    function renderBarChart(el, data, colors) {
+        var values = data.values || [];
+        var labels = data.labels || [];
+        var max = Math.max.apply(null, values.concat([1]));
+        var width = 720, height = 300, padL = 42, padR = 18, padT = 18, padB = 58;
+        var chartW = width - padL - padR;
+        var chartH = height - padT - padB;
+        var gap = 10;
+        var barW = Math.max(18, (chartW - gap * Math.max(values.length - 1, 0)) / Math.max(values.length, 1));
+        var html = ['<svg class="inline-chart-svg" viewBox="0 0 ' + width + ' ' + height + '" role="img">'];
+        html.push('<line x1="' + padL + '" y1="' + (padT + chartH) + '" x2="' + (width - padR) + '" y2="' + (padT + chartH) + '" class="chart-axis"/>');
+        for (var i = 0; i < values.length; i++) {
+            var v = Number(values[i]) || 0;
+            var h = Math.round((v / max) * chartH);
+            var x = padL + i * (barW + gap);
+            var y = padT + chartH - h;
+            html.push('<rect x="' + x + '" y="' + y + '" width="' + barW + '" height="' + h + '" rx="8" fill="' + colors[i % colors.length] + '"/>');
+            html.push('<text x="' + (x + barW / 2) + '" y="' + Math.max(14, y - 7) + '" text-anchor="middle" class="chart-value">' + v + '</text>');
+            html.push('<text x="' + (x + barW / 2) + '" y="' + (height - 18) + '" text-anchor="middle" class="chart-label">' + escapeHtml(String(labels[i] || '').slice(0, 16)) + '</text>');
+        }
+        html.push('</svg>');
+        el.innerHTML = html.join('');
+    }
+
+    function renderDonutChart(el, data, colors) {
+        var values = data.values || [];
+        var total = values.reduce(function(a, b){ return a + (Number(b) || 0); }, 0);
+        if (!total) {
+            el.innerHTML = '<div class="text-muted">Нет данных для отображения.</div>';
+            return;
+        }
+        var cx = 180, cy = 145, outerR = 108, innerR = 66;
+        var angle = 0;
+        var html = ['<svg class="inline-chart-svg inline-chart-svg--donut" viewBox="0 0 360 290" role="img">'];
+        var nonZeroCount = values.filter(function(v){ return (Number(v) || 0) > 0; }).length;
+        if (nonZeroCount === 1) {
+            var colorIdx = 0;
+            for (var j = 0; j < values.length; j++) {
+                if ((Number(values[j]) || 0) > 0) { colorIdx = j; break; }
+            }
+            html.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + outerR + '" fill="' + colors[colorIdx % colors.length] + '"/>');
+            html.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + innerR + '" fill="var(--bg-card)"/>');
+        } else {
+        values.forEach(function(v, i) {
+            v = Number(v) || 0;
+            if (!v) return;
+            var next = angle + (v / total) * 360;
+            html.push('<path d="' + describeArc(cx, cy, outerR, innerR, angle, next) + '" fill="' + colors[i % colors.length] + '"/>');
+            angle = next;
+        });
+        }
+        html.push('<text x="' + cx + '" y="' + (cy - 6) + '" text-anchor="middle" class="chart-total">' + total + '</text>');
+        html.push('<text x="' + cx + '" y="' + (cy + 20) + '" text-anchor="middle" class="chart-total-label">ответов</text>');
+        html.push('</svg>');
+        el.innerHTML = html.join('');
+    }
+
+    document.querySelectorAll('.qsc-chart[id^="chart-"]').forEach(function(chartEl){
+        var num = chartEl.id.replace('chart-', '');
+        var dataEl = document.getElementById('chart-data-' + num);
+        var kindEl = document.getElementById('chart-kind-' + num);
+        if (!dataEl) return;
+        var data;
+        try { data = JSON.parse(dataEl.textContent); } catch (e) { return; }
+        var kind = 'bar';
+        try { kind = JSON.parse(kindEl.textContent); } catch (e) {}
+        if (!data.labels || !data.values) return;
+        var colors = data.values.map(function(_, i){ return PALETTE[i % PALETTE.length]; });
+
+        // покраска легенды
+        var card = chartEl.closest('.question-stats-card');
+        if (card) {
+            card.querySelectorAll('.qsc-legend-dot').forEach(function(dot, i){
+                dot.style.background = PALETTE[i % PALETTE.length];
+            });
+            var pcts = data.percentages || [];
+            card.querySelectorAll('.qsc-legend-row').forEach(function(row, i){
+                var p = row.querySelector('.qsc-legend-pct');
+                if (!p) return;
+                var val = data.values[i] || 0;
+                p.textContent = val + ' · ' + (pcts[i] !== undefined ? pcts[i] + '%' : '');
+            });
+        }
+
+        if (kind === 'pie') {
+            renderDonutChart(chartEl, data, colors);
+        } else {
+            renderBarChart(chartEl, data, colors);
+        }
+    });
+
+    var completionDataEl = document.getElementById('completion-chart-data');
+    var completionChartEl = document.getElementById('completionChart');
+    if (completionDataEl && completionChartEl) {
+        try {
+            var completionData = JSON.parse(completionDataEl.textContent);
+            renderDonutChart(completionChartEl, completionData, ['#008a4e', '#ff2fb3']);
+        } catch (e) {}
+    }
+
+    // фильтры участников
+    var list = document.getElementById('participantsList');
+    if (list) {
+        var rows = Array.prototype.slice.call(list.querySelectorAll('.participant-row'));
+        var search = document.getElementById('participantsSearch');
+        var activeFilter = 'all';
+
+        function refilter() {
+            var term = (search && search.value || '').toLowerCase().trim();
+            rows.forEach(function(r){
+                var statusOk = (activeFilter === 'all' || r.getAttribute('data-status') === activeFilter);
+                var s = r.getAttribute('data-search') || '';
+                var searchOk = !term || s.indexOf(term) !== -1;
+                r.style.display = (statusOk && searchOk) ? '' : 'none';
+            });
+        }
+
+        document.querySelectorAll('.participants-filter .chip').forEach(function(c) {
+            c.addEventListener('click', function() {
+                document.querySelectorAll('.participants-filter .chip').forEach(function(x){ x.classList.remove('is-active'); });
+                c.classList.add('is-active');
+                activeFilter = c.getAttribute('data-filter');
+                refilter();
+            });
+        });
+        if (search) search.addEventListener('input', refilter);
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,506 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if is_edit %}Редактирование: {{ article.title }}{% else %}Новая статья{% endif %} — WB Хаб{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .form-page {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .form-page h1 {
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 24px;
+    }
+
+    .form-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 24px;
+        padding: 28px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+
+    .lock-warning {
+        background: var(--warning-bg);
+        border: 1px solid var(--warning-border);
+        color: var(--warning-text);
+        padding: 14px 18px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+
+    .form-footer {
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 24px;
+    }
+
+    .version-comment-input {
+        flex: 1;
+        max-width: 400px;
+    }
+
+    .autosave-indicator {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+        .form-row { grid-template-columns: 1fr; }
+    }
+
+    .kb-attachments-field .kb-file-drop {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .kb-file-input-native {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .kb-file-input-label {
+        margin: 0;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .kb-file-input-hint {
+        font-size: 13px;
+        color: var(--text-muted);
+        flex: 1 1 160px;
+        min-width: 0;
+        line-height: 1.4;
+    }
+
+    @media (max-width: 480px) {
+        .form-page h1 {
+            font-size: 22px;
+            margin-bottom: 14px;
+        }
+
+        .form-card {
+            padding: 14px;
+            border-radius: 20px;
+        }
+
+        .kb-attachments-field .kb-file-drop {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .kb-file-input-hint {
+            flex-basis: auto;
+        }
+
+        .form-footer {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+
+        .form-footer > div {
+            width: 100%;
+        }
+
+        .form-footer .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .version-comment-input {
+            max-width: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wb-portal-form-page wb-editor-auth wb-editor-auth--article">
+    {% if is_edit %}
+    <a href="{% url 'kb_article_detail' slug=article.slug %}" class="wb-portal-form-back wb-editor-auth__back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        К статье
+    </a>
+    {% else %}
+    <a href="{% url 'kb_home' %}" class="wb-portal-form-back wb-editor-auth__back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        К базе знаний
+    </a>
+    {% endif %}
+
+    <div class="wb-editor-auth__card">
+        <div class="auth-welcome">
+            <h2 id="kb-article-form-title">{% if is_edit %}Редактирование статьи{% else %}Новая статья{% endif %}</h2>
+            <p>Заполните поля и сохраните материал.</p>
+        </div>
+
+    {% if lock_warning %}
+    <div class="lock-warning">{{ lock_warning }}</div>
+    {% endif %}
+
+        {% if form.errors %}
+        <div class="form-errors">
+            <strong>Пожалуйста, исправьте ошибки:</strong>
+            <ul style="margin: 8px 0 0; padding-left: 20px;">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                <li>{{ field }}: {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <form method="post" id="article-form" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {% if not is_edit %}
+            <div class="form-group">
+                <label class="form-label">Шаблон</label>
+                {{ form.template_id }}
+                <small style="color:var(--text-muted);font-size:12px;">Выберите шаблон для автоматической подстановки структуры</small>
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label class="form-label" for="id_title">Заголовок</label>
+                {{ form.title }}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="id_category">Основная рубрика</label>
+                    {{ form.category }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="id_article_type">Тип статьи</label>
+                    {{ form.article_type }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Доп. рубрики (кросс-категории)</label>
+                {{ form.extra_categories }}
+                <small style="color:var(--text-muted);font-size:12px;">Ctrl+Click для множественного выбора</small>
+            </div>
+
+            <div class="form-group" style="position: relative;">
+                <label class="form-label" for="id_tags_input">Теги (через запятую)</label>
+                {{ form.tags_input }}
+                <div id="tags-dropdown" class="tags-dropdown" style="display:none;"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Содержимое</label>
+                {{ form.content }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_excerpt">Краткое описание</label>
+                {{ form.excerpt }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_review_period_months">Период пересмотра (месяцев)</label>
+                {{ form.review_period_months }}
+            </div>
+
+            <div class="form-group kb-attachments-field">
+                <label class="form-label" for="kb-article-files">Вложения</label>
+                <div class="kb-file-drop">
+                    <input type="file" name="attachments" multiple id="kb-article-files" class="kb-file-input-native" aria-describedby="kb-attachments-help">
+                    <label for="kb-article-files" class="kb-file-input-label btn btn-secondary">Выбрать файлы</label>
+                    <span class="kb-file-input-hint" id="kb-article-files-hint" aria-live="polite">Файлы не выбраны</span>
+                </div>
+                <small id="kb-attachments-help" style="color:var(--text-muted);font-size:12px;display:block;margin-top:8px;">PDF, Word, Excel, изображения, архивы. Макс. 50 МБ на файл. Исполняемые файлы запрещены.</small>
+                {% if is_edit and article.attachments.count %}
+                <div style="margin-top:10px;">
+                    {% for att in article.attachments.all %}
+                    <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-hover);border-radius:8px;margin-bottom:4px;font-size:13px;">
+                        <span style="display:inline-flex;align-items:center;gap:6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.2-9.19a3.5 3.5 0 1 1 4.95 4.95l-9.2 9.2a2 2 0 1 1-2.83-2.83l8.49-8.48"/></svg>
+                            {{ att.file_name }} ({{ att.file_size|filesizeformat }})
+                        </span>
+                        <form method="post" action="{% url 'kb_delete_attachment' slug=article.slug attachment_id=att.id %}" style="margin-left:auto;">
+                            {% csrf_token %}
+                            <button type="submit" style="background:none;border:none;color:var(--error-text);cursor:pointer;font-size:12px;">Удалить</button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-footer">
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    {% if is_edit and article.status == 'published' %}
+                    <button type="submit" name="action" value="save" class="btn btn-primary">Сохранить</button>
+                    {% else %}
+                    <button type="submit" name="action" value="draft" class="btn btn-secondary">Сохранить черновик</button>
+                    <button type="submit" name="action" value="publish" class="btn btn-primary">Опубликовать</button>
+                    {% endif %}
+                    <button type="button" class="btn btn-secondary" onclick="previewArticle()">Предпросмотр</button>
+                    <a href="{% if is_edit %}{% url 'kb_article_detail' slug=article.slug %}{% else %}{% url 'kb_home' %}{% endif %}" class="btn btn-secondary">Отмена</a>
+                    <span id="autosave-status" class="autosave-indicator"></span>
+                </div>
+                {% if is_edit %}
+                <div class="version-comment-input">
+                    <input type="text" name="version_comment" class="form-control"
+                           placeholder="Описание изменений (необязательно)"
+                           style="font-size: 13px; padding: 8px 14px;">
+                </div>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+    .tags-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: var(--shadow-hover);
+        z-index: 100;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    .tags-dropdown-item {
+        padding: 8px 14px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text-primary);
+    }
+    .tags-dropdown-item:hover {
+        background: rgba(228, 0, 175, 0.14);
+        color: var(--magenta);
+    }
+</style>
+<script src="{% static 'tinymce/tinymce.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script>
+const articleTemplates = {{ article_templates_json|safe }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    tinymce.init({
+        selector: '#id_content',
+        license_key: 'gpl',
+        height: 500,
+        menubar: 'file edit view insert format tools table',
+        plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+            'preview', 'anchor', 'searchreplace', 'visualblocks', 'code',
+            'fullscreen', 'insertdatetime', 'media', 'table', 'codesample',
+            'help', 'wordcount', 'emoticons'
+        ],
+        toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table codesample | removeformat | fullscreen preview | help',
+        codesample_languages: [
+            {text: 'Python', value: 'python'},
+            {text: 'JavaScript', value: 'javascript'},
+            {text: 'HTML/XML', value: 'markup'},
+            {text: 'CSS', value: 'css'},
+            {text: 'SQL', value: 'sql'},
+            {text: 'Bash', value: 'bash'},
+            {text: 'JSON', value: 'json'},
+            {text: 'PowerShell', value: 'powershell'},
+            {text: 'YAML', value: 'yaml'},
+        ],
+        skin: document.documentElement.getAttribute('data-theme') === 'light' ? 'oxide' : 'oxide-dark',
+        content_css: document.documentElement.getAttribute('data-theme') === 'light' ? 'default' : 'dark',
+        promotion: false,
+        branding: false,
+        setup: function(editor) {
+            editor.on('change keyup', function() { editor.save(); });
+        }
+    });
+
+    // Template loading
+    const tplSelect = document.getElementById('id_template_id');
+    if (tplSelect) {
+        tplSelect.addEventListener('change', function() {
+            const tplId = parseInt(this.value);
+            if (!tplId) return;
+            const tpl = articleTemplates.find(t => t.id === tplId);
+            if (tpl && tpl.content_template) {
+                const editor = tinymce.get('id_content');
+                if (editor && !editor.getContent().trim()) {
+                    editor.setContent(tpl.content_template);
+                } else if (editor && confirm('Подставить шаблон? Текущее содержимое будет заменено.')) {
+                    editor.setContent(tpl.content_template);
+                }
+                const typeSelect = document.getElementById('id_article_type');
+                if (typeSelect && tpl.article_type) {
+                    typeSelect.value = tpl.article_type;
+                }
+            }
+        });
+    }
+
+    const kbFiles = document.getElementById('kb-article-files');
+    const kbFilesHint = document.getElementById('kb-article-files-hint');
+    if (kbFiles && kbFilesHint) {
+        kbFiles.addEventListener('change', function() {
+            if (!this.files || !this.files.length) {
+                kbFilesHint.textContent = 'Файлы не выбраны';
+                return;
+            }
+            if (this.files.length === 1) {
+                kbFilesHint.textContent = this.files[0].name;
+                return;
+            }
+            kbFilesHint.textContent = 'Выбрано файлов: ' + this.files.length;
+        });
+    }
+
+    // Tag autocomplete
+    const tagsInput = document.getElementById('id_tags_input');
+    const dropdown = document.getElementById('tags-dropdown');
+    if (tagsInput && dropdown) {
+        let debounce;
+        tagsInput.addEventListener('input', function() {
+            clearTimeout(debounce);
+            debounce = setTimeout(function() {
+                const val = tagsInput.value;
+                const lastComma = val.lastIndexOf(',');
+                const current = (lastComma >= 0 ? val.substring(lastComma + 1) : val).trim();
+                if (current.length < 1) { dropdown.style.display = 'none'; return; }
+                fetch('/knowledge/tags/autocomplete/?q=' + encodeURIComponent(current))
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.tags || data.tags.length === 0) { dropdown.style.display = 'none'; return; }
+                    dropdown.innerHTML = '';
+                    data.tags.forEach(function(tag) {
+                        const div = document.createElement('div');
+                        div.className = 'tags-dropdown-item';
+                        div.textContent = tag;
+                        div.addEventListener('click', function() {
+                            const before = val.substring(0, lastComma >= 0 ? lastComma + 1 : 0);
+                            tagsInput.value = (before ? before + ' ' : '') + tag + ', ';
+                            dropdown.style.display = 'none';
+                            tagsInput.focus();
+                        });
+                        dropdown.appendChild(div);
+                    });
+                    dropdown.style.display = 'block';
+                });
+            }, 200);
+        });
+        document.addEventListener('click', function(e) {
+            if (!tagsInput.contains(e.target) && !dropdown.contains(e.target)) dropdown.style.display = 'none';
+        });
+    }
+
+    const form = document.getElementById('article-form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            if (typeof tinymce !== 'undefined') tinymce.triggerSave();
+        });
+    }
+});
+
+// Preview
+function previewArticle() {
+    if (typeof tinymce !== 'undefined') tinymce.triggerSave();
+    const content = document.getElementById('id_content').value;
+    const title = document.getElementById('id_title').value || 'Предпросмотр';
+    const w = window.open('', '_blank', 'width=900,height=700');
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "kb_article_preview" %}';
+    form.target = '_self';
+    const csrf = document.createElement('input');
+    csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
+    const fTitle = document.createElement('input');
+    fTitle.type = 'hidden'; fTitle.name = 'title'; fTitle.value = title;
+    const fContent = document.createElement('input');
+    fContent.type = 'hidden'; fContent.name = 'content'; fContent.value = content;
+    form.appendChild(csrf); form.appendChild(fTitle); form.appendChild(fContent);
+    w.document.body.appendChild(form);
+    form.submit();
+}
+
+{% if is_edit %}
+// Edit lock
+setInterval(function() {
+    fetch('{% url "kb_extend_lock" slug=article.slug %}', {
+        method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    });
+}, 300000);
+window.addEventListener('beforeunload', function() {
+    navigator.sendBeacon(
+        '{% url "kb_release_lock" slug=article.slug %}',
+        new URLSearchParams({'csrfmiddlewaretoken': '{{ csrf_token }}'})
+    );
+});
+
+// Autosave
+let autosaveTimer;
+document.getElementById('id_content')?.addEventListener('input', scheduleAutosave);
+document.getElementById('id_title')?.addEventListener('input', scheduleAutosave);
+
+function scheduleAutosave() {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(doAutosave, 30000);
+}
+
+function doAutosave() {
+    if (typeof tinymce !== 'undefined') tinymce.triggerSave();
+    const content = document.getElementById('id_content').value;
+    const title = document.getElementById('id_title').value;
+    fetch('{% url "kb_article_autosave" slug=article.slug %}', {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'title=' + encodeURIComponent(title) + '&content=' + encodeURIComponent(content)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const el = document.getElementById('autosave-status');
+            if (el) el.textContent = 'Автосохранено ' + data.saved_at;
+        }
+    });
+}
+{% endif %}
+</script>
+{% endblock %}

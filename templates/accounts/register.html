@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    {% load static %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#e400af">
+    {% include 'partials/favicon.html' %}
+    <title>Регистрация — WB Хаб</title>
+    <link rel="stylesheet" href="{% static 'css/wb-bank-portal.css' %}">
+    <link rel="stylesheet" href="{% static 'css/wb-auth.css' %}">
+</head>
+<body class="auth-page">
+<div class="register-container">
+        <!-- Theme Toggle -->
+        <button class="theme-toggle" id="themeToggle" type="button" title="Сменить тему">
+            <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+        </button>
+
+        <div class="auth-logo">
+            {% include 'partials/wb_bank_logo.html' with css_class='auth-logo-svg' %}
+        </div>
+
+        <div class="auth-welcome">
+            <h2>Создайте аккаунт</h2>
+            <p>Присоединяйтесь к корпоративному порталу</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label class="form-label">Имя пользователя *</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.username.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% if form.username.help_text %}
+                    <div class="helptext">{{ form.username.help_text }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Имя</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.first_name.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Фамилия</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.last_name.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email *</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.email.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Пароль *</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.password1.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% if form.password1.help_text %}
+                    <div class="helptext">{{ form.password1.help_text }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Подтверждение пароля *</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.password2.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Аватар</label>
+                <div class="file-upload">
+                    {{ form.avatar }}
+                    <label for="id_avatar" class="file-upload-label">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Загрузить фото
+                    </label>
+                    <div class="file-name" id="fileName"></div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-register">Создать аккаунт</button>
+        </form>
+
+        <div class="divider">
+            <span>или</span>
+        </div>
+
+        <div class="login-link">
+            Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Theme
+            const html = document.documentElement;
+            const savedTheme = localStorage.getItem('wb-theme') || 'light';
+            html.setAttribute('data-theme', savedTheme);
+            
+            document.getElementById('themeToggle').addEventListener('click', function() {
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('wb-theme', newTheme);
+            });
+
+            // Add form-control class to all Django form inputs
+            document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], select').forEach(input => {
+                input.classList.add('form-control');
+            });
+
+            // File upload handler
+            const fileInput = document.getElementById('id_avatar');
+            const fileName = document.getElementById('fileName');
+            
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    if (this.files && this.files[0]) {
+                        fileName.textContent = this.files[0].name;
+                    } else {
+                        fileName.textContent = '';
+                    }
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

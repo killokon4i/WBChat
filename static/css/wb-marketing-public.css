@@ -1,0 +1,496 @@
+/*
+ * Слой в духе публичных страниц wb-bank.ru (/card, /about, блоки гида приложения).
+ * Подключайте классы в шаблонах для лендингов, инструкций, промо-блоков в портале.
+ */
+
+html {
+  scroll-padding-top: calc(72px + env(safe-area-inset-top, 0px));
+}
+
+/* ---------- Типографика и секции ---------- */
+
+.wb-m-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.wb-m-kicker {
+  font-family: var(--fontWBSans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.wb-m-h1 {
+  font-family: var(--fontWBSans);
+  font-size: clamp(1.5rem, 4.2vw, 2.5rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.wb-m-lead {
+  font-family: var(--fontHauss);
+  font-size: clamp(1rem, 2.4vw, 1.125rem);
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 40rem;
+  margin-bottom: 28px;
+}
+
+.wb-m-section {
+  margin-bottom: clamp(28px, 5vw, 56px);
+}
+
+.wb-m-section-title {
+  font-family: var(--fontWBSans);
+  font-size: clamp(0.875rem, 2.2vw, 1rem);
+  font-weight: 500;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* ---------- Герой (как шапка продуктовых страниц) ---------- */
+
+.wb-m-hero {
+  position: relative;
+  border-radius: var(--wb-radius-xl, 36px);
+  padding: clamp(24px, 5vw, 48px);
+  margin-bottom: 32px;
+  overflow: hidden;
+  text-align: left;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-hover);
+}
+
+[data-theme="light"] .wb-m-hero {
+  background: linear-gradient(
+    118deg,
+    var(--colorWhite500) 0%,
+    var(--colorPink50) 48%,
+    var(--colorGrey500) 100%
+  );
+}
+
+[data-theme="dark"] .wb-m-hero {
+  background: linear-gradient(
+    125deg,
+    var(--bg-card) 0%,
+    rgba(228, 0, 175, 0.12) 45%,
+    var(--bg-card) 100%
+  );
+}
+
+.wb-m-hero::after {
+  content: "";
+  position: absolute;
+  width: min(55vw, 280px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  right: -12%;
+  top: -55%;
+  background: radial-gradient(circle, rgba(228, 0, 175, 0.14) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+[data-theme="dark"] .wb-m-hero::after {
+  background: radial-gradient(circle, rgba(228, 0, 175, 0.2) 0%, transparent 65%);
+}
+
+.wb-m-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- CTA: чёрная и малиновая «пилюли» ---------- */
+
+.wb-m-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.wb-m-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 26px;
+  border-radius: 9999px;
+  font-family: var(--fontWBSans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none !important;
+  border: none;
+  cursor: pointer;
+  transition:
+    filter 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.wb-m-btn--black {
+  background: var(--colorBlack500);
+  color: #fff !important;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.14);
+}
+
+[data-theme="dark"] .wb-m-btn--black {
+  background: #fff;
+  color: #0a0a0a !important;
+  box-shadow: none;
+}
+
+.wb-m-btn--black:hover {
+  filter: brightness(1.06);
+}
+
+.wb-m-btn--pink {
+  background: var(--colorPink600);
+  color: #fff !important;
+  box-shadow: 0 6px 24px rgba(228, 0, 175, 0.22);
+}
+
+.wb-m-btn--pink:hover {
+  filter: brightness(1.06);
+}
+
+.wb-m-btn--ghost {
+  background: transparent;
+  color: var(--text-primary) !important;
+  border: 2px solid var(--colorBlack500);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .wb-m-btn--ghost {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.wb-m-btn--ghost:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .wb-m-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .wb-m-btn:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ---------- Нумерованные шаги (#AppGuide, инструкции) ---------- */
+
+.wb-m-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  counter-reset: wbstep;
+}
+
+.wb-m-step {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.wb-m-step-num {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--fontWBSans);
+  font-weight: 500;
+  font-size: 1rem;
+  background: var(--colorGrey900);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+
+[data-theme="dark"] .wb-m-step-num {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.wb-m-step-body h3 {
+  font-family: var(--fontWBSans);
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.wb-m-step-body p {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* якорь для гида приложения */
+#AppGuide,
+.wb-m-anchor-target {
+  scroll-margin-top: calc(80px + env(safe-area-inset-top, 0px));
+}
+
+/* ---------- «Магазины» / скачать приложение — светло-розовые пилюли ---------- */
+
+.wb-m-store-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.wb-m-store-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: 9999px;
+  font-family: var(--fontHauss);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  color: var(--colorPink700) !important;
+  background: var(--colorPink50);
+  border: 1px solid rgba(228, 0, 175, 0.18);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+[data-theme="dark"] .wb-m-store-pill {
+  background: rgba(228, 0, 175, 0.12);
+  border-color: rgba(255, 34, 204, 0.28);
+  color: var(--colorPink200) !important;
+}
+
+.wb-m-store-pill:hover {
+  background: var(--colorPink100);
+  border-color: var(--colorPink600);
+}
+
+.wb-m-store-pill svg,
+.wb-m-store-pill .wb-m-store-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  color: var(--colorPink600);
+}
+
+/* ---------- Сетка преимуществ (как блоки на /card) ---------- */
+
+.wb-m-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.wb-m-feature {
+  border-radius: var(--wb-radius-lg, 28px);
+  padding: 24px;
+  text-align: left;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  transition: border-color 0.2s ease, box-shadow 0.22s ease;
+}
+
+[data-theme="light"] .wb-m-feature {
+  background: var(--colorWhite500);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.wb-m-feature:hover {
+  border-color: rgba(228, 0, 175, 0.22);
+  box-shadow: var(--shadow-hover);
+}
+
+.wb-m-feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  background: rgba(228, 0, 175, 0.12);
+  color: var(--colorPink700);
+}
+
+.wb-m-feature-icon--green {
+  background: rgba(14, 97, 59, 0.12);
+  color: var(--colorGreen500);
+}
+
+.wb-m-feature h3 {
+  font-family: var(--fontWBSans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.wb-m-feature p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ---------- О компании: акцентный абзац ---------- */
+
+.wb-m-about-highlight {
+  font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+  line-height: 1.55;
+  color: var(--text-primary);
+  font-weight: 500;
+  padding: 24px 28px;
+  border-radius: var(--wb-radius-lg, 28px);
+  border-left: 4px solid var(--colorGreen500);
+  background: var(--colorGrey900);
+}
+
+[data-theme="dark"] .wb-m-about-highlight {
+  background: var(--bg-hover);
+  border-left-color: var(--colorGreen300);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-m-btn,
+  .wb-m-store-pill,
+  .wb-m-feature {
+    transition: none !important;
+  }
+}
+
+/* Поиск в герое (как на продуктовых страницах банка) */
+.wb-m-hero .kb-search-box,
+.wb-portal-hero .kb-search-box {
+  max-width: 36rem;
+  margin-top: 8px;
+}
+
+.wb-m-hero .kb-search-box input,
+.wb-portal-hero .kb-search-box input {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-light);
+  font-size: 15px;
+  font-family: var(--fontHauss);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wb-m-hero .kb-search-box input::placeholder,
+.wb-portal-hero .kb-search-box input::placeholder {
+  color: var(--text-muted);
+}
+
+.wb-m-hero .kb-search-box input:focus,
+.wb-portal-hero .kb-search-box input:focus {
+  outline: none;
+  border-color: rgba(228, 0, 175, 0.45);
+  box-shadow: 0 0 0 3px rgba(228, 0, 175, 0.12);
+}
+
+.wb-m-hero .kb-search-box button,
+.wb-portal-hero .kb-search-box button {
+  padding: 14px 26px;
+  border-radius: 9999px;
+  border: none;
+  background: var(--colorBlack500);
+  color: #fff;
+  font-weight: 500;
+  font-size: 14px;
+  font-family: var(--fontWBSans);
+  cursor: pointer;
+  transition: filter 0.2s ease;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .wb-m-hero .kb-search-box button,
+[data-theme="dark"] .wb-portal-hero .kb-search-box button {
+  background: #fff;
+  color: #0a0a0a;
+}
+
+.wb-m-hero .kb-search-box button:hover,
+.wb-portal-hero .kb-search-box button:hover {
+  filter: brightness(1.06);
+}
+
+@media (max-width: 600px) {
+  .wb-m-page {
+    max-width: none;
+  }
+
+  .wb-m-hero {
+    border-radius: var(--wb-radius-lg, 28px);
+    padding: 20px 18px;
+    margin-bottom: 24px;
+  }
+
+  .wb-m-section {
+    margin-bottom: clamp(24px, 6vw, 40px);
+  }
+
+  .wb-m-section-title {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+  }
+
+  .wb-m-lead {
+    margin-bottom: 18px;
+  }
+
+  .wb-m-features {
+    gap: 12px;
+  }
+
+  .wb-m-feature {
+    padding: 18px;
+  }
+
+  .wb-m-steps {
+    gap: 16px;
+  }
+
+  .wb-m-cta-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wb-m-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .wb-m-store-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wb-m-store-pill {
+    justify-content: center;
+  }
+}

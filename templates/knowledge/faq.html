@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block title %}FAQ — База знаний{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .faq-page { max-width: 800px; margin: 0 auto; }
+
+    .faq-page h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .faq-page .subtitle {
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+    }
+
+    .faq-filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+    }
+
+    .faq-filter-btn {
+        padding: 6px 16px;
+        border-radius: 28px;
+        font-size: 13px;
+        border: 1px solid var(--border-light);
+        background: transparent;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .faq-filter-btn:hover, .faq-filter-btn.active {
+        background: var(--magenta);
+        color: white;
+        border-color: var(--magenta);
+    }
+
+    .faq-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 20px;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+
+    .faq-question {
+        padding: 18px 20px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        font-size: 15px;
+        transition: background 0.2s;
+        user-select: none;
+    }
+
+    .faq-question:hover {
+        background: var(--bg-hover);
+    }
+
+    .faq-chevron {
+        font-size: 18px;
+        transition: transform 0.2s;
+        color: var(--text-muted);
+    }
+
+    .faq-item.open .faq-chevron {
+        transform: rotate(180deg);
+    }
+
+    .faq-answer {
+        display: none;
+        padding: 0 20px 20px;
+        font-size: 14px;
+        line-height: 1.8;
+        color: var(--text-primary);
+    }
+
+    .faq-answer p {
+        margin: 0 0 10px;
+        color: var(--text-primary);
+    }
+
+    .faq-answer ul, .faq-answer ol {
+        padding-left: 20px;
+        margin: 8px 0;
+        color: var(--text-primary);
+    }
+
+    .faq-answer li {
+        margin-bottom: 4px;
+    }
+
+    .faq-answer code {
+        background: var(--bg-hover);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .faq-answer a {
+        color: var(--magenta);
+        text-decoration: none;
+    }
+
+    .faq-answer a:hover {
+        color: var(--link-hover);
+    }
+
+    .faq-item.open .faq-answer {
+        display: block;
+    }
+
+    .faq-answer-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border-light);
+        font-size: 13px;
+    }
+
+    .faq-helpful {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        color: var(--text-secondary);
+    }
+
+    .faq-helpful button {
+        padding: 6px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border-light);
+        background: transparent;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+        color: var(--text-primary);
+    }
+
+    .faq-helpful button:hover {
+        border-color: var(--magenta);
+        color: var(--magenta);
+    }
+
+    .faq-helpful button.yes {
+        color: var(--text-primary);
+    }
+
+    .faq-helpful button.yes:hover {
+        background: rgba(34, 197, 94, 0.12);
+        border-color: var(--brand-green);
+        color: var(--brand-green);
+    }
+
+    .faq-helpful button.no {
+        color: var(--text-primary);
+    }
+
+    .faq-helpful button.no:hover {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: var(--error-border);
+        color: var(--error-text);
+    }
+
+    @media (max-width: 480px) {
+        .faq-page h1 {
+            font-size: 22px;
+        }
+
+        .faq-page .subtitle {
+            margin-bottom: 14px;
+            font-size: 14px;
+        }
+
+        .faq-question {
+            padding: 12px 14px;
+            font-size: 14px;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .faq-answer {
+            padding: 0 14px 14px;
+        }
+
+        .faq-answer-footer {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .faq-helpful {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="faq-page wb-portal-marketing">
+    <h1>FAQ</h1>
+    <p class="subtitle">Часто задаваемые вопросы и быстрые ответы</p>
+
+    <div class="faq-filters">
+        <a href="{% url 'kb_faq' %}" class="faq-filter-btn {% if not current_category %}active{% endif %}">Все</a>
+        {% for cat in categories %}
+        <a href="{% url 'kb_faq' %}?category={{ cat.slug }}"
+           class="faq-filter-btn {% if current_category == cat.slug %}active{% endif %}">
+            {{ cat.name }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% for faq in faqs %}
+    <div class="faq-item">
+        <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+            <span>{{ faq.question }}</span>
+            <span class="faq-chevron">▼</span>
+        </div>
+        <div class="faq-answer">
+            {{ faq.answer|safe }}
+            <div class="faq-answer-footer">
+                <div class="faq-helpful">
+                    <span>Было полезно?</span>
+                    <button class="yes" onclick="faqHelpful({{ faq.id }}, 'yes', this)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 2 2.24l-1 8A2 2 0 0 1 18.84 22H7V10l4.14-6.9A1.95 1.95 0 0 1 12.8 2c.9 0 1.6.78 1.4 1.66z"/></svg>
+                        Да ({{ faq.helpful_yes }})
+                    </button>
+                    <button class="no" onclick="faqHelpful({{ faq.id }}, 'no', this)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-2-2.24l1-8A2 2 0 0 1 5.16 2H17v12l-4.14 6.9A1.95 1.95 0 0 1 11.2 22c-.9 0-1.6-.78-1.4-1.66z"/></svg>
+                        Нет ({{ faq.helpful_no }})
+                    </button>
+                    <button class="no" onclick="faqEscalate({{ faq.id }})" style="margin-left:8px;" title="Сообщить автору, что ответ не помог">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Сообщить автору
+                    </button>
+                </div>
+                {% if faq.related_article %}
+                <a href="{% url 'kb_article_detail' slug=faq.related_article.slug %}">Подробнее →</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-muted" style="text-align: center; padding: 40px;">Вопросов пока нет</p>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function faqHelpful(faqId, helpful, btn) {
+    fetch(`/knowledge/faq/${faqId}/helpful/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'helpful=' + helpful
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            btn.style.background = helpful === 'yes' ? 'var(--success-bg)' : 'var(--error-bg)';
+            btn.style.color = helpful === 'yes' ? 'var(--success-text)' : 'var(--error-text)';
+        }
+    });
+}
+
+function faqEscalate(faqId) {
+    const feedback = prompt('Опишите, почему ответ не помог (необязательно):');
+    if (feedback === null) return;
+    fetch(`/knowledge/faq/${faqId}/escalate/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'feedback=' + encodeURIComponent(feedback)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) alert('Автор уведомлён. Спасибо за обратную связь!');
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,690 @@
+{% extends 'base.html' %}
+{% block title %}{% if survey %}Редактировать опрос{% else %}Создать опрос{% endif %} — WB Хаб{% endblock %}
+
+{% block content %}
+<div class="wb-portal-form-page wb-editor-auth wb-editor-auth--wide">
+    <a href="{% url 'surveys_manage_list' %}" class="wb-portal-form-back wb-editor-auth__back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Назад к моим опросам
+    </a>
+    <div class="wb-editor-auth__card survey-form-card">
+        <div class="auth-welcome">
+            <h2 id="survey-form-title">{% if survey %}Редактирование опроса{% else %}Новый опрос{% endif %}</h2>
+            <p>Вопросы, сроки и настройки — в одной форме.</p>
+        </div>
+        <form method="post" id="survey-form" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <section class="survey-form-section">
+                <h2 class="survey-form-section-title">Основные данные</h2>
+                <div class="form-group">
+                    <label class="form-label" for="id_title">{{ form.title.label }}</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}<div class="form-error">{{ form.title.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="id_description">{{ form.description.label }}</label>
+                    {{ form.description }}
+                    {% if form.description.help_text %}<div class="form-help">{{ form.description.help_text }}</div>{% endif %}
+                    {% if form.description.errors %}<div class="form-error">{{ form.description.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-row form-row-checkboxes">
+                    <div class="form-group form-group-inline">
+                        <label class="form-label form-label-inline">{{ form.is_anonymous }} {{ form.is_anonymous.label }}</label>
+                        {% if form.is_anonymous.errors %}<div class="form-error">{{ form.is_anonymous.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group form-group-inline">
+                        <label class="form-label form-label-inline">{{ form.allow_multiple }} {{ form.allow_multiple.label }}</label>
+                        {% if form.allow_multiple.errors %}<div class="form-error">{{ form.allow_multiple.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group form-group-inline">
+                        <label class="form-label form-label-inline">{{ form.allow_edit_until_end }} {{ form.allow_edit_until_end.label }}</label>
+                        {% if form.allow_edit_until_end.errors %}<div class="form-error">{{ form.allow_edit_until_end.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group form-group-half">
+                        <label class="form-label" for="id_starts_at">{{ form.starts_at.label }}</label>
+                        {{ form.starts_at }}
+                        {% if form.starts_at.errors %}<div class="form-error">{{ form.starts_at.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group form-group-half">
+                        <label class="form-label" for="id_ends_at">{{ form.ends_at.label }}</label>
+                        {{ form.ends_at }}
+                        {% if form.ends_at.errors %}<div class="form-error">{{ form.ends_at.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="survey-form-section">
+                <h2 class="survey-form-section-title">Целевая аудитория</h2>
+                <div class="form-group">
+                    <label class="form-label" for="id_audience_type">{{ form.audience_type.label }}</label>
+                    {{ form.audience_type }}
+                    {% if form.audience_type.errors %}<div class="form-error">{{ form.audience_type.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div id="audience-departments" class="audience-block" data-audience="departments" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.audience_departments.label }}</label>
+                        {{ form.audience_departments }}
+                        <div class="form-help">Удерживайте Ctrl (Cmd на Mac) для выбора нескольких.</div>
+                        {% if form.audience_departments.errors %}<div class="form-error">{{ form.audience_departments.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div id="audience-users" class="audience-block" data-audience="users" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.audience_users.label }}</label>
+                        {{ form.audience_users }}
+                        <div class="form-help">Удерживайте Ctrl (Cmd на Mac) для выбора нескольких.</div>
+                        {% if form.audience_users.errors %}<div class="form-error">{{ form.audience_users.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div id="audience-roles" class="audience-block" data-audience="roles" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.audience_roles.label }}</label>
+                        {{ form.audience_roles }}
+                        <div class="form-help">{{ form.audience_roles.help_text }}</div>
+                        {% if form.audience_roles.errors %}<div class="form-error">{{ form.audience_roles.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div id="audience-excluded" class="audience-block audience-excluded" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.excluded_users.label }}</label>
+                        {{ form.excluded_users }}
+                        <div class="form-help">Удерживайте Ctrl для выбора нескольких.</div>
+                        {% if form.excluded_users.errors %}<div class="form-error">{{ form.excluded_users.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="survey-form-section">
+                <h2 class="survey-form-section-title">Напоминания и теги</h2>
+                <div class="form-group">
+                    <label class="form-label" for="id_reminder_days">{{ form.reminder_days.label }}</label>
+                    {{ form.reminder_days }}
+                    <div class="form-help">{{ form.reminder_days.help_text }}</div>
+                    {% if form.reminder_days.errors %}<div class="form-error">{{ form.reminder_days.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <span class="form-label">Теги</span>
+                    <div class="tags-checkboxes">
+                        {% for tag in all_tags %}
+                        <label class="tag-checkbox">
+                            <input type="checkbox" name="tags" value="{{ tag.pk }}" {% if tag.pk in selected_tag_ids %}checked{% endif %}>
+                            <span>{{ tag.name }}</span>
+                        </label>
+                        {% empty %}
+                        <p class="text-muted">Теги не созданы. Добавьте теги в админке.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="survey-form-section">
+                <div class="section-head">
+                    <h2 class="survey-form-section-title">Вопросы</h2>
+                    <div class="builder-legend">
+                        <span class="legend-dot legend-dot--main"></span> Основной вопрос
+                        <span class="legend-dot legend-dot--sub"></span> Подвопрос (условный)
+                    </div>
+                </div>
+                <p class="form-help builder-help">
+                    Добавляйте варианты для типов «Одиночный/Множественный выбор». Любой вопрос можно сделать
+                    <b>подвопросом</b> другого — он будет появляться у сотрудника только если в родителе выбран один из
+                    указанных триггеров.
+                </p>
+
+                <div id="questions-container">
+                    {% for q in question_forms %}
+                    <div class="question-block{% if q.parent_client_id %} is-sub{% endif %}"
+                         data-question-index="{{ forloop.counter0 }}"
+                         data-question-type="{{ q.question_type|default:'single_choice' }}"
+                         data-client-id="{{ q.client_id }}"
+                         data-parent-client-id="{{ q.parent_client_id }}"
+                         data-parent-triggers="{{ q.parent_option_values_json|escape }}">
+                        <input type="hidden" name="q{{ forloop.counter0 }}-id" value="{{ q.id|default:'' }}">
+                        <input type="hidden" name="q{{ forloop.counter0 }}-client_id" value="{{ q.client_id }}">
+                        <input type="hidden" name="q{{ forloop.counter0 }}-parent_client_id" value="{{ q.parent_client_id|default:'' }}" class="js-parent-client-id">
+
+                        <div class="question-block-header">
+                            <span class="qb-num">Вопрос <span class="qb-num-value">{{ forloop.counter }}</span></span>
+                            <span class="qb-badge js-qb-badge"></span>
+                            <div class="qb-spacer"></div>
+                            <button type="button" class="btn-icon-delete js-btn-remove-question" title="Удалить вопрос" aria-label="Удалить вопрос">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                            </button>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Текст вопроса</label>
+                            <input type="text" name="q{{ forloop.counter0 }}-title" value="{{ q.title|default:'' }}" class="form-control" placeholder="Введите вопрос">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group form-group-half">
+                                <label class="form-label">Тип</label>
+                                <select name="q{{ forloop.counter0 }}-question_type" class="form-control js-q-type">
+                                    {% for val, label in question_type_choices %}
+                                    <option value="{{ val }}" {% if q.question_type == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group form-group-inline" style="align-self:flex-end;">
+                                <label class="form-label form-label-inline"><input type="checkbox" name="q{{ forloop.counter0 }}-is_required" value="1" {% if q.is_required %}checked{% endif %}> Обязательный</label>
+                            </div>
+                        </div>
+
+                        <div class="question-options js-options-block" data-question-index="{{ forloop.counter0 }}" data-hide-for="scale,free_text" data-initial-type="{{ q.question_type|default:'single_choice' }}">
+                            <label class="form-label">Варианты ответа</label>
+                            {% for opt in q.options %}
+                            <div class="option-row">
+                                <input type="text" name="q{{ forloop.parentloop.counter0 }}-option_{{ forloop.counter0 }}" value="{{ opt }}" class="form-control" placeholder="Вариант {{ forloop.counter }}">
+                                <button type="button" class="btn-icon-delete js-btn-remove-option" title="Удалить вариант" aria-label="Удалить вариант">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                            </div>
+                            {% endfor %}
+                            {% if not q.options and q.question_type != 'scale' and q.question_type != 'free_text' %}
+                            <div class="option-row">
+                                <input type="text" name="q{{ forloop.counter0 }}-option_0" value="" class="form-control" placeholder="Вариант 1">
+                                <button type="button" class="btn-icon-delete js-btn-remove-option" title="Удалить вариант" aria-label="Удалить вариант">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="question-actions-row">
+                            <button type="button" class="btn btn-secondary btn-add-option" data-hide-for="scale,free_text">+ Добавить вариант</button>
+                            <button type="button" class="btn btn-secondary btn-add-subquestion">+ Добавить подвопрос</button>
+                        </div>
+
+                        <div class="subquestion-settings" {% if not q.parent_client_id %}hidden{% endif %}>
+                            <div class="form-label form-label--mini js-parent-caption">Подвопрос</div>
+                            <div class="js-parent-triggers-wrap">
+                                <div class="parent-triggers-empty form-help">Выберите вариант ответа родительского вопроса, при котором подвопрос будет показан.</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" id="btn-add-question" class="btn btn-secondary">+ Добавить вопрос</button>
+            </section>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+                <a href="{% url 'surveys_manage_list' %}" class="btn btn-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.container--narrow { max-width: 820px; }
+.container--center { margin-left: auto; margin-right: auto; }
+.survey-form-card { margin: 0 auto; }
+.back-link { display:inline-flex; align-items:center; gap:6px; margin-bottom:16px; color:var(--text-secondary); text-decoration:none; }
+.back-link svg { width:18px; height:18px; }
+
+.question-options.hidden-options,
+.btn-add-option.hidden-options { display: none !important; }
+
+.survey-form-section { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border-color); }
+.survey-form-section:last-of-type { border-bottom: none; }
+.survey-form-section-title { font-size: 18px; margin-bottom: 16px; color: var(--text-primary); }
+.section-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom: 8px; }
+.builder-legend { font-size:12px; color: var(--text-secondary); display:flex; gap:14px; align-items:center; }
+.legend-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; vertical-align:middle; }
+.legend-dot--main { background: var(--magenta); }
+.legend-dot--sub { background: var(--brand-green); }
+.builder-help { margin-bottom: 16px; }
+
+.form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.form-row--tight { gap: 12px; }
+.form-row-checkboxes { align-items: center; }
+.form-group-half { flex: 1; min-width: 220px; }
+.form-group-inline { margin-bottom: 12px; }
+.form-label--mini { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-top: 8px; }
+.form-label-inline { font-weight: normal; display: inline; }
+.form-label-inline input { margin-right: 8px; }
+.form-help { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+.form-error { font-size: 12px; color: #dc2626; margin-top: 6px; }
+
+.audience-block { margin-top: 12px; }
+.tags-checkboxes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.tag-checkbox { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-hover); border-radius: 16px; cursor: pointer; font-size: 14px; }
+.tag-checkbox input { margin: 0; }
+
+.question-block { background: var(--bg-hover); border-radius: 22px; padding: 18px; margin-bottom: 18px; border: 1px solid var(--border-color); position: relative; transition: border-color .2s ease, box-shadow .2s ease; }
+.question-block.is-sub { background: var(--bg-hover); border-color: rgba(245, 158, 11, 0.35); }
+.question-block.is-sub::before { content:""; position:absolute; left:0; top:18px; bottom:18px; width:3px; border-radius:3px; background: var(--brand-green); }
+
+.question-block-header { display:flex; align-items:center; gap:10px; margin-bottom: 12px; }
+.qb-num { font-weight: 600; color: var(--text-secondary); font-size: 13px; text-transform: uppercase; letter-spacing: .4px; }
+.qb-badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(203,17,171,.12); color: var(--magenta); }
+.question-block.is-sub .qb-badge { background: rgba(0,138,78,.18); color: var(--brand-green); }
+.qb-spacer { flex: 1; }
+
+.option-row { display:flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.option-row .form-control { flex: 1; }
+.btn-icon-delete { background: transparent; border: none; padding: 6px; border-radius: 8px; cursor: pointer; color: var(--text-muted); display:inline-flex; align-items:center; justify-content:center; transition: background .15s ease, color .15s ease; }
+.btn-icon-delete:hover { background: rgba(255,47,179,.14); color: #ff73cb; }
+
+.btn-add-option { margin-top: 4px; }
+.question-actions-row { margin-top: 10px; display:flex; flex-wrap: wrap; gap: 8px; }
+.btn-add-subquestion { border-style: dashed; }
+
+.subquestion-settings { margin-top: 14px; padding: 12px 14px; border: 1px dashed var(--border-light); border-radius: 20px; background: var(--bg-card); }
+
+.trigger-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.trigger-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 13px; background: rgba(203,17,171,.1); border: 1px solid rgba(203,17,171,.25); color: var(--text-primary); cursor: pointer; }
+.trigger-chip input { display: none; }
+.trigger-chip.is-checked { background: var(--magenta); color: #fff; border-color: var(--magenta); }
+
+.form-actions { display:flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+
+#id_audience_type, #id_audience_departments, #id_audience_users, #id_excluded_users { width: 100%; }
+select.form-control { min-height: 42px; }
+</style>
+
+<script>
+(function() {
+    var audienceType = document.getElementById('id_audience_type');
+    function updateAudienceVisibility() {
+        var v = audienceType.value;
+        document.querySelectorAll('.audience-block[data-audience]').forEach(function(el) { el.style.display = (el.getAttribute('data-audience') === v) ? 'block' : 'none'; });
+        var excluded = document.getElementById('audience-excluded');
+        if (excluded) excluded.style.display = (v !== 'all') ? 'block' : 'none';
+    }
+    if (audienceType) {
+        audienceType.addEventListener('change', updateAudienceVisibility);
+        updateAudienceVisibility();
+    }
+
+    var questionsContainer = document.getElementById('questions-container');
+    if (!questionsContainer) return;
+    var addBtn = document.getElementById('btn-add-question');
+    var formEl = document.getElementById('survey-form');
+    var newCounter = 0;
+
+    function makeClientId() {
+        newCounter += 1;
+        return 'new-row-' + Date.now() + '-' + newCounter;
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function(c) {
+            return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c];
+        });
+    }
+
+    function splitCsv(text) {
+        if (!text) return [];
+        return String(text).split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+    }
+
+    function getBlocks() {
+        return Array.prototype.slice.call(questionsContainer.querySelectorAll('.question-block'));
+    }
+
+    function getClientId(block) {
+        return block.getAttribute('data-client-id') || '';
+    }
+
+    function getParentInput(block) {
+        return block.querySelector('.js-parent-client-id');
+    }
+
+    function getParentClientId(block) {
+        var inp = getParentInput(block);
+        return inp ? (inp.value || '').trim() : '';
+    }
+
+    function setParentClientId(block, parentClientId) {
+        var val = parentClientId || '';
+        block.setAttribute('data-parent-client-id', val);
+        var inp = getParentInput(block);
+        if (inp) inp.value = val;
+    }
+
+    function isSubQuestion(block) {
+        return !!getParentClientId(block);
+    }
+
+    function getQuestionType(block) {
+        var sel = block.querySelector('.js-q-type');
+        return sel ? (sel.value || 'single_choice') : 'single_choice';
+    }
+
+    function getTitleText(block) {
+        var t = block.querySelector('input[name$="-title"]');
+        return (t && t.value ? t.value : '').trim();
+    }
+
+    function getQuestionLabel(block, numberingByClient) {
+        var num = numberingByClient[getClientId(block)] || '?';
+        var title = getTitleText(block) || 'Без текста';
+        return num + '. ' + title.slice(0, 80);
+    }
+
+    function getInitialTriggers(block) {
+        var raw = block.getAttribute('data-parent-triggers') || '[]';
+        try {
+            var parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed.map(String) : [];
+        } catch (_e) {
+            var m = [];
+            raw.replace(/'([^']*)'|"([^"]*)"/g, function(_, a, b) { m.push(a !== undefined ? a : b); });
+            return m.map(String);
+        }
+    }
+
+    function getCurrentTriggers(block) {
+        var wrap = block.querySelector('.js-parent-triggers-wrap');
+        if (!wrap) return [];
+        var sel = wrap.querySelector('select.js-parent-trigger-select');
+        if (sel && sel.value.trim()) return [sel.value.trim()];
+        var checked = Array.prototype.map.call(
+            wrap.querySelectorAll('input[type="checkbox"]:checked'),
+            function(i){ return (i.value || '').trim(); }
+        ).filter(Boolean);
+        if (checked.length) return checked;
+        var txt = wrap.querySelector('input[type="text"]');
+        if (txt && txt.value.trim()) return splitCsv(txt.value);
+        return [];
+    }
+
+    function updateOptionsVisibilityForBlock(block) {
+        var sel = block.querySelector('.js-q-type');
+        var optsBlock = block.querySelector('.js-options-block');
+        var btnOpt = block.querySelector('.btn-add-option');
+        if (!sel || !optsBlock) return;
+        var v = sel.value || 'single_choice';
+        var hide = (v === 'scale' || v === 'free_text');
+        optsBlock.classList.toggle('hidden-options', hide);
+        if (btnOpt) btnOpt.classList.toggle('hidden-options', hide);
+        block.setAttribute('data-question-type', v);
+    }
+
+    function computeNumbering() {
+        var blocks = getBlocks();
+        var byClient = {};
+        var mainCounter = 0;
+        var subCounters = {};
+        blocks.forEach(function(block) {
+            var clientId = getClientId(block);
+            var parentClientId = getParentClientId(block);
+            var label = '';
+            if (!parentClientId || !byClient[parentClientId]) {
+                mainCounter += 1;
+                label = String(mainCounter);
+            } else {
+                subCounters[parentClientId] = (subCounters[parentClientId] || 0) + 1;
+                label = byClient[parentClientId] + '.' + subCounters[parentClientId];
+            }
+            byClient[clientId] = label;
+            block.setAttribute('data-number-label', label);
+        });
+        return byClient;
+    }
+
+    function renderSubquestionSettings(block, numberingByClient) {
+        var settings = block.querySelector('.subquestion-settings');
+        var caption = block.querySelector('.js-parent-caption');
+        var wrap = block.querySelector('.js-parent-triggers-wrap');
+        var idx = block.getAttribute('data-question-index');
+        if (!settings || !caption || !wrap) return;
+
+        var parentClientId = getParentClientId(block);
+        var sub = !!parentClientId;
+        settings.hidden = !sub;
+        block.classList.toggle('is-sub', sub);
+
+        var badge = block.querySelector('.js-qb-badge');
+        if (badge) badge.textContent = sub ? 'Подвопрос' : 'Основной';
+
+        var addSubBtn = block.querySelector('.btn-add-subquestion');
+        if (addSubBtn) addSubBtn.style.display = sub ? 'none' : '';
+
+        if (!sub) {
+            wrap.innerHTML = '';
+            return;
+        }
+
+        var parent = questionsContainer.querySelector('.question-block[data-client-id="' + parentClientId + '"]');
+        if (!parent) {
+            setParentClientId(block, '');
+            settings.hidden = true;
+            wrap.innerHTML = '';
+            return;
+        }
+
+        caption.textContent = 'Подвопрос к: ' + getQuestionLabel(parent, numberingByClient);
+        var parentType = getQuestionType(parent);
+        var selectedTriggers = getCurrentTriggers(block);
+        if (!selectedTriggers.length) selectedTriggers = getInitialTriggers(block);
+
+        if (parentType === 'single_choice' || parentType === 'multiple_choice') {
+            var options = Array.prototype.map.call(
+                parent.querySelectorAll('.option-row input[type="text"]'),
+                function(inp){ return (inp.value || '').trim(); }
+            ).filter(Boolean);
+            if (!options.length) {
+                wrap.innerHTML = '<div class="form-help">Добавьте варианты в родительском вопросе, затем выберите триггер.</div>';
+                return;
+            }
+            var selected = selectedTriggers.length ? selectedTriggers[0] : '';
+            var html = ['<label class="form-label form-label--mini">Показывать при выборе варианта родителя:</label>'];
+            html.push('<select class="form-control js-parent-trigger-select" name="q' + idx + '-parent_triggers">');
+            html.push('<option value="">— Выберите вариант —</option>');
+            options.forEach(function(opt) {
+                var isSelected = selected === opt;
+                html.push('<option value="' + escapeHtml(opt) + '"' + (isSelected ? ' selected' : '') + '>' + escapeHtml(opt) + '</option>');
+            });
+            html.push('</select>');
+            wrap.innerHTML = html.join('');
+        } else if (parentType === 'scale') {
+            wrap.innerHTML =
+                '<label class="form-label form-label--mini">Триггерные значения шкалы (через запятую)</label>' +
+                '<input type="text" class="form-control" name="q' + idx + '-parent_triggers_text" value="' + escapeHtml(selectedTriggers.join(', ')) + '" placeholder="например 1,2,3">';
+        } else {
+            wrap.innerHTML = '<div class="form-help">Для родителя с типом «Свободный текст» подвопрос не поддерживается.</div>';
+        }
+    }
+
+    function reindexBlocks() {
+        getBlocks().forEach(function(block, idx) {
+            block.setAttribute('data-question-index', idx);
+            block.querySelectorAll('input, select, textarea').forEach(function(el) {
+                var name = el.getAttribute('name');
+                if (!name) return;
+                el.setAttribute('name', name.replace(/^q\d+/, 'q' + idx));
+            });
+            var optsBlock = block.querySelector('.js-options-block');
+            if (optsBlock) optsBlock.setAttribute('data-question-index', idx);
+        });
+
+        var numberingByClient = computeNumbering();
+        getBlocks().forEach(function(block) {
+            var numEl = block.querySelector('.qb-num-value');
+            if (numEl) numEl.textContent = block.getAttribute('data-number-label') || '?';
+            updateOptionsVisibilityForBlock(block);
+            renderSubquestionSettings(block, numberingByClient);
+        });
+    }
+
+    function resetOptionsForNewBlock(block) {
+        var optsDiv = block.querySelector('.js-options-block');
+        if (!optsDiv) return;
+        optsDiv.querySelectorAll('.option-row').forEach(function(r){ r.remove(); });
+        var row = document.createElement('div');
+        row.className = 'option-row';
+        row.innerHTML =
+            '<input type="text" name="placeholder-option_0" value="" class="form-control" placeholder="Вариант 1">' +
+            '<button type="button" class="btn-icon-delete js-btn-remove-option" title="Удалить вариант" aria-label="Удалить вариант">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+            '</button>';
+        optsDiv.appendChild(row);
+    }
+
+    function makeNewBlock() {
+        var blocks = getBlocks();
+        var template = blocks[blocks.length - 1] || blocks[0];
+        if (!template) return null;
+        var clone = template.cloneNode(true);
+        var clientId = makeClientId();
+        clone.setAttribute('data-client-id', clientId);
+        clone.setAttribute('data-parent-client-id', '');
+        clone.setAttribute('data-parent-triggers', '[]');
+        clone.setAttribute('data-question-type', 'single_choice');
+        clone.classList.remove('is-sub');
+
+        clone.querySelectorAll('input, select, textarea').forEach(function(input) {
+            var name = input.getAttribute('name') || '';
+            if (input.type === 'checkbox' || input.type === 'radio') input.checked = false;
+            if (input.tagName === 'SELECT') input.selectedIndex = 0;
+            if (input.tagName === 'TEXTAREA') input.value = '';
+            if (input.type === 'text' && !/-parent_triggers_text$/.test(name)) input.value = '';
+            if (/-parent_triggers_text$/.test(name)) input.value = '';
+            if (input.type === 'hidden') input.value = '';
+        });
+        var idInput = clone.querySelector('input[name$="-id"]');
+        if (idInput) idInput.value = '';
+        var clientInput = clone.querySelector('input[name$="-client_id"]');
+        if (clientInput) clientInput.value = clientId;
+        setParentClientId(clone, '');
+
+        var typeSel = clone.querySelector('.js-q-type');
+        if (typeSel) typeSel.value = 'single_choice';
+
+        resetOptionsForNewBlock(clone);
+
+        var wrap = clone.querySelector('.js-parent-triggers-wrap');
+        if (wrap) wrap.innerHTML = '';
+        var settings = clone.querySelector('.subquestion-settings');
+        if (settings) settings.hidden = true;
+
+        return clone;
+    }
+
+    function insertAfter(newNode, referenceNode) {
+        if (!referenceNode || !referenceNode.parentNode) return;
+        if (referenceNode.nextSibling) {
+            referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+        } else {
+            referenceNode.parentNode.appendChild(newNode);
+        }
+    }
+
+    function addMainQuestion() {
+        var block = makeNewBlock();
+        if (!block) return;
+        questionsContainer.appendChild(block);
+        reindexBlocks();
+    }
+
+    function addSubQuestion(parentBlock) {
+        if (!parentBlock || isSubQuestion(parentBlock)) return;
+        var block = makeNewBlock();
+        if (!block) return;
+        var parentClientId = getClientId(parentBlock);
+        setParentClientId(block, parentClientId);
+
+        var blocks = getBlocks();
+        var parentIndex = blocks.indexOf(parentBlock);
+        var insertAfterBlock = parentBlock;
+        for (var i = parentIndex + 1; i < blocks.length; i++) {
+            if (getParentClientId(blocks[i]) === parentClientId) {
+                insertAfterBlock = blocks[i];
+                continue;
+            }
+            if (!getParentClientId(blocks[i])) break;
+        }
+        insertAfter(block, insertAfterBlock);
+        reindexBlocks();
+
+        var titleInput = block.querySelector('input[name$="-title"]');
+        if (titleInput) titleInput.focus();
+    }
+
+    formEl.addEventListener('change', function(e) {
+        var t = e.target;
+        if (!t) return;
+        if (t.classList.contains('js-q-type')) {
+            reindexBlocks();
+            return;
+        }
+        if (t.matches('.trigger-chip input[type="checkbox"]')) {
+            var chip = t.closest('.trigger-chip');
+            if (chip) chip.classList.toggle('is-checked', t.checked);
+            return;
+        }
+        if (t.name && (t.name.endsWith('-title') || /-option_\d+$/.test(t.name) || /-parent_triggers/.test(t.name))) {
+            reindexBlocks();
+        }
+    });
+
+    formEl.addEventListener('input', function(e) {
+        var t = e.target;
+        if (!t || !t.name) return;
+        if (t.name.endsWith('-title') || /-option_\d+$/.test(t.name)) {
+            clearTimeout(window.__surveyBuilderRefreshTimer);
+            window.__surveyBuilderRefreshTimer = setTimeout(reindexBlocks, 120);
+        }
+    });
+
+    questionsContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-add-option')) {
+            var block = e.target.closest('.question-block');
+            if (!block) return;
+            var optsDiv = block.querySelector('.js-options-block');
+            var idx = block.getAttribute('data-question-index');
+            var nextOpt = optsDiv.querySelectorAll('.option-row').length;
+            var row = document.createElement('div');
+            row.className = 'option-row';
+            row.innerHTML =
+                '<input type="text" name="q' + idx + '-option_' + nextOpt + '" value="" class="form-control" placeholder="Вариант ' + (nextOpt + 1) + '">' +
+                '<button type="button" class="btn-icon-delete js-btn-remove-option" title="Удалить вариант" aria-label="Удалить вариант">' +
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+                '</button>';
+            optsDiv.appendChild(row);
+            reindexBlocks();
+            return;
+        }
+        if (e.target.closest('.btn-add-subquestion')) {
+            var parent = e.target.closest('.question-block');
+            addSubQuestion(parent);
+            return;
+        }
+        if (e.target.closest('.js-btn-remove-option')) {
+            var row2 = e.target.closest('.option-row');
+            if (row2) row2.remove();
+            reindexBlocks();
+            return;
+        }
+        if (e.target.closest('.js-btn-remove-question')) {
+            var blk = e.target.closest('.question-block');
+            if (!blk) return;
+            var blkClientId = getClientId(blk);
+            var toRemove = getBlocks().filter(function(b) {
+                return b === blk || getParentClientId(b) === blkClientId;
+            });
+            if (getBlocks().length - toRemove.length <= 0) {
+                alert('Должен оставаться хотя бы один вопрос.');
+                return;
+            }
+            toRemove.forEach(function(b){ b.remove(); });
+            reindexBlocks();
+            return;
+        }
+    });
+
+    addBtn.addEventListener('click', addMainQuestion);
+    reindexBlocks();
+})();
+</script>
+{% endblock %}

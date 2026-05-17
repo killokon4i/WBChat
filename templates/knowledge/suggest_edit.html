@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Предложить правку — {{ article.title }} — WB Хаб{% endblock %}
+{% block extra_styles %}
+<style>
+    .suggest-actions { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; margin-top: 8px; }
+    @media (max-width: 480px) {
+        .suggest-actions { flex-direction: column-reverse; }
+        .suggest-actions .btn-primary,
+        .suggest-actions .btn-secondary { width: 100%; justify-content: center; min-height: 44px; }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="wb-portal-form-page wb-editor-auth wb-editor-auth--wide">
+    <a href="{% url 'kb_article_detail' slug=article.slug %}" class="wb-portal-form-back wb-editor-auth__back">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        К статье
+    </a>
+    <div class="wb-editor-auth__card">
+        <div class="auth-welcome">
+            <h2 id="suggest-edit-title">Правка статьи</h2>
+            <p>Опишите изменения — модератор рассмотрит предложение.</p>
+        </div>
+        <form method="post" class="suggest-form">
+            {% csrf_token %}
+            <p style="margin:0 0 18px;font-size:14px;color:var(--text-secondary);line-height:1.45;">Статья: <a href="{% url 'kb_article_detail' slug=article.slug %}" class="auth-inline-link">{{ article.title }}</a></p>
+            <div class="form-group">
+                <label class="form-label">{{ form.comment.label }}</label>
+                {{ form.comment }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">{{ form.title.label }}</label>
+                {{ form.title }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">{{ form.content.label }}</label>
+                {{ form.content }}
+            </div>
+            <div class="suggest-actions">
+                <a href="{% url 'kb_article_detail' slug=article.slug %}" class="btn-secondary">Отмена</a>
+                <button type="submit" class="btn-primary">Отправить предложение</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="{% static 'tinymce/tinymce.min.js' %}"></script>
+<script>
+tinymce.init({
+    selector: '.tinymce-editor',
+    license_key: 'gpl',
+    language: 'ru',
+    height: 400,
+    plugins: 'lists link image table code codesample',
+    toolbar: 'undo redo | styles | bold italic | alignleft aligncenter | bullist numlist | link image table codesample | code',
+    setup: function(editor) { editor.on('change keyup', editor.save); }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+
+{% block title %}Уведомления — WB Хаб{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .notifications-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .notifications-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .notification-card {
+        display: flex;
+        gap: 16px;
+        padding: 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--wb-radius-md, 22px);
+        transition: all 0.2s;
+    }
+    
+    .notification-card.unread {
+        background: var(--bg-card);
+        border-left: 3px solid var(--magenta);
+    }
+    
+    .notification-card:hover {
+        background: var(--bg-hover);
+    }
+    
+    .notification-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .notification-icon svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+    }
+    
+    .notification-icon.info { background: var(--info-bg); }
+    .notification-icon.success { background: var(--success-bg); }
+    .notification-icon.warning { background: var(--warning-bg); }
+    .notification-icon.error { background: var(--error-bg); }
+    .notification-icon.mention { background: rgba(228, 0, 175, 0.14); }
+    
+    .notification-content {
+        flex: 1;
+    }
+    
+    .notification-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    
+    .notification-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
+
+    .notification-text a {
+        color: var(--magenta);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .notification-text a:hover {
+        color: var(--link-hover);
+    }
+    
+    .notification-meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    
+    .notification-time {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+    
+    .notification-link {
+        font-size: 13px;
+        color: var(--magenta);
+        text-decoration: none;
+    }
+    
+    .notification-link:hover {
+        color: var(--link-hover);
+    }
+    
+    .notification-actions {
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .btn-mark-read {
+        padding: 8px 14px;
+        background: transparent;
+        border: 2px solid var(--border-color);
+        border-radius: 9999px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .btn-mark-read:hover {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-icon {
+        width: 56px;
+        height: 56px;
+        margin-bottom: 16px;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-hover);
+        color: var(--text-muted);
+    }
+
+    .empty-icon svg {
+        width: 28px;
+        height: 28px;
+        stroke: currentColor;
+    }
+    
+    .empty-title {
+        font-size: 18px;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .empty-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    @media (max-width: 480px) {
+        .notification-card {
+            flex-direction: column;
+            gap: 12px;
+            padding: 14px;
+        }
+
+        .notification-content {
+            min-width: 0;
+        }
+
+        .notification-meta {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .notification-actions {
+            align-self: stretch;
+        }
+
+        .btn-mark-read {
+            width: 100%;
+            min-height: 40px;
+            font-size: 13px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wb-portal-mesh-page wb-portal-marketing wb-list-page">
+    <header class="wb-portal-hero" aria-labelledby="notifications-page-title">
+        <div class="wb-portal-hero-text">
+            <p class="wb-portal-kicker">Личный центр</p>
+            <h1 class="wb-portal-hero-title" id="notifications-page-title">Уведомления</h1>
+            <p class="wb-portal-hero-sub">
+                {% if unread_count %}{{ unread_count }} непрочитанных сообщений{% else %}Все сообщения прочитаны{% endif %} — новости чатов, задач и портала в WB&nbsp;Хаб.</p>
+        </div>
+        {% if unread_count %}
+        <div class="wb-portal-hero-actions">
+            <button type="button" class="wb-portal-pill-btn wb-portal-pill-btn--ghost" onclick="markAllRead()">Отметить все</button>
+        </div>
+        {% endif %}
+    </header>
+
+    <div class="notifications-container">
+    {% if notifications %}
+    <div class="notifications-list">
+        {% for notif in notifications %}
+        <div class="notification-card {% if not notif.is_read %}unread{% endif %}" data-id="{{ notif.id }}">
+            <div class="notification-icon {{ notif.notification_type.code|default:'info' }}">
+                {% if notif.notification_type.code == 'success' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                {% elif notif.notification_type.code == 'warning' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                {% elif notif.notification_type.code == 'error' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                {% elif notif.notification_type.code == 'mention' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <circle cx="12" cy="12" r="4"/>
+                    <path d="M16 8v5a2 2 0 0 0 4 0v-1a8 8 0 1 0-3.92 6.9"/>
+                </svg>
+                {% else %}
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                {% endif %}
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">{{ notif.title }}</div>
+                <div class="notification-text">{{ notif.content|safe }}</div>
+                <div class="notification-meta">
+                    <span class="notification-time">{{ notif.created_at|timesince }} назад</span>
+                    {% if notif.link %}
+                    <a href="{{ notif.link }}" class="notification-link">Перейти →</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% if not notif.is_read %}
+            <div class="notification-actions">
+                <button class="btn-mark-read" onclick="markRead({{ notif.id }})">Прочитано</button>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+        </div>
+        <div class="empty-title">Нет уведомлений</div>
+        <div class="empty-text">Здесь будут появляться ваши уведомления</div>
+    </div>
+    {% endif %}
+    </div>
+</div>
+
+<script>
+function markRead(notificationId) {
+    fetch(`/notifications/${notificationId}/read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    }).then(response => {
+        if (response.ok) {
+            const card = document.querySelector(`[data-id="${notificationId}"]`);
+            card.classList.remove('unread');
+            card.querySelector('.btn-mark-read')?.remove();
+        }
+    });
+}
+
+function markAllRead() {
+    fetch('/notifications/mark-all-read/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    }).then(response => {
+        if (response.ok) {
+            document.querySelectorAll('.notification-card.unread').forEach(card => {
+                card.classList.remove('unread');
+                card.querySelector('.btn-mark-read')?.remove();
+            });
+            document.querySelector('.wb-portal-hero-actions')?.remove();
+            const sub = document.querySelector('.wb-portal-mesh-page .wb-portal-hero-sub');
+            if (sub) sub.textContent = 'Все сообщения прочитаны — новости чатов, задач и портала в WB Хаб.';
+        }
+    });
+}
+</script>
+{% endblock %}

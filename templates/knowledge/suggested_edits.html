@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}Предложенные правки — {{ article.title }} — WB Bank{% endblock %}
+{% block extra_styles %}
+<style>
+    .edits-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .edits-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .edits-header h1 { color: var(--text-primary); font-size: 22px; }
+    .edit-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 22px; padding: 20px; margin-bottom: 24px; }
+    .edit-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .edit-author { color: var(--text-primary); font-weight: 500; font-size: 15px; }
+    .edit-date { color: var(--text-muted); font-size: 13px; }
+    .edit-comment { color: var(--text-secondary); font-size: 14px; margin-bottom: 12px; padding: 10px 14px; background: var(--bg-hover); border-radius: 8px; }
+    .edit-status { display: inline-block; padding: 4px 12px; border-radius: 28px; font-size: 12px; font-weight: 600; }
+    .edit-status.pending { background: var(--warning-bg); color: var(--warning-text); }
+    .edit-status.accepted { background: var(--success-bg); color: var(--brand-green); }
+    .edit-status.rejected { background: var(--error-bg); color: var(--error-text); }
+    .edit-actions { display: flex; gap: 8px; margin-top: 16px; align-items: center; }
+    .btn-sm { padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; }
+    .btn-accept { background: var(--brand-green); color: white; }
+    .btn-reject { background: var(--error-text); color: white; }
+    .review-comment-input {
+        flex: 1;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: 13px;
+    }
+
+    .diff-toggle {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        padding: 6px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        margin-top: 12px;
+    }
+
+    .diff-wrapper {
+        overflow-x: auto;
+        margin-top: 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 12px;
+        background: var(--bg-primary);
+    }
+
+    table.diff {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    table.diff td, table.diff th {
+        padding: 3px 8px;
+        border: 1px solid var(--border-color);
+        vertical-align: top;
+        color: var(--text-primary);
+    }
+    table.diff th {
+        background: var(--bg-hover);
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--text-primary);
+    }
+    table.diff .diff_add { background: rgba(34, 197, 94, 0.15); }
+    table.diff .diff_sub { background: rgba(239, 68, 68, 0.15); }
+    table.diff .diff_chg { background: rgba(234, 179, 8, 0.15); }
+
+    .title-change {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        padding: 8px 12px;
+        background: var(--bg-hover);
+        border-radius: 8px;
+    }
+    .title-change .old { text-decoration: line-through; color: var(--error-text); }
+    .title-change .new { color: var(--brand-green); font-weight: 500; }
+
+    @media (max-width: 480px) {
+        .edits-container {
+            padding: 0;
+        }
+
+        .edits-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .edits-header h1 {
+            font-size: 20px;
+        }
+
+        .edit-card {
+            padding: 14px;
+        }
+
+        .edit-meta {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .edit-actions form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .btn-sm {
+            width: 100%;
+            min-height: 40px;
+        }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="edits-container wb-portal-marketing">
+    <div class="edits-header">
+        <h1>Предложенные правки</h1>
+        <a href="{% url 'kb_article_detail' slug=article.slug %}" style="color:var(--magenta);text-decoration:none;font-size:14px;">← К статье</a>
+    </div>
+    <p style="color:var(--text-muted);font-size:14px;margin-bottom:24px;">Статья: <strong style="color:var(--text-primary);">{{ article.title }}</strong></p>
+
+    {% for edit in edits %}
+    <div class="edit-card" id="edit-{{ edit.id }}">
+        <div class="edit-meta">
+            <span class="edit-author">{{ edit.author.get_full_name|default:edit.author.username }}</span>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <span class="edit-status {{ edit.status }}">{{ edit.get_status_display }}</span>
+                <span class="edit-date">{{ edit.created_at|date:"d.m.Y H:i" }}</span>
+            </div>
+        </div>
+
+        {% if edit.comment %}
+        <div class="edit-comment" style="display:flex;align-items:center;gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            {{ edit.comment }}
+        </div>
+        {% endif %}
+
+        {% if edit.title and edit.title != article.title %}
+        <div class="title-change">
+            Заголовок: <span class="old">{{ article.title }}</span> → <span class="new">{{ edit.title }}</span>
+        </div>
+        {% endif %}
+
+        <button class="diff-toggle" onclick="toggleDiff({{ edit.id }})">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><polyline points="22 6 13.5 14.5 8.5 9.5 2 16"/><polyline points="16 6 22 6 22 12"/></svg>
+            Показать сравнение
+        </button>
+
+        <div class="diff-wrapper" id="diff-{{ edit.id }}" style="display:none;">
+            {{ edit.diff_html|safe }}
+        </div>
+
+        {% if edit.status == 'pending' %}
+        <div class="edit-actions">
+            <form method="post" action="{% url 'kb_review_suggested_edit' slug=article.slug edit_id=edit.id %}" style="display:flex;gap:8px;align-items:center;flex:1;flex-wrap:wrap;">
+                {% csrf_token %}
+                <input type="text" name="review_comment" class="review-comment-input" placeholder="Комментарий модератора (необязательно)">
+                <button type="submit" name="action" value="accept" class="btn-sm btn-accept">Принять правку</button>
+                <button type="submit" name="action" value="reject" class="btn-sm btn-reject">Отклонить</button>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if edit.reviewed_by %}
+        <div style="margin-top:12px;font-size:13px;color:var(--text-muted);">
+            Рассмотрел: {{ edit.reviewed_by.get_full_name|default:edit.reviewed_by.username }}
+            {{ edit.reviewed_at|date:"d.m.Y H:i" }}
+            {% if edit.review_comment %} — {{ edit.review_comment }}{% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div style="text-align:center;padding:60px;color:var(--text-muted);font-size:15px;">
+        Предложений пока нет
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function toggleDiff(editId) {
+    const el = document.getElementById('diff-' + editId);
+    if (el.style.display === 'none') {
+        el.style.display = 'block';
+        el.previousElementSibling.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><polyline points="22 6 13.5 14.5 8.5 9.5 2 16"/><polyline points="16 6 22 6 22 12"/></svg> Скрыть сравнение';
+    } else {
+        el.style.display = 'none';
+        el.previousElementSibling.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><polyline points="22 6 13.5 14.5 8.5 9.5 2 16"/><polyline points="16 6 22 6 22 12"/></svg> Показать сравнение';
+    }
+}
+</script>
+{% endblock %}

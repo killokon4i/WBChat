@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% block title %}{{ survey.title }} — Опрос{% endblock %}
+
+{% block content %}
+<div class="container container--narrow wb-portal-marketing">
+    <div class="card survey-take-card">
+        <h1 class="page-title">{{ survey.title }}</h1>
+        {% if survey.description %}
+        <p class="text-secondary mb-2">{{ survey.description }}</p>
+        {% endif %}
+
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <div class="take-progress">
+            <div class="take-progress-bar"><div class="take-progress-fill" id="takeProgressFill"></div></div>
+            <div class="take-progress-text" id="takeProgressText">0 из 0</div>
+        </div>
+
+        <form method="post" id="survey-take-form" novalidate>
+            {% csrf_token %}
+            {% for q in questions %}
+            <div class="take-question{% if q.parent_question_id %} is-sub{% endif %}"
+                 data-question-id="{{ q.id }}"
+                 data-parent-id="{{ q.parent_question_id|default:'' }}"
+                 data-triggers="{{ q.triggers_json|escape }}"
+                 data-type="{{ q.question_type }}"
+                 data-required="{{ q.is_required|yesno:'1,0' }}"
+                 {% if q.parent_question_id %}style="display:none;"{% endif %}>
+                <div class="take-question-head">
+                    <span class="take-q-num">{{ q.number_label|default:forloop.counter }}</span>
+                    <div class="take-q-text">
+                        {{ q.title }}
+                        {% if q.is_required %}<span class="take-q-req" title="Обязательный вопрос">*</span>{% endif %}
+                        {% if q.parent_question_id %}
+                        <span class="take-q-sub-badge">подвопрос</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if q.help_text %}
+                <div class="take-q-help">{{ q.help_text }}</div>
+                {% endif %}
+
+                <div class="take-q-body">
+                {% if q.question_type == 'free_text' %}
+                    <textarea name="q{{ q.id }}" class="form-control" rows="3" placeholder="Ваш ответ"></textarea>
+                {% elif q.question_type == 'scale' %}
+                    <div class="scale-control">
+                        <div class="scale-row" data-scale-row="{{ q.id }}">
+                            {% for n in q.scale_range %}
+                            <button type="button" class="scale-btn" data-scale-value="{{ n }}" data-scale-target="{{ q.id }}">{{ n }}</button>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="q{{ q.id }}" id="scale-hidden-{{ q.id }}" value="">
+                    </div>
+                {% elif q.question_type == 'single_choice' %}
+                    <div class="choice-list">
+                    {% for opt in q.options %}
+                        <label class="choice-row">
+                            <input type="radio" name="q{{ q.id }}" value="{{ opt.text }}">
+                            <span class="choice-bullet"></span>
+                            <span class="choice-text">{{ opt.text }}</span>
+                        </label>
+                    {% endfor %}
+                    </div>
+                {% elif q.question_type == 'multiple_choice' %}
+                    <div class="choice-list">
+                    {% for opt in q.options %}
+                        <label class="choice-row choice-row--checkbox">
+                            <input type="checkbox" name="q{{ q.id }}" value="{{ opt.text }}">
+                            <span class="choice-bullet choice-bullet--box"></span>
+                            <span class="choice-text">{{ opt.text }}</span>
+                        </label>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="form-actions" style="display:flex;gap:12px;margin-top:24px;">
+                <button type="submit" class="btn btn-primary">Завершить опрос</button>
+                <a href="{% url 'surveys_list' %}" class="btn btn-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.container--narrow { max-width: 720px; margin-left: auto; margin-right: auto; }
+.survey-take-card { margin: 0 auto; }
+
+.take-progress { margin: 12px 0 22px; }
+.take-progress-bar { width: 100%; height: 8px; background: var(--bg-hover); border-radius: 999px; overflow: hidden; }
+.take-progress-fill { height: 100%; width: 0%; background: var(--colorPink600); transition: width .25s ease; }
+.take-progress-text { font-size: 12px; color: var(--text-muted); margin-top: 6px; text-align: right; }
+
+.take-question { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 22px; padding: 18px; margin-bottom: 14px; position: relative; transition: border-color .2s ease, box-shadow .2s ease; }
+.take-question.is-sub { background: var(--bg-card); border-color: rgba(245, 158, 11, 0.35); }
+.take-question.is-sub::before { content:""; position:absolute; left:0; top:18px; bottom:18px; width:3px; border-radius:3px; background: var(--brand-green); }
+.take-question-head { display:flex; gap: 12px; align-items: flex-start; }
+.take-q-num { flex: 0 0 auto; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px; background: var(--magenta); color: #fff; font-size: 13px; font-weight: 600; display:inline-flex; align-items:center; justify-content:center; }
+.take-question.is-sub .take-q-num { background: var(--brand-green); }
+.take-q-text { font-size: 15px; font-weight: 500; color: var(--text-primary); line-height: 1.45; }
+.take-q-req { color: #ef4444; margin-left: 4px; }
+.take-q-sub-badge { display:inline-block; margin-left: 8px; padding: 2px 8px; font-size: 11px; border-radius: 999px; background: rgba(0,138,78,.18); color: var(--brand-green); vertical-align: middle; }
+.take-q-help { margin-top: 6px; font-size: 12px; color: var(--text-muted); padding-left: 40px; }
+.take-q-body { margin-top: 14px; padding-left: 40px; }
+
+.choice-list { display: flex; flex-direction: column; gap: 8px; }
+.choice-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: var(--bg-hover); border: 1px solid var(--border-light); cursor: pointer; transition: background .15s ease, border-color .15s ease; position: relative; }
+.choice-row:hover { border-color: rgba(203,17,171,.4); }
+.choice-row input { position: absolute; opacity: 0; pointer-events: none; }
+.choice-bullet { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border-color); flex-shrink: 0; position: relative; transition: border-color .15s ease, background .15s ease; }
+.choice-bullet--box { border-radius: 4px; }
+.choice-row input:checked ~ .choice-bullet { border-color: var(--magenta); background: var(--magenta); }
+.choice-bullet:not(.choice-bullet--box)::after { content:""; position:absolute; width: 6px; height: 6px; border-radius: 50%; background: #fff; top: 4px; left: 4px; opacity: 0; transition: opacity .15s ease; }
+.choice-row input:checked ~ .choice-bullet:not(.choice-bullet--box)::after { opacity: 1; }
+.choice-bullet--box::after { content:""; display:block; width: 6px; height: 10px; border-right: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(45deg); margin: 1px 0 0 4px; opacity: 0; transition: opacity .15s ease; }
+.choice-row input:checked ~ .choice-bullet--box::after { opacity: 1; }
+.choice-text { flex: 1; color: var(--text-primary); font-size: 14px; }
+
+.scale-control { display: flex; flex-direction: column; gap: 6px; }
+.scale-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.scale-btn { padding: 8px 14px; border-radius: 16px; border: 1px solid var(--border-color); background: var(--bg-hover); color: var(--text-primary); cursor: pointer; font-size: 14px; font-weight: 500; transition: all .15s ease; }
+.scale-btn:hover { border-color: rgba(203,17,171,.5); }
+.scale-btn.is-active { background: var(--magenta); border-color: var(--magenta); color: #fff; }
+</style>
+
+<script>
+(function(){
+    var form = document.getElementById('survey-take-form');
+    if (!form) return;
+
+    function getQ(id) {
+        return form.querySelector('.take-question[data-question-id="' + id + '"]');
+    }
+
+    function getSelectedValues(qEl) {
+        var type = qEl.getAttribute('data-type');
+        var qid = qEl.getAttribute('data-question-id');
+        if (type === 'single_choice') {
+            var r = qEl.querySelector('input[type="radio"][name="q' + qid + '"]:checked');
+            return r ? [r.value] : [];
+        }
+        if (type === 'multiple_choice') {
+            return Array.prototype.map.call(
+                qEl.querySelectorAll('input[type="checkbox"][name="q' + qid + '"]:checked'),
+                function(i){ return i.value; }
+            );
+        }
+        if (type === 'scale') {
+            var h = qEl.querySelector('input[type="hidden"][name="q' + qid + '"]');
+            return h && h.value ? [String(h.value)] : [];
+        }
+        if (type === 'free_text') {
+            var t = qEl.querySelector('textarea[name="q' + qid + '"]');
+            return t && t.value.trim() ? [t.value.trim()] : [];
+        }
+        return [];
+    }
+
+    function clearAnswers(qEl) {
+        qEl.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(function(i){ i.checked = false; });
+        qEl.querySelectorAll('input[type="hidden"]').forEach(function(i){ if (/^q\d+$/.test(i.name)) i.value = ''; });
+        qEl.querySelectorAll('textarea').forEach(function(t){ t.value = ''; });
+        qEl.querySelectorAll('.scale-btn.is-active').forEach(function(b){ b.classList.remove('is-active'); });
+    }
+
+    function parseTriggers(qEl) {
+        var raw = qEl.getAttribute('data-triggers') || '[]';
+        try {
+            var arr = JSON.parse(raw);
+            return Array.isArray(arr) ? arr : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function recomputeVisibility() {
+        var allQs = Array.prototype.slice.call(form.querySelectorAll('.take-question'));
+        allQs.forEach(function(qEl) {
+            var parentId = qEl.getAttribute('data-parent-id');
+            if (!parentId) { qEl.style.display = ''; return; }
+            var parent = getQ(parentId);
+            if (!parent) { qEl.style.display = 'none'; return; }
+            var parentVisible = parent.style.display !== 'none';
+            if (!parentVisible) {
+                qEl.style.display = 'none';
+                clearAnswers(qEl);
+                return;
+            }
+            var triggers = parseTriggers(qEl).map(function(x){ return String(x).toLowerCase().trim(); });
+            var selected = getSelectedValues(parent).map(function(x){ return String(x).toLowerCase().trim(); });
+            var shouldShow = false;
+            if (!triggers.length) shouldShow = false;
+            else shouldShow = selected.some(function(s){ return triggers.indexOf(s) !== -1; });
+            if (shouldShow) {
+                qEl.style.display = '';
+            } else {
+                qEl.style.display = 'none';
+                clearAnswers(qEl);
+            }
+        });
+        updateProgress();
+    }
+
+    function updateProgress() {
+        var visible = Array.prototype.filter.call(
+            form.querySelectorAll('.take-question'),
+            function(q){ return q.style.display !== 'none'; }
+        );
+        var done = visible.filter(function(q){ return getSelectedValues(q).length > 0; }).length;
+        var total = visible.length;
+        var fill = document.getElementById('takeProgressFill');
+        var txt = document.getElementById('takeProgressText');
+        if (fill) fill.style.width = total ? (Math.round((done / total) * 100) + '%') : '0%';
+        if (txt) txt.textContent = done + ' из ' + total;
+    }
+
+    form.addEventListener('change', recomputeVisibility);
+    form.addEventListener('input', updateProgress);
+
+    // обработка кнопок шкалы
+    form.addEventListener('click', function(e) {
+        var btn = e.target.closest('.scale-btn');
+        if (!btn) return;
+        var target = btn.getAttribute('data-scale-target');
+        var hidden = document.getElementById('scale-hidden-' + target);
+        var row = form.querySelector('[data-scale-row="' + target + '"]');
+        if (row) {
+            row.querySelectorAll('.scale-btn').forEach(function(x){ x.classList.remove('is-active'); });
+        }
+        btn.classList.add('is-active');
+        if (hidden) {
+            hidden.value = btn.getAttribute('data-scale-value');
+            hidden.dispatchEvent(new Event('change', {bubbles: true}));
+        }
+    });
+
+    form.addEventListener('submit', function(e){
+        recomputeVisibility();
+        var failed = null;
+        Array.prototype.forEach.call(form.querySelectorAll('.take-question'), function(qEl){
+            if (failed) return;
+            if (qEl.style.display === 'none') return;
+            if (qEl.getAttribute('data-required') !== '1') return;
+            var sel = getSelectedValues(qEl);
+            if (!sel.length) failed = qEl;
+        });
+        if (failed) {
+            e.preventDefault();
+            failed.scrollIntoView({behavior:'smooth', block:'center'});
+            failed.style.boxShadow = '0 0 0 3px rgba(239,68,68,.35)';
+            setTimeout(function(){ failed.style.boxShadow = ''; }, 1200);
+        }
+    });
+
+    recomputeVisibility();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,752 @@
+/* Редактирование в портале — та же система, что у страниц register/login (wb-auth.css) */
+
+.portal-body .wb-editor-auth {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 8px 16px 40px;
+  font-family: var(--fontHauss);
+  font-weight: 450;
+  -webkit-font-smoothing: antialiased;
+}
+
+.portal-body .wb-editor-auth--wide {
+  max-width: 820px;
+}
+
+.portal-body .wb-editor-auth--article {
+  max-width: 900px;
+}
+
+.portal-body .wb-editor-auth__back {
+  margin-bottom: 16px;
+}
+
+.portal-body .wb-editor-auth__card {
+  background: var(--bg-card);
+  border-radius: 22px;
+  padding: 44px 40px;
+  width: 100%;
+  box-shadow: var(--shadow-hover);
+  border: 1px solid var(--border-light);
+  text-align: left;
+  position: relative;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  animation: wbEditorAuthCardIn 0.45s ease-out;
+}
+
+@keyframes wbEditorAuthCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.portal-body .wb-editor-auth__card .auth-welcome {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.portal-body .wb-editor-auth__card .auth-welcome h2 {
+  font-size: 24px;
+  font-weight: 500;
+  font-family: var(--fontWBSans);
+  color: var(--text-primary);
+  margin: 0 0 8px;
+  line-height: 1.25;
+}
+
+.portal-body .wb-editor-auth__card .auth-welcome p {
+  color: var(--text-secondary);
+  font-size: 16px;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.portal-body .wb-editor-auth__card .form-group {
+  margin-bottom: 18px;
+}
+
+.portal-body .wb-editor-auth__card .form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-family: var(--fontWBSans);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.portal-body .wb-editor-auth__card .form-control,
+.portal-body .wb-editor-auth__card input[type="text"],
+.portal-body .wb-editor-auth__card input[type="email"],
+.portal-body .wb-editor-auth__card input[type="password"],
+.portal-body .wb-editor-auth__card input[type="url"],
+.portal-body .wb-editor-auth__card input[type="number"],
+.portal-body .wb-editor-auth__card input[type="date"],
+.portal-body .wb-editor-auth__card input[type="datetime-local"],
+.portal-body .wb-editor-auth__card input[type="search"],
+.portal-body .wb-editor-auth__card select,
+.portal-body .wb-editor-auth__card textarea {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-input);
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
+  font-size: 16px;
+  font-family: var(--fontHauss);
+  color: var(--text-primary);
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.portal-body .wb-editor-auth__card textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.portal-body .wb-editor-auth__card .input-wrapper {
+  position: relative;
+}
+
+.portal-body .wb-editor-auth__card .input-wrapper .form-control {
+  padding-left: 48px;
+}
+
+.portal-body .wb-editor-auth__card .form-control:focus,
+.portal-body .wb-editor-auth__card select:focus,
+.portal-body .wb-editor-auth__card textarea:focus {
+  outline: none;
+  border-color: var(--colorPink600);
+  box-shadow: 0 0 0 4px rgba(228, 0, 175, 0.12);
+}
+
+.portal-body .wb-editor-auth__card .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .portal-body .wb-editor-auth__card .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Основная кнопка — как «Создать аккаунт» */
+.portal-body .wb-editor-auth__card .btn-primary,
+.portal-body .wb-editor-auth__card .btn-register {
+  padding: 14px 24px;
+  margin-top: 4px;
+  border: none;
+  border-radius: 9999px;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: var(--fontWBSans);
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  background: var(--colorBlack500);
+  color: var(--colorWhite500) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  width: auto;
+}
+
+[data-theme="dark"] .portal-body .wb-editor-auth__card .btn-primary,
+[data-theme="dark"] .portal-body .wb-editor-auth__card .btn-register {
+  background: #fff;
+  color: #0a0a0a !important;
+  box-shadow: none;
+}
+
+.portal-body .wb-editor-auth__card .btn-primary:hover,
+.portal-body .wb-editor-auth__card .btn-register:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.portal-body .wb-editor-auth__card .btn-secondary {
+  padding: 14px 22px;
+  margin-top: 4px;
+  border-radius: 9999px;
+  border: 2px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--fontWBSans);
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: auto;
+}
+
+.portal-body .wb-editor-auth__card .btn-secondary:hover {
+  background: var(--bg-hover);
+}
+
+.portal-body .wb-editor-auth__card .form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+@media (min-width: 480px) {
+  .portal-body .wb-editor-auth__card .form-actions {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .portal-body .wb-editor-auth__card .form-actions > .btn-primary,
+  .portal-body .wb-editor-auth__card .form-actions > .btn-secondary,
+  .portal-body .wb-editor-auth__card .form-actions > a.btn-secondary {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* Ошибки */
+.portal-body .wb-editor-auth__card .alert-error,
+.portal-body .wb-editor-auth__card .form-errors,
+.portal-body .wb-editor-auth__card .alert.alert-error {
+  background: var(--error-bg);
+  color: var(--error-text);
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-bottom: 22px;
+  border: 1px solid var(--error-border);
+  font-size: 14px;
+}
+
+.portal-body .wb-editor-auth__card .lock-warning {
+  background: var(--warning-bg, rgba(234, 179, 8, 0.12));
+  border: 1px solid var(--warning-border, rgba(234, 179, 8, 0.35));
+  color: var(--warning-text, var(--text-primary));
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+
+/* Ссылки внутри карточки (подсказки) */
+.portal-body .wb-editor-auth__card .auth-inline-link {
+  color: var(--colorPink700);
+  font-weight: 500;
+}
+
+.portal-body .wb-editor-auth__card .auth-inline-link:hover {
+  color: var(--colorPink600);
+  text-decoration: underline;
+}
+
+.portal-body .wb-editor-auth__card .preview-title {
+  font-size: 22px;
+  margin: 0 0 16px;
+  font-family: var(--fontWBSans);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.portal-body .wb-editor-auth__card .diff-table-wrapper {
+  margin-top: 8px;
+  border-radius: 14px;
+}
+
+.portal-body .wb-editor-auth__card .diff-selector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 20px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.portal-body .wb-editor-auth__card .diff-selector select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.portal-body .wb-editor-auth__card .version-item {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  padding: 16px 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.portal-body .wb-editor-auth__card .version-item:last-child {
+  border-bottom: none !important;
+}
+
+.portal-body .wb-editor-auth__card .version-item.current {
+  border-left: 3px solid var(--colorPink600) !important;
+  padding-left: 14px !important;
+  margin-left: -3px;
+}
+
+/* Загрузка файла — как в регистрации */
+.portal-body .wb-editor-auth__card .file-upload-label,
+.portal-body .wb-editor-auth__card label.file-upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--bg-input);
+  border: 2px dashed var(--border-color);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-family: var(--fontHauss);
+}
+
+.portal-body .wb-editor-auth__card .file-upload-label:hover {
+  border-color: var(--colorPink600);
+  background: rgba(228, 0, 175, 0.08);
+  color: var(--colorPink700);
+}
+
+@media (max-width: 500px) {
+  .portal-body .wb-editor-auth__card {
+    padding: 28px 20px;
+    border-radius: 16px;
+  }
+
+  .portal-body .wb-editor-auth__card .auth-welcome h2 {
+    font-size: 20px;
+  }
+}
+
+/* —— Редактирование профиля —— */
+.portal-body .wb-editor-auth--profile .auth-welcome {
+  text-align: left;
+}
+
+.portal-body .wb-editor-auth--profile .auth-welcome p {
+  max-width: none;
+}
+
+.portal-body .wb-editor-auth--profile .pe-section-label {
+  font-family: var(--fontWBSans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 22px 0 12px;
+}
+
+.portal-body .wb-editor-auth--profile .pe-section-label:first-of-type {
+  margin-top: 4px;
+}
+
+.portal-body .wb-editor-auth--profile .pe-hr {
+  border: none;
+  height: 1px;
+  background: var(--border-color);
+  margin: 22px 0;
+}
+
+.portal-body .wb-editor-auth--profile .pe-avatar-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.portal-body .wb-editor-auth--profile .pe-avatar-preview {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid var(--border-color);
+  background: var(--colorPink600);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--fontWBSans);
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.portal-body .wb-editor-auth--profile .pe-avatar-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.portal-body .wb-editor-auth--profile .pe-avatar-col .form-label {
+  margin-bottom: 8px;
+}
+
+.portal-body .wb-editor-auth--profile .pe-upload-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.portal-body .wb-editor-auth--profile .pe-btn-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  padding: 8px 4px;
+  cursor: pointer;
+  font-family: var(--fontHauss);
+}
+
+.portal-body .wb-editor-auth--profile .pe-btn-text:hover {
+  color: var(--colorPink700);
+}
+
+.portal-body .wb-editor-auth--profile .form-helptext {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.portal-body .wb-editor-auth--profile .password-panel {
+  background: rgba(228, 0, 175, 0.06);
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.portal-body .wb-editor-auth--profile .password-panel .form-helptext {
+  margin-bottom: 14px;
+}
+
+.portal-body .wb-editor-auth--profile .input-wrapper .form-control {
+  padding-right: 44px;
+}
+
+.portal-body .wb-editor-auth--profile .input-wrapper .input-suffix {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--colorPink600);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+@media (max-width: 520px) {
+  .portal-body .wb-editor-auth--profile .pe-avatar-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .portal-body .wb-editor-auth--profile .pe-avatar-preview {
+    width: 64px;
+    height: 64px;
+  }
+
+  .portal-body .wb-editor-auth--profile .wb-editor-auth__card .file-upload-label {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* —— Модалка «Создать беседу» —— */
+.portal-body .group-modal .modal {
+  max-width: 520px;
+  width: calc(100% - 24px);
+  margin: 12px;
+}
+
+.portal-body .group-modal .group-form {
+  padding: 0 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  text-align: left;
+}
+
+.portal-body .group-modal .group-form .form-label {
+  display: block;
+  margin: 16px 0 8px;
+  font-weight: 500;
+  font-family: var(--fontWBSans);
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.portal-body .group-modal .group-form .form-label:first-child {
+  margin-top: 0;
+}
+
+.portal-body .group-modal .group-form .form-control,
+.portal-body .group-modal .group-form input[type="text"] {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-input);
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
+  font-size: 16px;
+  font-family: var(--fontHauss);
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
+.portal-body .group-modal .group-form input[type="text"]:focus {
+  outline: none;
+  border-color: var(--colorPink600);
+  box-shadow: 0 0 0 4px rgba(228, 0, 175, 0.12);
+}
+
+.portal-body .group-modal .group-avatar-upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 16px;
+  margin: 0;
+  background: var(--bg-input);
+  border: 2px dashed var(--border-color);
+  border-radius: 14px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-family: var(--fontHauss);
+  box-sizing: border-box;
+}
+
+.portal-body .group-modal .group-avatar-upload:hover {
+  border-color: var(--colorPink600);
+  background: rgba(228, 0, 175, 0.08);
+  color: var(--colorPink700);
+}
+
+.portal-body .group-modal .group-avatar-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.portal-body .group-modal .group-search-wrap {
+  padding: 0;
+  border: none;
+  margin: 0 0 8px;
+}
+
+.portal-body .group-modal .group-search-wrap input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.portal-body .group-modal .group-participants-list {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.portal-body .group-modal .group-participant-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+  text-align: left;
+}
+
+.portal-body .group-modal .group-participant-item:hover {
+  background: var(--bg-hover);
+}
+
+.portal-body .group-modal .group-participant-item.selected {
+  background: rgba(228, 0, 175, 0.1);
+}
+
+.portal-body .group-modal .group-participant-item input[type="checkbox"] {
+  accent-color: var(--colorPink600);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.portal-body .group-modal .gp-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--colorPink600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.portal-body .group-modal .gp-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.portal-body .group-modal .group-participant-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portal-body .group-modal .group-participant-pos {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.portal-body .group-modal .group-selected-count {
+  font-size: 13px;
+  color: var(--colorPink700);
+  font-weight: 500;
+  margin: 8px 0 4px;
+  min-height: 18px;
+}
+
+.portal-body .group-modal .group-create-btn {
+  width: 100%;
+  padding: 16px;
+  margin-top: 18px;
+  border: none;
+  border-radius: 9999px;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: var(--fontWBSans);
+  cursor: pointer;
+  background: var(--colorBlack500);
+  color: var(--colorWhite500);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  transition: filter 0.2s, transform 0.2s;
+}
+
+[data-theme="dark"] .portal-body .group-modal .group-create-btn {
+  background: #fff;
+  color: #0a0a0a;
+  box-shadow: none;
+}
+
+.portal-body .group-modal .group-create-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.portal-body .group-modal .group-create-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* —— Профиль: мобильная шапка слева —— */
+@media (max-width: 640px) {
+  .pr-page .pr-kicker {
+    text-align: left;
+  }
+
+  .pr-page .pr-identity-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+    text-align: left;
+  }
+
+  .pr-page .pr-avatar-wrap {
+    margin: 0;
+    flex-shrink: 0;
+    width: 88px;
+    height: 88px;
+  }
+
+  .pr-page .pr-avatar,
+  .pr-page .pr-avatar-placeholder {
+    width: 88px;
+    height: 88px;
+    border-radius: 20px;
+    font-size: 2rem;
+  }
+
+  .pr-page .pr-avatar-ring {
+    inset: -3px;
+    border-radius: 23px;
+    background: linear-gradient(135deg, var(--colorPink600), var(--colorPink700));
+  }
+
+  .pr-page .pr-identity-body {
+    flex: 1;
+    min-width: 0;
+    padding-top: 4px;
+  }
+
+  .pr-page .pr-name,
+  .pr-page .pr-handle {
+    text-align: left;
+  }
+
+  .pr-page .pr-role-wrap {
+    justify-content: flex-start;
+    margin: 0 0 0;
+  }
+
+  .pr-page .pr-role {
+    margin: 8px 0 0;
+  }
+
+  .pr-page .pr-metrics {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+  }
+
+  .pr-page .pr-metric {
+    text-align: left;
+  }
+
+  .pr-page .pr-sidebar .pr-card {
+    padding: 20px 18px 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-body .wb-editor-auth__card {
+    animation: none;
+  }
+}

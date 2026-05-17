@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление: {{ article.title }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .delete-wrap {
+        max-width: 600px;
+        margin: 40px auto;
+        text-align: center;
+    }
+
+    .delete-card {
+        padding: 32px;
+    }
+
+    .delete-title {
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+
+    .delete-name {
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        font-size: 18px;
+        font-weight: 500;
+    }
+
+    .delete-meta {
+        color: var(--text-muted);
+        font-size: 13px;
+        margin-bottom: 24px;
+    }
+
+    .delete-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .delete-actions form {
+        width: 100%;
+        max-width: 320px;
+    }
+
+    .delete-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .delete-note {
+        color: var(--text-muted);
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .delete-cancel {
+        color: var(--text-muted);
+        font-size: 14px;
+        margin-top: 8px;
+    }
+
+    @media (max-width: 480px) {
+        .delete-wrap {
+            margin: 16px auto;
+        }
+
+        .delete-card {
+            padding: 14px;
+        }
+
+        .delete-name {
+            font-size: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delete-wrap wb-portal-marketing">
+    <div class="card delete-card">
+        <h2 class="delete-title">Удаление статьи</h2>
+        <p class="delete-name">{{ article.title }}</p>
+        <p class="delete-meta">
+            {{ article.get_status_display }} · v{{ article.current_version }} · {{ article.views_count }} просм.
+        </p>
+
+        <div class="delete-actions">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="archive">
+                <button type="submit" class="btn" style="background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/><path d="M3 8h18"/><path d="M10 12h4"/></svg>
+                    В архив
+                </button>
+                <p class="delete-note">Статья не будет отображаться, но её можно восстановить</p>
+            </form>
+
+            {% if is_admin %}
+            <form method="post" onsubmit="return confirm('Вы уверены? Статья, все версии, комментарии и вложения будут безвозвратно удалены.')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="permanent">
+                <button type="submit" class="btn" style="background: var(--error-bg); color: var(--error-text); border: 1px solid var(--error-border);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    Удалить навсегда
+                </button>
+                <p class="delete-note">Безвозвратное удаление — только для администраторов</p>
+            </form>
+            {% endif %}
+
+            <a href="{% url 'kb_article_detail' slug=article.slug %}" class="delete-cancel">Отмена</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

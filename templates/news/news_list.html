@@ -1,0 +1,524 @@
+{% extends 'base.html' %}
+
+{% block title %}Новости — WB Хаб{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* Карусель */
+    .news-bank-showcase {
+        display: grid;
+        grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+        gap: clamp(18px, 3vw, 32px);
+        align-items: stretch;
+    }
+
+    .news-bank-aside {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        padding: 4px 0;
+    }
+
+    .news-bank-aside-label {
+        font-family: var(--fontWBSans);
+        font-size: 0.6875rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    .news-bank-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 22px;
+        border-radius: 9999px;
+        background: var(--colorBlack500);
+        color: #fff !important;
+        font-weight: 500;
+        font-size: 14px;
+        font-family: var(--fontHauss);
+        text-decoration: none;
+        width: fit-content;
+        border: none;
+        box-shadow: 0 6px 22px rgba(0, 0, 0, 0.15);
+        transition: filter 0.2s ease, transform 0.2s ease;
+    }
+
+    [data-theme="dark"] .news-bank-cta {
+        background: #fff;
+        color: #0a0a0a !important;
+        box-shadow: none;
+    }
+
+    .news-bank-cta:hover {
+        filter: brightness(1.07);
+        transform: translateY(-1px);
+    }
+
+    .news-bank-nav {
+        display: flex;
+        gap: 10px;
+        margin-top: auto;
+    }
+
+    .news-bank-arrow {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    }
+
+    .news-bank-arrow:hover {
+        border-color: rgba(228, 0, 175, 0.35);
+        color: var(--magenta);
+        background: rgba(228, 0, 175, 0.08);
+    }
+
+    .news-bank-arrow--accent {
+        background: rgba(228, 0, 175, 0.12);
+        border-color: rgba(228, 0, 175, 0.32);
+        color: var(--magenta);
+    }
+
+    .news-bank-track-wrap {
+        min-width: 0;
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: var(--wb-portal-hero-r);
+        padding: 10px 6px 12px;
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+    }
+
+    [data-theme="light"] .news-bank-track-wrap {
+        background: var(--colorWhite500);
+        border-color: rgba(0, 0, 0, 0.06);
+    }
+
+    .news-bank-track {
+        display: flex;
+        gap: 14px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        scroll-padding: 8px;
+        padding: 8px 10px 14px;
+        margin: 0;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
+    .news-bank-track:focus-visible {
+        outline: 2px solid var(--magenta);
+        outline-offset: 4px;
+    }
+
+    .news-bank-card {
+        flex: 0 0 min(100%, 300px);
+        scroll-snap-align: start;
+        background: var(--bg-hover);
+        border: 1px solid var(--border-light);
+        border-radius: var(--wb-portal-hero-r-sm);
+        padding: 18px 18px 20px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 268px;
+        box-sizing: border-box;
+        position: relative;
+        overflow: hidden;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .news-bank-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--colorPink600), var(--colorGreen500));
+        opacity: 0.9;
+    }
+
+    [data-theme="light"] .news-bank-card {
+        background: var(--colorGrey500);
+        border-color: rgba(0, 0, 0, 0.06);
+    }
+
+    .news-bank-card:hover,
+    .news-bank-card:focus-visible {
+        border-color: rgba(228, 0, 175, 0.28);
+        box-shadow: 0 14px 36px rgba(228, 0, 175, 0.12);
+        transform: translateY(-4px);
+        outline: none;
+    }
+
+    .news-bank-card-visual {
+        border-radius: 14px;
+        overflow: hidden;
+        aspect-ratio: 16 / 9;
+        background: var(--border-color);
+        max-height: 138px;
+    }
+
+    .news-bank-card-visual img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .news-bank-meta {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+        line-height: 1.4;
+        font-family: var(--fontHauss);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .news-bank-card-title {
+        font-size: 1rem;
+        font-weight: 500;
+        line-height: 1.35;
+        color: var(--text-primary);
+        margin: 0;
+        font-family: var(--fontWBSans);
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .news-bank-excerpt {
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--text-secondary);
+        margin: 0;
+        flex: 1;
+        font-family: var(--fontHauss);
+        font-weight: 500;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Пустое состояние */
+    .nl-empty {
+        text-align: center;
+        padding: clamp(40px, 8vw, 72px) 24px;
+        border-radius: var(--wb-portal-hero-r);
+        border: 1px solid var(--border-light);
+        background: var(--bg-card);
+        box-shadow: 0 4px 28px rgba(0, 0, 0, 0.05);
+        position: relative;
+        overflow: hidden;
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    [data-theme="light"] .nl-empty {
+        background: linear-gradient(180deg, var(--colorWhite500) 0%, var(--colorPink50) 120%);
+        border-color: rgba(228, 0, 175, 0.14);
+        box-shadow: 0 8px 40px rgba(181, 0, 139, 0.08);
+    }
+
+    .nl-empty::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(60% 50% at 50% 0%, rgba(228, 0, 175, 0.08) 0%, transparent 55%);
+        pointer-events: none;
+    }
+
+    .nl-empty-icon {
+        position: relative;
+        width: 88px;
+        height: 88px;
+        margin: 0 auto 22px;
+        border-radius: 28px;
+        background: linear-gradient(145deg, rgba(228, 0, 175, 0.18), rgba(14, 97, 59, 0.12));
+        border: 1px solid rgba(228, 0, 175, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 12px 32px rgba(228, 0, 175, 0.12);
+    }
+
+    .nl-empty-icon svg {
+        width: 40px;
+        height: 40px;
+        color: var(--colorPink700);
+        stroke: currentColor;
+        fill: none;
+    }
+
+    .nl-empty h2 {
+        position: relative;
+        font-family: var(--fontWBSans);
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin: 0 0 10px;
+        letter-spacing: -0.02em;
+    }
+
+    .nl-empty p {
+        position: relative;
+        font-size: 0.9375rem;
+        color: var(--text-secondary);
+        margin: 0 0 24px;
+        line-height: 1.55;
+        font-family: var(--fontHauss);
+        font-weight: 500;
+    }
+
+    .news-main-flow--empty {
+        min-height: min(70vh, 560px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 0;
+    }
+
+    /* Lightbox */
+    .lightbox {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        cursor: zoom-out;
+        animation: lightboxFadeIn 0.3s ease;
+    }
+
+    .lightbox.active {
+        display: flex;
+    }
+
+    @keyframes lightboxFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .lightbox img {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        animation: lightboxZoomIn 0.3s ease;
+    }
+
+    @keyframes lightboxZoomIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+    .lightbox-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+    }
+
+    .lightbox-close svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    @media (max-width: 900px) {
+        .news-bank-showcase {
+            grid-template-columns: 1fr;
+        }
+
+        .news-bank-aside {
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .news-bank-nav {
+            margin-top: 0;
+            margin-left: auto;
+        }
+    }
+
+    @media (max-width: 520px) {
+        .nl-empty {
+            padding: 36px 18px 40px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wb-portal-mesh-page wb-portal-marketing wb-list-page">
+    <header class="wb-portal-hero" aria-labelledby="news-page-title">
+        <div class="wb-portal-hero-text">
+            <p class="wb-portal-kicker">Корпоративная лента</p>
+            <h1 class="wb-portal-hero-title" id="news-page-title">Новости</h1>
+            <p class="wb-portal-hero-sub">Будьте в курсе событий, объявлений и обновлений WB&nbsp;Хаб.</p>
+        </div>
+        {% if request.user.is_authenticated and request.user.isModerator %}
+        <div class="wb-portal-hero-actions">
+            <a href="{% url 'create_news' %}" class="wb-portal-pill-btn wb-portal-pill-btn--primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Создать
+            </a>
+            <a href="{% url 'news_personal_dashboard' %}" class="wb-portal-pill-btn wb-portal-pill-btn--ghost">Личный кабинет</a>
+        </div>
+        {% endif %}
+    </header>
+
+    <section class="news-main-flow{% if not news %} news-main-flow--empty{% endif %}" aria-labelledby="news-page-title">
+    {% if news %}
+        <div class="news-bank-showcase">
+            <div class="news-bank-aside">
+                <p class="news-bank-aside-label">Свайп или стрелки — листать материалы</p>
+                <a href="#news-bank-list-end" class="news-bank-cta">К последним новостям</a>
+                <div class="news-bank-nav" role="group" aria-label="Листать новости">
+                    <button type="button" class="news-bank-arrow" id="news-bank-prev" aria-label="Предыдущие">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <button type="button" class="news-bank-arrow news-bank-arrow--accent" id="news-bank-next" aria-label="Следующие">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="news-bank-track-wrap">
+                <div class="news-bank-track" id="news-bank-track" tabindex="0" role="list">
+                    {% for item in news %}
+                    <article class="news-bank-card" role="listitem" tabindex="0"
+                             data-href="{% url 'news_detail' item.pk %}"
+                             onclick="window.location.href=this.dataset.href"
+                             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location.href=this.dataset.href}">
+                        {% if item.image %}
+                        <div class="news-bank-card-visual">
+                            <img src="{{ item.image.url }}" alt="" onclick="event.stopPropagation();openLightbox(this.src, event)">
+                        </div>
+                        {% endif %}
+                        <div class="news-bank-meta">
+                            {% if item.category %}{{ item.category.name }}{% else %}Новости{% endif %}
+                            &nbsp;·&nbsp;{{ item.published_at|default:item.created_at|date:"d.m.Y" }}
+                        </div>
+                        <h3 class="news-bank-card-title">{{ item.title }}</h3>
+                        <p class="news-bank-excerpt">{{ item.excerpt|default:item.content|striptags|truncatechars:180 }}</p>
+                    </article>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div id="news-bank-list-end" aria-hidden="true"></div>
+    {% else %}
+    <div class="nl-empty">
+        <div class="nl-empty-icon">
+            <svg viewBox="0 0 24 24" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+        </div>
+        <h2>Новостей пока нет</h2>
+        <p>Здесь появятся корпоративные новости и объявления — следите за обновлениями.</p>
+        {% if request.user.is_authenticated and request.user.isModerator %}
+        <a href="{% url 'create_news' %}" class="wb-portal-pill-btn wb-portal-pill-btn--primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Создать первую новость
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+    </section>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button type="button" class="lightbox-close" onclick="event.stopPropagation(); closeLightbox();" aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+    </button>
+    <img src="" alt="Просмотр изображения" id="lightbox-img">
+</div>
+
+<script>
+function openLightbox(src, event) {
+    event.stopPropagation();
+    const lightbox = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    img.src = src;
+    lightbox.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    const lightbox = document.getElementById('lightbox');
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeLightbox();
+    }
+});
+
+(function() {
+    var track = document.getElementById('news-bank-track');
+    var prev = document.getElementById('news-bank-prev');
+    var next = document.getElementById('news-bank-next');
+    if (!track || !prev || !next) return;
+    function step() {
+        return Math.min(320, Math.max(240, track.clientWidth * 0.82));
+    }
+    prev.addEventListener('click', function() {
+        track.scrollBy({ left: -step(), behavior: 'smooth' });
+    });
+    next.addEventListener('click', function() {
+        track.scrollBy({ left: step(), behavior: 'smooth' });
+    });
+})();
+</script>
+{% endblock %}

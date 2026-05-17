@@ -1,0 +1,645 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ employee.get_full_name }} — WB Bank{% endblock %}
+
+{% block content %}
+<style>
+    .employee-page {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    /* Header */
+    .employee-header {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 28px;
+        padding: 32px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 32px;
+        align-items: flex-start;
+    }
+    
+    @media (max-width: 768px) {
+        .employee-header {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+    }
+    
+    .employee-avatar-large {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: var(--colorPink600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        font-weight: 600;
+        color: #fff;
+        flex-shrink: 0;
+        border: 4px solid var(--border-color);
+        overflow: hidden;
+    }
+    
+    .employee-avatar-large img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .employee-header-info {
+        flex: 1;
+    }
+    
+    .employee-name-large {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .employee-username {
+        font-size: 15px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+    }
+    
+    .employee-position-large {
+        font-size: 16px;
+        color: var(--magenta);
+        margin-bottom: 16px;
+    }
+    
+    /* Action buttons */
+    .employee-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-message {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: var(--colorPink600);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-message:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(228, 0, 175, 0.36);
+    }
+    
+    .employee-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .meta-icon {
+        color: var(--magenta);
+    }
+    
+    .employee-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 28px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .employee-status-badge.active {
+        background: var(--success-bg);
+        color: var(--success-text);
+    }
+    
+    .employee-status-badge.vacation {
+        background: var(--warning-bg);
+        color: var(--warning-text);
+    }
+    
+    .employee-status-badge.sick {
+        background: var(--error-bg);
+        color: var(--error-text);
+    }
+    
+    /* Sections */
+    .employee-sections {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+    
+    @media (max-width: 768px) {
+        .employee-sections {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .section-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 24px;
+    }
+    
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .section-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(228, 0, 175, 0.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--magenta);
+    }
+
+    .section-icon svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+    }
+    
+    /* Info rows */
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .info-value {
+        font-size: 14px;
+        color: var(--text-primary);
+        text-align: right;
+    }
+    
+    .info-value a {
+        color: var(--magenta);
+        text-decoration: none;
+    }
+    
+    .info-value a:hover {
+        color: var(--link-hover);
+    }
+    
+    /* Manager card */
+    .manager-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--bg-hover);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        margin-top: 8px;
+        text-decoration: none;
+    }
+    
+    .manager-card:hover {
+        background: var(--border-color);
+    }
+    
+    .manager-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--colorPink600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        overflow: hidden;
+    }
+    
+    .manager-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .manager-info {
+        flex: 1;
+    }
+    
+    .manager-name {
+        font-size: 14px;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+    
+    .manager-position {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    
+    /* Subordinates */
+    .subordinates-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 16px;
+    }
+    
+    .subordinate-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background: var(--bg-hover);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        text-decoration: none;
+    }
+    
+    .subordinate-item:hover {
+        background: var(--border-color);
+    }
+    
+    .subordinate-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--colorPink600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        overflow: hidden;
+    }
+    
+    .subordinate-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .subordinate-name {
+        font-size: 14px;
+        color: var(--text-primary);
+    }
+    
+    /* About */
+    .about-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+    
+    /* Back link */
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+    
+    .back-link:hover {
+        color: var(--magenta);
+    }
+
+    @media (max-width: 480px) {
+        .employee-header {
+            padding: 16px;
+            border-radius: 22px;
+            gap: 14px;
+        }
+
+        .employee-avatar-large {
+            width: 96px;
+            height: 96px;
+            font-size: 34px;
+        }
+
+        .employee-name-large {
+            font-size: 22px;
+        }
+
+        .employee-position-large {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .employee-meta {
+            gap: 10px;
+        }
+
+        .meta-item {
+            font-size: 12px;
+        }
+
+        .employee-actions {
+            width: 100%;
+        }
+
+        .employee-actions .btn-message,
+        .employee-actions .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .section-card {
+            padding: 14px;
+            border-radius: 20px;
+        }
+
+        .info-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .info-value {
+            text-align: left;
+            word-break: break-word;
+        }
+    }
+</style>
+
+<div class="employee-page wb-portal-marketing">
+    <a href="{% url 'directory' %}" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Вернуться к справочнику
+    </a>
+    
+    <!-- Header -->
+    <div class="employee-header">
+        <div class="employee-avatar-large">
+            {% if employee.avatar %}
+            <img src="{{ employee.avatar.url }}" alt="{{ employee.get_full_name }}">
+            {% else %}
+            {{ employee.first_name|slice:":1" }}{{ employee.last_name|slice:":1" }}
+            {% endif %}
+        </div>
+        
+        <div class="employee-header-info">
+            <h1 class="employee-name-large">{{ employee.get_full_name|default:employee.username }}</h1>
+            <div class="employee-username">@{{ employee.username }}</div>
+            <div class="employee-position-large">{{ employee.position.name|default:"Должность не указана" }}</div>
+            
+            <div class="employee-meta">
+                {% if employee.department %}
+                <div class="meta-item">
+                    <svg class="meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    </svg>
+                    {{ employee.department.name }}
+                </div>
+                {% endif %}
+                {% if employee.band %}
+                <div class="meta-item">
+                    <svg class="meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                    Грейд: {{ employee.band }}
+                </div>
+                {% endif %}
+                {% if employee.office_location %}
+                <div class="meta-item">
+                    <svg class="meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    {{ employee.office_location }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <span class="employee-status-badge {% if employee.status == 'active' %}active{% elif employee.status == 'vacation' %}vacation{% else %}sick{% endif %}">
+                <span class="status-dot" style="width:8px;height:8px;border-radius:50%;background:currentColor;"></span>
+                {% if employee.status == 'active' %}На работе
+                {% elif employee.status == 'vacation' %}В отпуске{% if employee.status_end_date %} до {{ employee.status_end_date|date:"d.m" }}{% endif %}
+                {% elif employee.status == 'sick_leave' %}На больничном
+                {% else %}{{ employee.get_status_display }}
+                {% endif %}
+            </span>
+            
+            {% if request.user != employee %}
+            <div class="employee-actions">
+                <a href="{% url 'start_chat' employee.id %}" class="btn-message">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Написать сообщение
+                </a>
+            </div>
+            {% endif %}
+
+            {% if is_admin and employee.is_comments_banned %}
+            <div style="margin-top:16px;padding:16px 20px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:12px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                    <div>
+                        <div style="font-size:14px;font-weight:600;color:var(--error-text);margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                            Комментарии заблокированы
+                        </div>
+                        <div style="font-size:13px;color:var(--text-muted);">Предупреждений: {{ employee.comment_warnings }}{% if employee.comments_banned_at %} · Заблокирован: {{ employee.comments_banned_at|date:"d.m.Y H:i" }}{% endif %}</div>
+                    </div>
+                    <form method="post" action="{% url 'unban_comments' user_id=employee.id %}" onsubmit="return confirm('Снять блокировку комментариев и сбросить предупреждения?')">
+                        {% csrf_token %}
+                        <button type="submit" style="padding:8px 20px;border-radius:10px;border:1px solid var(--success-border);background:var(--success-bg);color:var(--brand-green);font-size:13px;font-weight:500;cursor:pointer;">Снять блокировку</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if is_admin and employee.comment_warnings > 0 and not employee.is_comments_banned %}
+            <div style="margin-top:16px;padding:12px 20px;background:var(--warning-bg);border:1px solid var(--warning-border);border-radius:12px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                    <div style="font-size:13px;color:var(--warning-text);display:flex;align-items:center;gap:6px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Предупреждений за комментарии: {{ employee.comment_warnings }} из 3
+                    </div>
+                    <form method="post" action="{% url 'unban_comments' user_id=employee.id %}" onsubmit="return confirm('Сбросить счётчик предупреждений?')">
+                        {% csrf_token %}
+                        <button type="submit" style="padding:6px 16px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-hover);color:var(--text-primary);font-size:12px;cursor:pointer;">Сбросить</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Sections -->
+    <div class="employee-sections">
+        <!-- Contact info -->
+        <div class="section-card">
+            <div class="section-title">
+                <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.18 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.61 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6.27 6.27l1.27-1.27a2 2 0 0 1 2.11-.45c.85.28 1.73.49 2.63.61A2 2 0 0 1 22 16.92z"/></svg></span>
+                Контактная информация
+            </div>
+            
+            {% if employee.work_phone %}
+            <div class="info-row">
+                <span class="info-label">Рабочий телефон</span>
+                <span class="info-value"><a href="tel:{{ employee.work_phone }}">{{ employee.work_phone }}</a></span>
+            </div>
+            {% endif %}
+            
+            {% if employee.work_email %}
+            <div class="info-row">
+                <span class="info-label">Рабочий email</span>
+                <span class="info-value"><a href="mailto:{{ employee.work_email }}">{{ employee.work_email }}</a></span>
+            </div>
+            {% endif %}
+            
+            {% if employee.telegram %}
+            <div class="info-row">
+                <span class="info-label">Telegram</span>
+                <span class="info-value"><a href="https://t.me/{{ employee.telegram }}" target="_blank">@{{ employee.telegram }}</a></span>
+            </div>
+            {% endif %}
+            
+            {% if employee.show_personal_phone and employee.personal_phone %}
+            <div class="info-row">
+                <span class="info-label">Личный телефон</span>
+                <span class="info-value"><a href="tel:{{ employee.personal_phone }}">{{ employee.personal_phone }}</a></span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Work info -->
+        <div class="section-card">
+            <div class="section-title">
+                <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
+                Рабочая информация
+            </div>
+            
+            {% if employee.hire_date %}
+            <div class="info-row">
+                <span class="info-label">Дата приёма</span>
+                <span class="info-value">{{ employee.hire_date|date:"d.m.Y" }}</span>
+            </div>
+            {% endif %}
+            
+            {% if employee.show_birth_date and employee.birth_date %}
+            <div class="info-row">
+                <span class="info-label">День рождения</span>
+                <span class="info-value">{{ employee.birth_date|date:"d E" }}</span>
+            </div>
+            {% endif %}
+            
+            {% if employee.employee_category %}
+            <div class="info-row">
+                <span class="info-label">Категория</span>
+                <span class="info-value">{{ employee.employee_category }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Manager -->
+        {% if employee.manager %}
+        <div class="section-card">
+            <div class="section-title">
+                <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                Руководитель
+            </div>
+            
+            <a href="{% url 'employee_card' employee.manager.id %}" class="manager-card">
+                <div class="manager-avatar">
+                    {% if employee.manager.avatar %}
+                    <img src="{{ employee.manager.avatar.url }}" alt="">
+                    {% else %}
+                    {{ employee.manager.first_name|slice:":1" }}{{ employee.manager.last_name|slice:":1" }}
+                    {% endif %}
+                </div>
+                <div class="manager-info">
+                    <div class="manager-name">{{ employee.manager.get_full_name }}</div>
+                    <div class="manager-position">{{ employee.manager.position.name|default:"" }}</div>
+                </div>
+            </a>
+        </div>
+        {% endif %}
+        
+        <!-- Subordinates -->
+        {% if subordinates %}
+        <div class="section-card">
+            <div class="section-title">
+                <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                Подчинённые ({{ subordinates|length }})
+            </div>
+            
+            <div class="subordinates-list">
+                {% for sub in subordinates %}
+                <a href="{% url 'employee_card' sub.id %}" class="subordinate-item">
+                    <div class="subordinate-avatar">
+                        {% if sub.avatar %}
+                        <img src="{{ sub.avatar.url }}" alt="">
+                        {% else %}
+                        {{ sub.first_name|slice:":1" }}{{ sub.last_name|slice:":1" }}
+                        {% endif %}
+                    </div>
+                    <span class="subordinate-name">{{ sub.get_full_name }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- About -->
+        {% if employee.about %}
+        <div class="section-card" style="grid-column: 1 / -1;">
+            <div class="section-title">
+                <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+                О себе
+            </div>
+            <p class="about-text">{{ employee.about }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

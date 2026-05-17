@@ -1,0 +1,567 @@
+{% extends 'base.html' %}
+
+{% block title %}Документы — WB Хаб{% endblock %}
+
+{% block content %}
+<style>
+    .documents-container {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        gap: 24px;
+        min-height: calc(100vh - 140px);
+    }
+    
+    @media (max-width: 1024px) {
+        .documents-container {
+            grid-template-columns: 1fr;
+        }
+
+        /* Липкий сайдбар на узкой колонке даёт наслоение при скролле */
+        .docs-sidebar {
+            position: static;
+            top: auto;
+        }
+    }
+    
+    /* Sidebar */
+    .docs-sidebar {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 20px;
+        height: fit-content;
+        position: sticky;
+        top: 88px;
+    }
+    
+    .sidebar-section {
+        margin-bottom: 24px;
+    }
+    
+    .sidebar-section:last-child {
+        margin-bottom: 0;
+    }
+    
+    .sidebar-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+    }
+    
+    .filter-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .filter-item {
+        margin-bottom: 4px;
+    }
+    
+    .filter-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-radius: 8px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    
+    .filter-link:hover {
+        background: rgba(228, 0, 175, 0.14);
+        color: var(--text-primary);
+    }
+    
+    .filter-link.active {
+        background: var(--magenta);
+        color: #fff;
+    }
+    
+    .filter-icon {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+    }
+
+    .filter-text {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .filter-text svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        flex-shrink: 0;
+    }
+    
+    .filter-count {
+        background: var(--bg-hover);
+        padding: 2px 8px;
+        border-radius: 16px;
+        font-size: 12px;
+    }
+    
+    .filter-link.active .filter-count {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Main content */
+    .docs-main {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 24px;
+        position: relative;
+        z-index: 0;
+        isolation: isolate;
+    }
+    
+    /* Search */
+    .search-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+    
+    .search-input-wrapper {
+        flex: 1;
+        position: relative;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 12px 16px 12px 44px;
+        background: var(--bg-hover);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        color: var(--text-primary);
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+    }
+    
+    .search-input::placeholder {
+        color: var(--text-muted);
+    }
+    
+    .search-input:focus {
+        border-color: var(--magenta);
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+    
+    .btn-search {
+        padding: 12px 24px;
+        background: var(--colorPink600);
+        color: #fff;
+        border: none;
+        border-radius: 16px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .btn-search:hover { filter: brightness(1.08); }
+    
+    /* Documents list */
+    .docs-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .doc-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 20px;
+        background: var(--bg-hover);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    
+    .doc-card:hover {
+        background: var(--border-color);
+        transform: translateX(4px);
+    }
+    
+    .doc-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .doc-icon svg {
+        width: 22px;
+        height: 22px;
+        stroke: currentColor;
+    }
+    
+    .doc-icon.order { background: var(--error-bg); }
+    .doc-icon.regulation { background: var(--info-bg); }
+    .doc-icon.instruction { background: var(--success-bg); }
+    .doc-icon.policy { background: rgba(168, 85, 247, 0.15); }
+    .doc-icon.other { background: var(--bg-hover); }
+    
+    .doc-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .doc-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .doc-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    
+    .doc-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .doc-badge {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .doc-badge.active { background: var(--success-bg); color: var(--success-text); }
+    .doc-badge.draft { background: var(--warning-bg); color: var(--warning-text); }
+    .doc-badge.archived { background: var(--bg-hover); color: var(--text-secondary); }
+    
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 24px;
+    }
+    
+    .page-btn {
+        padding: 8px 14px;
+        background: var(--bg-hover);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+    
+    .page-btn:hover {
+        background: var(--border-color);
+    }
+    
+    .page-btn.active {
+        background: var(--magenta);
+        border-color: var(--magenta);
+        color: #fff;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-icon {
+        width: 56px;
+        height: 56px;
+        margin-bottom: 16px;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 24px;
+        background: var(--bg-hover);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .empty-icon svg {
+        width: 28px;
+        height: 28px;
+        stroke: currentColor;
+    }
+    
+    .empty-title {
+        font-size: 18px;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .empty-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    @media (max-width: 480px) {
+        .documents-container {
+            gap: 12px;
+            min-height: auto;
+        }
+
+        .docs-sidebar,
+        .docs-main {
+            border-radius: 20px;
+            padding: 14px;
+        }
+
+        .search-row {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-search {
+            width: 100%;
+            min-height: 44px;
+        }
+
+        .doc-card {
+            flex-wrap: wrap;
+            padding: 14px;
+            gap: 10px;
+        }
+
+        .doc-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+        }
+
+        .doc-badge {
+            width: 100%;
+            text-align: center;
+        }
+
+        .pagination {
+            flex-wrap: wrap;
+        }
+    }
+</style>
+
+<div class="wb-portal-mesh-page wb-portal-mesh-page--wide wb-portal-marketing">
+    <header class="wb-portal-hero" aria-labelledby="docs-page-title">
+        <div class="wb-portal-hero-text">
+            <p class="wb-portal-kicker">Корпоративный архив</p>
+            <h1 class="wb-portal-hero-title" id="docs-page-title">Документы</h1>
+            <p class="wb-portal-hero-sub">Приказы, регламенты, политики и инструкции WB&nbsp;Хаб — единая точка доступа к материалам компании.
+                {% with n=documents|length %}
+                {% if n == 0 %}В каталоге пока нет документов.{% elif n == 1 %}В каталоге 1 документ.{% elif n > 1 and n < 5 %}В каталоге {{ n }} документа.{% else %}В каталоге {{ n }} документов.{% endif %}
+                {% endwith %}</p>
+        </div>
+    </header>
+
+    <div class="documents-container">
+    <!-- Sidebar -->
+    <aside class="docs-sidebar">
+        <div class="sidebar-section">
+            <div class="sidebar-label">Тип документа</div>
+            <ul class="filter-list">
+                <li class="filter-item">
+                    <a href="{% url 'documents_list' %}" class="filter-link {% if not current_type %}active{% endif %}">
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            Все документы
+                        </span>
+                        <span class="filter-count">{{ total_count|default:0 }}</span>
+                    </a>
+                </li>
+                <li class="filter-item">
+                    <a href="?type=order" class="filter-link {% if current_type == 'order' %}active{% endif %}">
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg>
+                            Приказы
+                        </span>
+                    </a>
+                </li>
+                <li class="filter-item">
+                    <a href="?type=regulation" class="filter-link {% if current_type == 'regulation' %}active{% endif %}">
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                            Регламенты
+                        </span>
+                    </a>
+                </li>
+                <li class="filter-item">
+                    <a href="?type=instruction" class="filter-link {% if current_type == 'instruction' %}active{% endif %}">
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 4h13a3 3 0 0 1 3 3v13H6a3 3 0 0 1-3-3V4z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg>
+                            Инструкции
+                        </span>
+                    </a>
+                </li>
+                <li class="filter-item">
+                    <a href="?type=policy" class="filter-link {% if current_type == 'policy' %}active{% endif %}">
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 2v20"/><path d="M5 5h6v14H5z"/><path d="M13 7h6v12h-6z"/></svg>
+                            Политики
+                        </span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="sidebar-label">Статус</div>
+            <ul class="filter-list">
+                <li class="filter-item">
+                    <a href="?status=active" class="filter-link {% if current_status == 'active' %}active{% endif %}">
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Актуальные
+                        </span>
+                    </a>
+                </li>
+                <li class="filter-item">
+                    <a href="?status=draft" class="filter-link {% if current_status == 'draft' %}active{% endif %}">
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            Черновики
+                        </span>
+                    </a>
+                </li>
+                <li class="filter-item">
+                    <a href="?status=archived" class="filter-link {% if current_status == 'archived' %}active{% endif %}">
+                        <span class="filter-text">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/><path d="M3 8h18"/><path d="M10 12h4"/></svg>
+                            Архив
+                        </span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="sidebar-label">Категории</div>
+            <ul class="filter-list">
+                {% for category in categories %}
+                <li class="filter-item">
+                    <a href="?category={{ category.slug }}" 
+                       class="filter-link {% if current_category == category.slug %}active{% endif %}">
+                        <span>{{ category.name }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </aside>
+    
+    <!-- Main content -->
+    <main class="docs-main">
+        <!-- Search -->
+        <form method="get" action="{% url 'documents_list' %}">
+            <div class="search-row">
+                <div class="search-input-wrapper">
+                    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="text" name="q" value="{{ query }}" 
+                           class="search-input" 
+                           placeholder="Поиск по названию, номеру, содержимому...">
+                </div>
+                <button type="submit" class="btn-search">Найти</button>
+            </div>
+        </form>
+        
+        <!-- Documents list -->
+        {% if documents %}
+        <div class="docs-list">
+            {% for doc in documents %}
+            <a href="{% url 'document_detail' doc.id %}" class="doc-card">
+                <div class="doc-icon {{ doc.document_type }}">
+                    {% if doc.document_type == 'order' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg>
+                    {% elif doc.document_type == 'regulation' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    {% elif doc.document_type == 'instruction' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 4h13a3 3 0 0 1 3 3v13H6a3 3 0 0 1-3-3V4z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg>
+                    {% elif doc.document_type == 'policy' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 2v20"/><path d="M5 5h6v14H5z"/><path d="M13 7h6v12h-6z"/></svg>
+                    {% else %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    {% endif %}
+                </div>
+                <div class="doc-info">
+                    <div class="doc-title">{{ doc.title }}</div>
+                    <div class="doc-meta">
+                        {% if doc.document_number %}
+                        <span class="doc-meta-item">№ {{ doc.document_number }}</span>
+                        {% endif %}
+                        {% if doc.document_date %}
+                        <span class="doc-meta-item">{{ doc.document_date|date:"d.m.Y" }}</span>
+                        {% endif %}
+                        <span class="doc-meta-item">{{ doc.category.name|default:"Без категории" }}</span>
+                    </div>
+                </div>
+                <span class="doc-badge {{ doc.status }}">
+                    {% if doc.status == 'active' %}Актуален
+                    {% elif doc.status == 'draft' %}Черновик
+                    {% elif doc.status == 'archived' %}В архиве
+                    {% else %}{{ doc.get_status_display }}{% endif %}
+                </span>
+            </a>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if pages > 1 %}
+        <div class="pagination">
+            {% for p in page_range %}
+            <a href="?page={{ p }}{% if query %}&q={{ query }}{% endif %}" 
+               class="page-btn {% if p == page %}active{% endif %}">{{ p }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 12v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7"/><path d="M22 12h-5l-2 3h-6l-2-3H2"/><path d="M5 12V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8"/></svg>
+            </div>
+            <div class="empty-title">Документы не найдены</div>
+            <div class="empty-text">Попробуйте изменить параметры поиска или фильтры</div>
+        </div>
+        {% endif %}
+    </main>
+</div>
+</div>
+{% endblock %}

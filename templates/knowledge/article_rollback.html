@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Откат к v{{ version.version_number }} — {{ article.title }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .rollback-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+    @media (max-width: 480px) {
+        .rollback-actions { flex-direction: column; }
+        .rollback-actions .btn-primary,
+        .rollback-actions .btn-secondary { width: 100%; justify-content: center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wb-portal-form-page wb-editor-auth wb-editor-auth--profile">
+    <a href="{% url 'kb_article_versions' slug=article.slug %}" class="wb-portal-form-back wb-editor-auth__back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        История версий
+    </a>
+    <div class="wb-editor-auth__card">
+        <div class="auth-welcome">
+            <h2 id="kb-rollback-title">Подтверждение отката</h2>
+            <p>Статья «{{ article.title }}» → версия v{{ version.version_number }}.</p>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 8px;">
+            Вы уверены, что хотите откатить статью <strong>{{ article.title }}</strong>
+            к версии <strong>v{{ version.version_number }}</strong>?
+        </p>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 24px;">
+            Автор версии: {{ version.author.get_full_name|default:version.author.username }},
+            {{ version.created_at|date:"d.m.Y H:i" }}
+        </p>
+        <form method="post" class="rollback-actions">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary">Откатить</button>
+            <a href="{% url 'kb_article_versions' slug=article.slug %}" class="btn-secondary">Отмена</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

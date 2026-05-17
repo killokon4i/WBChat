@@ -1,0 +1,644 @@
+{% extends 'base.html' %}
+
+{% block title %}Профиль — WB Хаб{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* Страница профиля — отдельный макет (2 колонки → 1 на мобильных) */
+    .pr-page {
+        --pr-radius: 28px;
+        --pr-radius-sm: 18px;
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 8px 0 24px;
+        position: relative;
+    }
+
+    .pr-page::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0.55;
+        background:
+            radial-gradient(50% 42% at 12% 8%, rgba(228, 0, 175, 0.09) 0%, transparent 72%),
+            radial-gradient(40% 36% at 88% 94%, rgba(228, 0, 175, 0.06) 0%, transparent 70%);
+    }
+
+    [data-theme="dark"] .pr-page::before {
+        opacity: 0.35;
+        background:
+            radial-gradient(45% 40% at 10% 12%, rgba(228, 0, 175, 0.14) 0%, transparent 72%),
+            radial-gradient(42% 38% at 92% 90%, rgba(228, 0, 175, 0.08) 0%, transparent 70%);
+    }
+
+    .pr-shell {
+        display: grid;
+        grid-template-columns: minmax(272px, 320px) minmax(0, 1fr);
+        gap: 22px;
+        align-items: start;
+    }
+
+    .pr-card {
+        border-radius: var(--pr-radius);
+        border: 1px solid var(--border-light);
+        background: var(--bg-card);
+        box-shadow: 0 4px 28px rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="light"] .pr-card {
+        box-shadow:
+            0 2px 16px rgba(0, 0, 0, 0.04),
+            0 20px 48px rgba(181, 0, 139, 0.06);
+    }
+
+    /* —— Боковая колонка: личность и активность —— */
+    .pr-sidebar .pr-card {
+        padding: 28px 24px 26px;
+        position: sticky;
+        top: calc(76px + env(safe-area-inset-top, 0px));
+        overflow: hidden;
+    }
+
+    [data-theme="light"] .pr-sidebar .pr-card {
+        background:
+            linear-gradient(165deg, #ffffff 0%, var(--colorPink50) 45%, var(--colorGrey500) 160%);
+    }
+
+    [data-theme="dark"] .pr-sidebar .pr-card {
+        background: linear-gradient(165deg, var(--bg-card) 0%, rgba(228, 0, 175, 0.08) 55%, var(--bg-card) 100%);
+    }
+
+    .pr-sidebar .pr-card::after {
+        content: "";
+        position: absolute;
+        right: -32px;
+        top: -40px;
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(228, 0, 175, 0.22) 0%, transparent 68%);
+        pointer-events: none;
+    }
+
+    .pr-kicker {
+        font-family: var(--fontWBSans);
+        font-size: 0.625rem;
+        font-weight: 500;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 0 0 22px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .pr-identity-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 18px;
+        margin-bottom: 20px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .pr-identity-body {
+        flex: 1;
+        min-width: 0;
+        padding-top: 6px;
+    }
+
+    .pr-avatar-wrap {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        margin: 0;
+        flex-shrink: 0;
+        z-index: 1;
+    }
+
+    .pr-avatar-ring {
+        position: absolute;
+        inset: -4px;
+        border-radius: 26px;
+        background: linear-gradient(135deg, var(--colorPink600), var(--colorPink700));
+        opacity: 0.9;
+    }
+
+    [data-theme="light"] .pr-avatar-ring {
+        filter: saturate(1.05);
+    }
+
+    .pr-avatar,
+    .pr-avatar-placeholder {
+        position: relative;
+        z-index: 1;
+        width: 96px;
+        height: 96px;
+        border-radius: 22px;
+        object-fit: cover;
+        border: 3px solid var(--colorWhite500);
+        box-shadow:
+            0 12px 36px rgba(228, 0, 175, 0.2),
+            0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    [data-theme="dark"] .pr-avatar,
+    [data-theme="dark"] .pr-avatar-placeholder {
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .pr-avatar-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--fontWBSans);
+        font-size: 2.1rem;
+        font-weight: 500;
+        color: #fff;
+        background: linear-gradient(150deg, var(--colorPink600), var(--colorPink700));
+    }
+
+    .pr-name {
+        font-family: var(--fontWBSans);
+        font-size: clamp(1.35rem, 2.8vw, 1.65rem);
+        font-weight: 500;
+        letter-spacing: -0.03em;
+        line-height: 1.18;
+        color: var(--text-primary);
+        margin: 0 0 8px;
+        text-align: left;
+        position: relative;
+        z-index: 1;
+    }
+
+    .pr-handle {
+        font-family: var(--fontWBSans);
+        font-size: 0.9375rem;
+        font-weight: 500;
+        color: var(--colorPink700);
+        margin: 0 0 12px;
+        text-align: left;
+        position: relative;
+        z-index: 1;
+    }
+
+    .pr-role {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        margin: 0 auto 22px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 500;
+        font-family: var(--fontHauss);
+        color: var(--colorPink700);
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid rgba(228, 0, 175, 0.2);
+        backdrop-filter: blur(10px);
+        position: relative;
+        z-index: 1;
+    }
+
+    [data-theme="dark"] .pr-role {
+        background: rgba(228, 0, 175, 0.12);
+        border-color: rgba(228, 0, 175, 0.28);
+    }
+
+    .pr-role svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+    }
+
+    .pr-role-wrap {
+        display: flex;
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .pr-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 24px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .pr-metric {
+        border-radius: var(--pr-radius-sm);
+        padding: 14px 12px;
+        text-align: left;
+        border: 1px solid rgba(228, 0, 175, 0.14);
+        background: rgba(255, 255, 255, 0.55);
+    }
+
+    [data-theme="dark"] .pr-metric {
+        background: rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .pr-metric-val {
+        font-family: var(--fontWBSans);
+        font-size: 1.65rem;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        color: var(--colorPink600);
+        line-height: 1;
+        margin-bottom: 6px;
+    }
+
+    .pr-metric-lbl {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        font-family: var(--fontHauss);
+        letter-spacing: 0.02em;
+    }
+
+    .pr-aside-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .pr-aside-actions .btn {
+        width: 100%;
+        justify-content: center;
+        border-radius: 9999px;
+        padding: 13px 20px;
+        min-height: 48px;
+        font-weight: 500;
+    }
+
+    .pr-aside-actions .btn-primary {
+        background: var(--colorBlack500) !important;
+        color: #fff !important;
+        border: none;
+        box-shadow: 0 8px 26px rgba(0, 0, 0, 0.18);
+    }
+
+    [data-theme="dark"] .pr-aside-actions .btn-primary {
+        background: #fff !important;
+        color: #0a0a0a !important;
+        box-shadow: none;
+    }
+
+    .pr-aside-actions .btn-ghost {
+        background: transparent;
+        color: var(--text-primary);
+        border: 2px solid var(--colorBlack500);
+    }
+
+    [data-theme="dark"] .pr-aside-actions .btn-ghost {
+        border-color: rgba(255, 255, 255, 0.35);
+        color: #fff;
+    }
+
+    /* —— Основная колонка: данные —— */
+    .pr-main .pr-card {
+        padding: 28px 28px 30px;
+    }
+
+    .pr-main-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 22px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .pr-main-title {
+        font-family: var(--fontWBSans);
+        font-size: 1.05rem;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .pr-main-title::before {
+        content: "";
+        width: 4px;
+        height: 1.1em;
+        border-radius: 9999px;
+        background: linear-gradient(180deg, var(--colorPink600), var(--colorPink700));
+    }
+
+    .pr-main-sub {
+        margin: 0;
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        font-family: var(--fontHauss);
+        max-width: 280px;
+        line-height: 1.45;
+    }
+
+    .pr-bento {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .pr-tile {
+        border-radius: var(--pr-radius-sm);
+        padding: 18px 20px;
+        border: 1px solid var(--border-light);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        position: relative;
+    }
+
+    [data-theme="light"] .pr-tile {
+        background: var(--colorWhite500);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    [data-theme="dark"] .pr-tile {
+        background: var(--bg-hover);
+        border-color: var(--border-color);
+    }
+
+    .pr-tile:hover {
+        border-color: rgba(228, 0, 175, 0.22);
+        box-shadow: 0 12px 36px rgba(228, 0, 175, 0.09);
+        transform: translateY(-2px);
+    }
+
+    .pr-tile--wide {
+        grid-column: 1 / -1;
+    }
+
+    .pr-tile::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 14px;
+        bottom: 14px;
+        width: 3px;
+        border-radius: 9999px;
+        background: var(--colorPink600);
+        opacity: 0.85;
+    }
+
+    .pr-tile:nth-child(2)::before {
+        background: var(--colorPink700);
+    }
+
+    .pr-tile:nth-child(3)::before {
+        background: linear-gradient(180deg, var(--colorPink600), var(--colorPink700));
+    }
+
+    .pr-tile-inner {
+        padding-left: 14px;
+    }
+
+    .pr-tile-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        background: rgba(228, 0, 175, 0.1);
+        color: var(--colorPink700);
+    }
+
+    .pr-tile:nth-child(2) .pr-tile-icon {
+        background: rgba(228, 0, 175, 0.12);
+        color: var(--colorPink700);
+    }
+
+    .pr-tile:nth-child(3) .pr-tile-icon {
+        background: rgba(228, 0, 175, 0.08);
+        color: var(--colorPink700);
+    }
+
+    .pr-tile-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .pr-tile-label {
+        font-family: var(--fontWBSans);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+    }
+
+    .pr-tile-value {
+        font-family: var(--fontHauss);
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        line-height: 1.5;
+        word-break: break-word;
+    }
+
+    .pr-main-foot {
+        margin-top: 26px;
+        padding-top: 22px;
+        border-top: 1px solid var(--border-light);
+        display: none;
+    }
+
+    @media (max-width: 900px) {
+        .pr-shell {
+            grid-template-columns: 1fr;
+        }
+
+        .pr-sidebar .pr-card {
+            position: relative;
+            top: auto;
+        }
+
+        .pr-aside-actions {
+            display: none;
+        }
+
+        .pr-metrics {
+            max-width: none;
+            margin-left: 0;
+            margin-right: 0;
+            width: 100%;
+        }
+
+        .pr-main-foot {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pr-main-foot .btn {
+            width: 100%;
+            justify-content: center;
+            border-radius: 9999px;
+            min-height: 48px;
+            font-weight: 500;
+        }
+
+        .pr-main-foot .btn-primary {
+            background: var(--colorBlack500) !important;
+            color: #fff !important;
+        }
+
+        [data-theme="dark"] .pr-main-foot .btn-primary {
+            background: #fff !important;
+            color: #0a0a0a !important;
+        }
+    }
+
+    @media (max-width: 620px) {
+        .pr-bento {
+            grid-template-columns: 1fr;
+        }
+
+        .pr-tile--wide {
+            grid-column: auto;
+        }
+
+        .pr-main .pr-card {
+            padding: 22px 18px 24px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pr-page wb-portal-marketing">
+    <div class="pr-shell">
+        <aside class="pr-sidebar" aria-label="Профиль пользователя">
+            <div class="pr-card">
+                <p class="pr-kicker">Личный кабинет</p>
+                <div class="pr-identity-row">
+                    <div class="pr-avatar-wrap">
+                        <div class="pr-avatar-ring" aria-hidden="true"></div>
+                    {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="pr-avatar">
+                    {% else %}
+                        <div class="pr-avatar-placeholder" aria-hidden="true">
+                            {{ user.username|slice:":1"|upper }}
+                        </div>
+                    {% endif %}
+                    </div>
+                    <div class="pr-identity-body">
+                <h1 class="pr-name">
+                    {% if user.last_name or user.first_name %}
+                        {{ user.last_name }} {{ user.first_name }}{% if user.middle_name %} {{ user.middle_name }}{% endif %}
+                    {% else %}
+                        {{ user.username }}
+                    {% endif %}
+                </h1>
+                <p class="pr-handle">@{{ user.username }}</p>
+                {% if user.isModerator %}
+                <div class="pr-role-wrap">
+                    <span class="pr-role">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                        Модератор
+                    </span>
+                </div>
+                {% endif %}
+                    </div>
+                </div>
+                <div class="pr-metrics">
+                    <div class="pr-metric">
+                        <div class="pr-metric-val">{{ messages_count|default:0 }}</div>
+                        <div class="pr-metric-lbl">Сообщений</div>
+                    </div>
+                    <div class="pr-metric">
+                        <div class="pr-metric-val">{{ chats_count|default:0 }}</div>
+                        <div class="pr-metric-lbl">Чатов</div>
+                    </div>
+                </div>
+                <div class="pr-aside-actions">
+                    <a href="{% url 'profile_edit' %}" class="btn btn-primary">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Редактировать
+                    </a>
+                    <a href="{% url 'logout' %}" class="btn btn-ghost">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Выйти
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <main class="pr-main">
+            <div class="pr-card">
+                <div class="pr-main-head">
+                    <h2 class="pr-main-title">Данные</h2>
+                    <p class="pr-main-sub">Контакты и реквизиты из вашей учётной записи в WB&nbsp;Хаб.</p>
+                </div>
+                <div class="pr-bento">
+                    <div class="pr-tile pr-tile--wide">
+                        <div class="pr-tile-inner">
+                            <div class="pr-tile-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                    <polyline points="22,6 12,13 2,6"/>
+                                </svg>
+                            </div>
+                            <div class="pr-tile-label">Email</div>
+                            <div class="pr-tile-value">{{ user.email|default:"Не указан" }}</div>
+                        </div>
+                    </div>
+                    <div class="pr-tile">
+                        <div class="pr-tile-inner">
+                            <div class="pr-tile-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                    <polyline points="9 22 9 12 15 12 15 22"/>
+                                </svg>
+                            </div>
+                            <div class="pr-tile-label">Отдел</div>
+                            <div class="pr-tile-value">{{ user.department|default:"Не указан" }}</div>
+                        </div>
+                    </div>
+                    <div class="pr-tile">
+                        <div class="pr-tile-inner">
+                            <div class="pr-tile-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                    <line x1="16" y1="2" x2="16" y2="6"/>
+                                    <line x1="8" y1="2" x2="8" y2="6"/>
+                                    <line x1="3" y1="10" x2="21" y2="10"/>
+                                </svg>
+                            </div>
+                            <div class="pr-tile-label">Регистрация</div>
+                            <div class="pr-tile-value">{{ user.date_joined|date:"d E Y" }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pr-main-foot">
+                    <a href="{% url 'profile_edit' %}" class="btn btn-primary">Редактировать профиль</a>
+                    <a href="{% url 'logout' %}" class="btn btn-secondary">Выйти</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
