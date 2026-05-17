@@ -4,7 +4,7 @@
 
 {% block extra_styles %}
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/chat-split.css' %}?v=3">
+<link rel="stylesheet" href="{% static 'css/chat-split.css' %}?v=4">
 <style>
     .chat-list {
         display: flex;
@@ -209,6 +209,12 @@
         background: var(--colorPink600);
         color: #fff;
         box-shadow: 0 4px 18px rgba(228, 0, 175, 0.28);
+    }
+
+    [data-theme="dark"] .new-chat-btn--pink {
+        background: var(--colorPink600);
+        color: #fff;
+        box-shadow: 0 4px 18px rgba(228, 0, 175, 0.35);
     }
 
     .new-chat-btn:hover {
@@ -945,5 +951,5 @@ function createGroup(e) {
 
 {% block extra_scripts %}
 {% load static %}
-<script src="{% static 'js/chat-shell.js' %}?v=5"></script>
+<script src="{% static 'js/chat-shell.js' %}?v=6"></script>
 {% endblock %}

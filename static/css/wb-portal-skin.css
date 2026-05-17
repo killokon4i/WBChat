@@ -1170,6 +1170,25 @@
   box-shadow: 0 4px 18px rgba(228, 0, 175, 0.28);
 }
 
+[data-theme="dark"] .wb-portal-marketing.chat-page .new-chat-btn--pink {
+  background: var(--colorPink600);
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(228, 0, 175, 0.35);
+}
+
+/* Новости: правая кнопка в шапке — всегда малиновая */
+.wb-portal-marketing.wb-list-page .wb-portal-hero-actions .wb-portal-pill-btn--primary {
+  background: var(--colorPink600);
+  color: #fff !important;
+  border: none;
+  box-shadow: 0 4px 20px rgba(228, 0, 175, 0.28);
+}
+
+[data-theme="dark"] .wb-portal-marketing.wb-list-page .wb-portal-hero-actions .wb-portal-pill-btn--primary {
+  background: var(--colorPink600);
+  color: #fff !important;
+}
+
 .wb-portal-marketing.chat-page .new-chat-btn:hover {
   filter: brightness(1.06);
   transform: translateY(-1px);

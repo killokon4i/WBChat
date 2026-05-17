@@ -1320,14 +1320,20 @@ function linkify(text) {
         let isExternal = false;
         try { isExternal = new URL(href, location.origin).host !== currentHost; } catch(e) { isExternal = true; }
         if (isExternal) return `<a href="#" class="ext-link" data-url="${escapeHtml(href)}">${matchedUrl}</a>`;
-        return `<a href="${escapeHtml(href)}">${matchedUrl}</a>`;
+        return `<a href="${escapeHtml(href)}" target="_top" rel="noopener">${matchedUrl}</a>`;
     });
 }
 
 let pendingExtUrl = '';
 function openExtLinkWarning(url) { pendingExtUrl = url; document.getElementById('ext-link-url').textContent = url; document.getElementById('ext-link-overlay').classList.add('active'); }
 function closeExtLinkWarning() { pendingExtUrl = ''; document.getElementById('ext-link-overlay').classList.remove('active'); }
-document.getElementById('ext-link-go').addEventListener('click', function() { if (pendingExtUrl) window.open(pendingExtUrl, '_blank', 'noopener,noreferrer'); closeExtLinkWarning(); });
+document.getElementById('ext-link-go').addEventListener('click', function() {
+    if (pendingExtUrl) {
+        const topWin = window.top && window.top !== window ? window.top : window;
+        topWin.location.href = pendingExtUrl;
+    }
+    closeExtLinkWarning();
+});
 document.getElementById('ext-link-overlay').addEventListener('click', function(e) { if (e.target === this) closeExtLinkWarning(); });
 document.addEventListener('click', function(e) { const link = e.target.closest('.ext-link'); if (link) { e.preventDefault(); openExtLinkWarning(link.dataset.url); } });
 
