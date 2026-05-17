@@ -1,0 +1,16 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+
+{% block object-tools-items %}
+    <li>
+        <a href="{% url 'admin:surveys_survey_seed_wb_pack' %}" class="addlink">
+            Загрузить 5 опросов ВБ Банк (черновики)
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'admin:surveys_survey_seed_wb_pack_publish' %}" class="viewsitelink">
+            Загрузить и опубликовать пакет
+        </a>
+    </li>
+    {{ block.super }}
+{% endblock %}
