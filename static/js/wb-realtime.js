@@ -1,0 +1,225 @@
+﻿/**
+ * Global WebSocket: notifications, chat badges, chat list sidebar.
+ */
+(function () {
+    if (!document.body || !document.body.classList.contains('portal-body')) {
+        return;
+    }
+
+    var socket = null;
+    var reconnectTimer = null;
+    var reconnectAttempt = 0;
+
+    function wsUrl() {
+        var scheme = location.protocol === 'https:' ? 'wss://' : 'ws://';
+        return scheme + location.host + '/ws/notifications/';
+    }
+
+    function setBadge(name, count) {
+        var n = parseInt(count, 10) || 0;
+        document.querySelectorAll('[data-wb-badge="' + name + '"]').forEach(function (el) {
+            if (n > 0) {
+                el.textContent = n > 99 ? '99+' : String(n);
+                el.style.display = '';
+                el.hidden = false;
+            } else {
+                el.textContent = '';
+                el.style.display = 'none';
+                el.hidden = true;
+            }
+        });
+    }
+
+    function applyCounts(counts) {
+        if (!counts) return;
+        setBadge('notifications', counts.notifications_unread);
+        setBadge('chats', counts.messages_unread);
+        if (counts.conversations) {
+            counts.conversations.forEach(function (c) {
+                updateChatListItem(c.id, { unread_count: c.unread_count });
+            });
+        }
+    }
+
+    function formatChatTime(iso) {
+        if (!iso) return '';
+        var d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '';
+        var now = new Date();
+        var pad = function (x) { return String(x).padStart(2, '0'); };
+        if (d.toDateString() === now.toDateString()) {
+            return pad(d.getHours()) + ':' + pad(d.getMinutes());
+        }
+        return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function updateChatListItem(conversationId, data) {
+        var item = document.querySelector('.chat-item[data-conversation-id="' + conversationId + '"]');
+        if (!item) return;
+
+        var previewEl = item.querySelector('.chat-last-message');
+        if (data.preview && previewEl) {
+            var badge = previewEl.querySelector('.chat-type-badge');
+            var badgeHtml = badge ? badge.outerHTML : '';
+            previewEl.innerHTML = badgeHtml + ' ' + escapeHtml(data.preview);
+        }
+
+        if (data.updated_at) {
+            var timeEl = item.querySelector('.chat-time');
+            if (timeEl) timeEl.textContent = formatChatTime(data.updated_at);
+        }
+
+        var unread = parseInt(data.unread_count, 10) || 0;
+        var previewWrap = item.querySelector('.chat-preview');
+        if (previewWrap) {
+            var unreadEl = previewWrap.querySelector('.chat-unread');
+            if (unread > 0) {
+                if (!unreadEl) {
+                    unreadEl = document.createElement('span');
+                    unreadEl.className = 'chat-unread';
+                    previewWrap.appendChild(unreadEl);
+                }
+                unreadEl.textContent = unread > 99 ? '99+' : String(unread);
+            } else if (unreadEl) {
+                unreadEl.remove();
+            }
+        }
+
+        var list = item.closest('.chat-list');
+        if (list && item.parentNode === list) {
+            list.prepend(item);
+        }
+    }
+
+    function escapeHtml(text) {
+        var d = document.createElement('div');
+        d.textContent = text == null ? '' : String(text);
+        return d.innerHTML;
+    }
+
+    function prependNotificationCard(notif) {
+        var container = document.querySelector('.notifications-list');
+        if (!container || !notif) return;
+
+        var empty = document.querySelector('.notifications-container .empty-state');
+        if (empty) empty.remove();
+
+        if (document.querySelector('.notification-card[data-id="' + notif.id + '"]')) {
+            return;
+        }
+
+        var card = document.createElement('div');
+        card.className = 'notification-card unread';
+        card.dataset.id = notif.id;
+        card.innerHTML =
+            '<div class="notification-icon info">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' +
+            '</div>' +
+            '<div class="notification-content">' +
+            '<div class="notification-title">' + escapeHtml(notif.title || '') + '</div>' +
+            '<div class="notification-text">' + (notif.content || '') + '</div>' +
+            '<div class="notification-meta"><span class="notification-time">С‚РѕР»СЊРєРѕ С‡С‚Рѕ</span></div>' +
+            (notif.link ? '<a href="' + escapeHtml(notif.link) + '" class="notification-link">РџРµСЂРµР№С‚Рё в†’</a>' : '') +
+            '</div></div>' +
+            '<div class="notification-actions"><button type="button" class="btn-mark-read" data-mark-read="' + notif.id + '">РџСЂРѕС‡РёС‚Р°РЅРѕ</button></div>';
+        container.prepend(card);
+    }
+
+    function handlePayload(data) {
+        if (!data || !data.type) return;
+
+        if (data.counts) {
+            applyCounts(data.counts);
+        }
+
+        switch (data.type) {
+            case 'counts_update':
+                break;
+            case 'notification':
+                if (data.notification) prependNotificationCard(data.notification);
+                break;
+            case 'chat_inbox':
+                updateChatListItem(data.conversation_id, {
+                    unread_count: data.unread_count,
+                    preview: data.author_name ? (data.author_name + ': ' + (data.preview || '')) : data.preview,
+                    updated_at: data.updated_at,
+                });
+                break;
+            case 'chat_read':
+                updateChatListItem(data.conversation_id, { unread_count: 0 });
+                break;
+        }
+    }
+
+    function connect() {
+        if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+            return;
+        }
+        try {
+            socket = new WebSocket(wsUrl());
+        } catch (e) {
+            scheduleReconnect();
+            return;
+        }
+
+        socket.onopen = function () {
+            reconnectAttempt = 0;
+        };
+
+        socket.onmessage = function (e) {
+            try {
+                handlePayload(JSON.parse(e.data));
+            } catch (err) { /* ignore */ }
+        };
+
+        socket.onclose = function () {
+            scheduleReconnect();
+        };
+
+        socket.onerror = function () {
+            try { socket.close(); } catch (err) { /* ignore */ }
+        };
+    }
+
+    function scheduleReconnect() {
+        if (reconnectTimer) return;
+        reconnectAttempt += 1;
+        var delay = Math.min(30000, 2000 * reconnectAttempt);
+        reconnectTimer = setTimeout(function () {
+            reconnectTimer = null;
+            connect();
+        }, delay);
+    }
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-mark-read]');
+        if (!btn) return;
+        var id = btn.getAttribute('data-mark-read');
+        if (!id) return;
+        e.preventDefault();
+        fetch('/notifications/' + id + '/read/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCsrfToken() },
+        }).then(function (r) {
+            if (!r.ok) return;
+            var card = document.querySelector('.notification-card[data-id="' + id + '"]');
+            if (card) {
+                card.classList.remove('unread');
+                btn.remove();
+            }
+        });
+    });
+
+    function getCsrfToken() {
+        var m = document.cookie.match(/csrftoken=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+
+    connect();
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) connect();
+    });
+
+    window.WBRealtime = { connect: connect, applyCounts: applyCounts };
+})();
+

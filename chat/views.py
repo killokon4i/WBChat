@@ -455,6 +455,9 @@ def upload_attachment(request, conversation_id):
         {'type': 'chat_message', 'message': message_payload},
     )
 
+    from chat.realtime import notify_chat_message_by_id
+    notify_chat_message_by_id(message.id, request.user.id)
+
     return JsonResponse({
         'success': True,
         'message': message_payload,
@@ -563,6 +566,10 @@ def forward_message(request, conversation_id, message_id):
             uploaded_by=request.user,
         )
     Conversation.objects.filter(id=target_id).update(updated_at=timezone.now())
+
+    from chat.realtime import notify_chat_message_by_id
+    notify_chat_message_by_id(fwd.id, request.user.id)
+
     return JsonResponse({'success': True, 'message_id': fwd.id})
 
 
@@ -601,6 +608,9 @@ def mark_read(request, conversation_id):
                 'message_ids': message_ids,
             }
         )
+
+    from chat.realtime import notify_inbox_read
+    notify_inbox_read(request.user.id, conversation_id)
 
     return JsonResponse({'success': True, 'updated': len(message_ids)})
 

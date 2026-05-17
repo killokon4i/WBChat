@@ -1046,6 +1046,7 @@ function ensureDateSeparator(container, isoString) {
 }
 
 function addMessage(msg) {
+    if (document.getElementById('message-' + msg.id)) return;
     const container = document.getElementById('messages');
     const isOwn = msg.author_id === userId;
 

@@ -30,6 +30,8 @@ def mark_notification_read(request, notification_id):
     try:
         notification = Notification.objects.get(id=notification_id, user=request.user)
         notification.mark_as_read()
+        from chat.realtime import push_counts_update
+        push_counts_update(request.user.id)
         return JsonResponse({'success': True})
     except Notification.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Not found'}, status=404)
@@ -42,7 +44,10 @@ def mark_all_read(request):
         user=request.user,
         is_read=False
     ).update(is_read=True, read_at=timezone.now())
-    
+
+    from chat.realtime import push_counts_update
+    push_counts_update(request.user.id)
+
     return JsonResponse({'success': True, 'marked_count': count})
 
 

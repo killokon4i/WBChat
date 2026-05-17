@@ -133,6 +133,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         # Create message statuses for all participants
         await self.create_message_statuses(message)
+        await self.broadcast_inbox_update(message.id)
 
     async def handle_typing(self, data):
         """Handle typing indicator"""
@@ -298,6 +299,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }))
 
     # Database operations
+    @database_sync_to_async
+    def broadcast_inbox_update(self, message_id):
+        from chat.realtime import notify_chat_message_by_id
+        notify_chat_message_by_id(message_id, self.user.id)
+
     @database_sync_to_async
     def check_conversation_membership(self):
         """Check if user is a member of the conversation"""
@@ -542,6 +548,18 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
+        counts = await self.get_initial_counts()
+        if counts:
+            await self.send(text_data=json.dumps({
+                'type': 'counts_update',
+                'counts': counts,
+            }))
+
+    @database_sync_to_async
+    def get_initial_counts(self):
+        from chat.realtime import get_unread_summary
+        return get_unread_summary(self.user)
+
     async def disconnect(self, close_code):
         """Handle WebSocket disconnection"""
         # Leave notification group
@@ -561,3 +579,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'type': 'notification',
             'notification': event['notification'],
         }))
+
+    async def user_event(self, event):
+        """Generic real-time payload (badges, inbox, notifications)."""
+        await self.send(text_data=json.dumps(event['payload']))

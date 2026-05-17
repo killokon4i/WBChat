@@ -967,7 +967,7 @@
                             <span class="dh-quick-desc">Переписка{% if unread_messages_count %} · {{ unread_messages_count }} непрочитанных{% endif %}</span>
                         </span>
                         {% if unread_messages_count %}
-                        <span class="dh-quick-badge" aria-label="Непрочитанных сообщений: {{ unread_messages_count }}">{{ unread_messages_count }}</span>
+                        <span class="dh-quick-badge" data-wb-badge="chats" aria-label="Непрочитанных сообщений: {{ unread_messages_count }}"{% if not unread_messages_count %} hidden style="display:none"{% endif %}>{{ unread_messages_count }}</span>
                         {% endif %}
                     </a>
                     <a href="{% url 'directory' %}" class="dh-quick">
