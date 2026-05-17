@@ -1,0 +1,13 @@
+---
+description: После правок в WBChat — коммит и push в GitHub
+globs: "**/*"
+alwaysApply: true
+---
+
+# Push после каждого изменения
+
+- Рабочая папка проекта: `c:\Users\PC\Desktop\jj\WBChat-main` (не `diplom`).
+- После **любого** завершённого изменения кода/шаблонов/стилей: `git add -A`, коммит с кратким сообщением на русском, `git push origin DesignUpdate`.
+- Remote: `https://github.com/killokon4i/WBChat.git`, ветка **DesignUpdate**.
+- Не спрашивать разрешение на push — делать по умолчанию, если пользователь не просил иное.
+- Не коммитить `.env` и секреты; `__pycache__` уже в `.gitignore`.
