@@ -515,31 +515,106 @@
         padding: 8px 14px; cursor: pointer; font-size: 13px; color: var(--text-primary);
     }
 
-    .msg-voice {
-        display: flex; align-items: center; gap: 10px;
-        min-width: 200px; max-width: min(280px, 100%);
-        padding: 8px 12px; border-radius: 20px;
-        background: rgba(0,0,0,.1);
+    /* Голосовое — компактно, как в Telegram */
+    .message-voice-only {
+        padding: 4px 8px 6px !important;
+        max-width: min(280px, 88%) !important;
     }
-    .message-own .msg-voice { background: rgba(255,255,255,.15); }
+    .message-voice-only .msg-attachment {
+        margin-top: 0;
+    }
+    .message-voice-only .msg-attachment-dl {
+        top: 4px;
+        right: 4px;
+    }
+    .msg-voice {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 160px;
+        max-width: min(260px, 100%);
+        padding: 0;
+        background: transparent;
+    }
     .msg-voice-play {
-        width: 40px; height: 40px; border-radius: 50%; border: none;
-        background: var(--magenta); color: #fff; cursor: pointer;
-        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: none;
+        background: var(--magenta);
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(228, 0, 175, .35);
+    }
+    .message-other .msg-voice-play {
+        background: var(--colorPink600);
+    }
+    .message-own .msg-voice-play {
+        background: rgba(255, 255, 255, .95);
+        color: var(--magenta);
+        box-shadow: none;
     }
     .msg-voice-play svg { width: 18px; height: 18px; }
     .msg-voice-meta { flex: 1; min-width: 0; }
-    .msg-voice-progress {
-        height: 4px; border-radius: 2px; background: rgba(0,0,0,.15);
-        margin-top: 6px; overflow: hidden; cursor: pointer;
+    .msg-voice-wave {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        height: 22px;
+        margin-bottom: 2px;
     }
-    .message-own .msg-voice-progress { background: rgba(255,255,255,.2); }
+    .msg-voice-wave span {
+        width: 3px;
+        border-radius: 2px;
+        background: currentColor;
+        opacity: .45;
+        animation: voiceWave 1.2s ease-in-out infinite;
+    }
+    .message-own .msg-voice-wave span { background: #fff; opacity: .55; }
+    .msg-voice-wave span:nth-child(1) { height: 8px; animation-delay: 0s; }
+    .msg-voice-wave span:nth-child(2) { height: 14px; animation-delay: .1s; }
+    .msg-voice-wave span:nth-child(3) { height: 10px; animation-delay: .2s; }
+    .msg-voice-wave span:nth-child(4) { height: 16px; animation-delay: .3s; }
+    .msg-voice-wave span:nth-child(5) { height: 9px; animation-delay: .4s; }
+    .msg-voice-wave span:nth-child(6) { height: 12px; animation-delay: .5s; }
+    @keyframes voiceWave {
+        0%, 100% { transform: scaleY(.6); opacity: .35; }
+        50% { transform: scaleY(1); opacity: .9; }
+    }
+    .msg-voice-progress {
+        height: 3px;
+        border-radius: 2px;
+        background: rgba(0,0,0,.12);
+        overflow: hidden;
+        cursor: pointer;
+    }
+    .message-own .msg-voice-progress { background: rgba(255,255,255,.25); }
     .msg-voice-progress-fill {
-        height: 100%; width: 0; background: var(--magenta);
-        border-radius: inherit; transition: width .1s linear;
+        height: 100%;
+        width: 0;
+        background: var(--magenta);
+        border-radius: inherit;
+        transition: width .1s linear;
     }
     .message-own .msg-voice-progress-fill { background: #fff; }
-    .msg-voice-time { font-size: 12px; opacity: .75; margin-top: 4px; }
+    .msg-voice-time {
+        font-size: 11px;
+        opacity: .7;
+        margin-top: 2px;
+        font-variant-numeric: tabular-nums;
+    }
+    .chat-send-btn.has-voice-pending {
+        box-shadow: 0 0 0 3px rgba(255, 47, 179, .35);
+        animation: voicePulse 1.2s ease infinite;
+    }
+    .chat-media-btn.has-pending {
+        border-color: #ff73cb;
+        color: var(--magenta);
+    }
 
     .msg-vnote {
         width: 220px; height: 220px; border-radius: 50%;
@@ -557,12 +632,26 @@
     }
 
     .vnote-overlay {
-        position: fixed; inset: 0; z-index: 6000;
-        background: rgba(0,0,0,.88); display: none;
-        flex-direction: column; align-items: center; justify-content: center;
-        padding: 24px;
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        background: rgba(0,0,0,.92);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+        touch-action: manipulation;
     }
     .vnote-overlay.active { display: flex; }
+    .vnote-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-width: 100%;
+        position: relative;
+        z-index: 1;
+    }
     .vnote-preview-wrap {
         width: min(320px, 80vw); height: min(320px, 80vw);
         border-radius: 50%; overflow: visible; position: relative;
@@ -613,9 +702,36 @@
         background: #ff4081;
     }
     .vnote-record-btn.is-recording::after { border-radius: 8px; inset: 22px; }
+    .vnote-close-btn,
+    .vnote-send-btn {
+        border: none;
+        padding: 12px 22px;
+        border-radius: 22px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
     .vnote-close-btn {
-        border: none; background: rgba(255,255,255,.15); color: #fff;
-        padding: 10px 18px; border-radius: 20px; cursor: pointer; font-size: 14px;
+        background: rgba(255,255,255,.15);
+        color: #fff;
+    }
+    .vnote-send-btn {
+        background: var(--magenta);
+        color: #fff;
+    }
+    .vnote-send-btn:disabled {
+        opacity: .45;
+        cursor: not-allowed;
+    }
+    .vnote-hint {
+        color: rgba(255,255,255,.7);
+        font-size: 13px;
+        margin-top: 12px;
+        text-align: center;
+        max-width: 320px;
+        line-height: 1.4;
     }
 
     .chat-send-btn {
@@ -1120,7 +1236,7 @@
         <div class="voice-record-panel" id="voice-record-panel">
             <span class="voice-record-dot" aria-hidden="true"></span>
             <span class="voice-record-timer" id="voice-record-timer">0:00</span>
-            <span class="voice-record-hint" style="font-size:13px;color:var(--text-secondary);flex:1">Запись… нажмите микрофон ещё раз, чтобы отправить</span>
+            <span class="voice-record-hint" style="font-size:13px;color:var(--text-secondary);flex:1">Нажмите микрофон для записи</span>
             <button type="button" class="voice-record-cancel" id="voice-record-cancel">Отмена</button>
         </div>
 
@@ -1186,6 +1302,7 @@
 
 <!-- Video note recorder -->
 <div class="vnote-overlay" id="vnote-overlay">
+    <div class="vnote-panel">
     <div class="vnote-timer" id="vnote-timer">0:00</div>
     <div class="vnote-preview-wrap">
         <svg class="vnote-ring" viewBox="0 0 100 100" aria-hidden="true">
@@ -1193,13 +1310,15 @@
             <circle class="vnote-ring-progress" id="vnote-ring-progress" cx="50" cy="50" r="46"></circle>
         </svg>
         <canvas id="vnote-preview-canvas" width="480" height="480"></canvas>
-        <video id="vnote-preview-video" playsinline muted></video>
+        <video id="vnote-preview-video" playsinline muted webkit-playsinline></video>
     </div>
     <div class="vnote-actions">
         <button type="button" class="vnote-close-btn" id="vnote-close-btn">Закрыть</button>
-        <button type="button" class="vnote-record-btn" id="vnote-record-btn" title="Запись"></button>
+        <button type="button" class="vnote-record-btn" id="vnote-record-btn" title="Запись / стоп"></button>
+        <button type="button" class="vnote-send-btn" id="vnote-send-btn">Отправить</button>
     </div>
-    <p style="color:rgba(255,255,255,.7);font-size:13px;margin-top:12px;text-align:center">Нажмите кнопку для записи (до 60 с)</p>
+    <p class="vnote-hint">Красное кольцо — прогресс записи (до 60 с). Сначала запись, затем «Отправить».</p>
+    </div>
 </div>
 
 <!-- Toast -->
@@ -1223,7 +1342,7 @@
 {% block extra_scripts %}
 <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
 <script src="{% static 'js/chat-time.js' %}?v=1"></script>
-<script src="{% static 'js/chat-media-recorder.js' %}?v=2"></script>
+<script src="{% static 'js/chat-media-recorder.js' %}?v=3"></script>
 <script>
 const conversationId = {{ conversation.id }};
 const userId = {{ user.id }};
@@ -1529,6 +1648,13 @@ function addMessage(msg, skipParentNotify, addOpts) {
     if (attsForClass.length) div.classList.add('message-has-media');
     if (attsForClass.length && !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id) {
         div.classList.add('message-media-only');
+    }
+    const isVoiceOnly = attsForClass.length === 1 &&
+        (attsForClass[0].variant === 'voice') &&
+        !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id;
+    if (isVoiceOnly) {
+        div.classList.add('message-voice-only');
+        div.classList.remove('message-media-only');
     }
 
     const time = window.WBChatTime
@@ -2386,7 +2512,20 @@ function sendMessage() {
     }
 
     if (isUploading) return;
-    if (window.WBChatMedia && WBChatMedia.isRecording && WBChatMedia.isRecording()) return;
+    if (window.WBChatMedia && WBChatMedia.isRecording && WBChatMedia.isRecording()) {
+        showToast('Сначала завершите запись кружка');
+        return;
+    }
+    if (window.WBChatMedia && WBChatMedia.hasPendingVoice && WBChatMedia.hasPendingVoice()) {
+        WBChatMedia.commitVoice().then(function (data) {
+            if (data && data.message) notifyParentInbox(data.message);
+        }).catch(function () {});
+        input.value = '';
+        input.style.height = 'auto';
+        stopTyping();
+        cancelReply();
+        return;
+    }
     if (!message && !pendingFiles.length) return;
 
     if (pendingFiles.length > 0) {

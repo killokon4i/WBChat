@@ -1,5 +1,7 @@
 /**
- * Голосовые сообщения и видео-кружки (Telegram-style) для чата WB Hub.
+ * Голосовые и видео-кружки для чата WB Hub.
+ * Голос: запись по микрофону → отправка кнопкой «Отправить».
+ * Кружок: запись в оверлее → «Отправить» / «Закрыть».
  */
 (function (global) {
     'use strict';
@@ -7,29 +9,41 @@
     var VOICE_MAX_SEC = 300;
     var VNOTE_MAX_SEC = 60;
     var VNOTE_SIZE = 480;
+    var VNOTE_RING_LEN = 289.03;
+
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     var state = {
-        conversationId: null,
-        csrfToken: '',
         uploadFn: null,
         showToast: function () {},
         onLockInput: function () {},
-        replyToId: null,
         getReplyToId: function () { return null; },
+        onVoicePendingChange: function () {},
     };
 
+    /* Voice */
     var voiceRec = null;
     var voiceChunks = [];
-    var voiceStartedAt = 0;
     var voiceStream = null;
     var voiceActive = false;
+    var voiceStartedAt = 0;
+    var voiceTimer = null;
+    var voicePending = null;
+    var voiceUploadWaiter = null;
 
+    /* Video note */
     var vnoteStream = null;
     var vnoteRecorder = null;
     var vnoteChunks = [];
     var vnoteRaf = null;
-    var vnoteStartedAt = 0;
     var vnoteActive = false;
+    var vnoteStartedAt = 0;
+    var vnoteTimer = null;
+    var vnotePending = null;
+    var vnoteDiscardOnStop = false;
+    var vnoteVideo = null;
+    var vnoteCanvas = null;
 
     function pickMime(candidates) {
         if (!global.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
@@ -39,9 +53,24 @@
         return '';
     }
 
-    function extForMime(mime) {
-        if (!mime) return '.webm';
+    function voiceMimeCandidates() {
+        if (isIOS) {
+            return ['audio/mp4', 'audio/webm', 'audio/aac'];
+        }
+        return ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+    }
+
+    function vnoteMimeCandidates() {
+        if (isIOS) {
+            return ['video/mp4', 'video/webm'];
+        }
+        return ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
+    }
+
+    function extForMime(mime, variant) {
+        if (!mime) return variant === 'voice' ? (isIOS ? '.m4a' : '.webm') : '.webm';
         if (mime.indexOf('mp4') !== -1) return '.mp4';
+        if (mime.indexOf('aac') !== -1) return '.m4a';
         if (mime.indexOf('ogg') !== -1) return '.ogg';
         return '.webm';
     }
@@ -55,19 +84,227 @@
 
     function stopStream(stream) {
         if (!stream) return;
-        stream.getTracks().forEach(function (t) { t.stop(); });
+        stream.getTracks().forEach(function (t) {
+            try { t.stop(); } catch (e) { /* ignore */ }
+        });
     }
 
-    function setVoiceUi(active, sec) {
+    function notifyVoicePending() {
+        if (state.onVoicePendingChange) {
+            state.onVoicePendingChange(!!voicePending, voiceActive);
+        }
+        updateSendButtonState();
+    }
+
+    function updateSendButtonState() {
+        var sendBtn = document.getElementById('send-btn');
+        if (!sendBtn) return;
+        var ready = voiceActive || voicePending;
+        sendBtn.classList.toggle('has-voice-pending', !!ready);
+        if (ready) {
+            sendBtn.title = voiceActive ? 'Остановить запись и отправить' : 'Отправить голосовое';
+        } else {
+            sendBtn.title = 'Отправить';
+        }
+    }
+
+    function setVoiceUi(mode, sec) {
         var btn = document.getElementById('chat-voice-btn');
         var panel = document.getElementById('voice-record-panel');
         var timer = document.getElementById('voice-record-timer');
-        if (btn) btn.classList.toggle('is-recording', !!active);
-        if (panel) panel.classList.toggle('active', !!active);
+        var hint = document.querySelector('.voice-record-hint');
+        if (btn) {
+            btn.classList.toggle('is-recording', mode === 'recording');
+            btn.classList.toggle('has-pending', mode === 'ready');
+        }
+        if (panel) panel.classList.toggle('active', mode === 'recording' || mode === 'ready');
         if (timer && sec != null) timer.textContent = formatDuration(sec);
+        if (hint) {
+            if (mode === 'recording') {
+                hint.textContent = 'Идёт запись… отправьте кнопкой со стрелкой';
+            } else if (mode === 'ready') {
+                hint.textContent = 'Готово — нажмите «Отправить»';
+            } else {
+                hint.textContent = 'Нажмите микрофон для записи';
+            }
+        }
     }
 
-    var VNOTE_RING_LEN = 289.03;
+    function uploadBlob(blob, filename, variant, durationSec) {
+        if (!state.uploadFn) return Promise.reject(new Error('no_upload'));
+        var fd = new FormData();
+        fd.append('files', blob, filename);
+        fd.append('variant', variant);
+        if (durationSec != null) fd.append('duration', String(durationSec));
+        var reply = state.getReplyToId ? state.getReplyToId() : null;
+        if (reply) fd.append('reply_to', String(reply));
+        state.onLockInput(true);
+        return state.uploadFn(fd).finally(function () {
+            state.onLockInput(false);
+        });
+    }
+
+    /* ---------- Voice ---------- */
+
+    function clearVoiceTimer() {
+        if (voiceTimer) {
+            clearInterval(voiceTimer);
+            voiceTimer = null;
+        }
+    }
+
+    function resetVoice() {
+        clearVoiceTimer();
+        voiceActive = false;
+        voicePending = null;
+        voiceChunks = [];
+        if (voiceRec && voiceRec.state !== 'inactive') {
+            try { voiceRec.stop(); } catch (e) { /* ignore */ }
+        }
+        voiceRec = null;
+        stopStream(voiceStream);
+        voiceStream = null;
+        setVoiceUi('idle');
+        notifyVoicePending();
+    }
+
+    function cancelVoice() {
+        voiceUploadWaiter = null;
+        resetVoice();
+    }
+
+    function stopVoiceRecorder(collectPending) {
+        if (!voiceRec || voiceRec.state === 'inactive') {
+            if (collectPending && voiceChunks.length) {
+                var mime0 = voiceRec ? voiceRec.mimeType : 'audio/webm';
+                voicePending = {
+                    blob: new Blob(voiceChunks, { type: mime0 || 'audio/webm' }),
+                    mime: mime0 || 'audio/webm',
+                    duration: Math.max(1, Math.round((Date.now() - voiceStartedAt) / 1000)),
+                };
+                voiceChunks = [];
+            }
+            stopStream(voiceStream);
+            voiceStream = null;
+            voiceActive = false;
+            clearVoiceTimer();
+            if (voicePending) setVoiceUi('ready', voicePending.duration);
+            else setVoiceUi('idle');
+            notifyVoicePending();
+            return Promise.resolve(voicePending);
+        }
+
+        return new Promise(function (resolve) {
+            var mime = voiceRec.mimeType || 'audio/webm';
+            voiceRec.onstop = function () {
+                clearVoiceTimer();
+                stopStream(voiceStream);
+                voiceStream = null;
+                voiceActive = false;
+                voiceRec = null;
+                var dur = Math.max(1, Math.round((Date.now() - voiceStartedAt) / 1000));
+                var blob = new Blob(voiceChunks, { type: mime });
+                voiceChunks = [];
+
+                if (collectPending && blob.size) {
+                    voicePending = { blob: blob, mime: mime, duration: dur };
+                    setVoiceUi('ready', dur);
+                    resolve(voicePending);
+                } else {
+                    setVoiceUi('idle');
+                    resolve(null);
+                }
+                notifyVoicePending();
+            };
+            try {
+                if (voiceRec.state === 'recording') voiceRec.requestData();
+                voiceRec.stop();
+            } catch (e) {
+                voiceRec.onstop();
+            }
+        });
+    }
+
+    function startVoice() {
+        if (voiceActive || voicePending || vnoteActive) return;
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            state.showToast('Микрофон недоступен');
+            return;
+        }
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function (stream) {
+                voiceStream = stream;
+                voiceChunks = [];
+                voicePending = null;
+                var mime = pickMime(voiceMimeCandidates());
+                try {
+                    voiceRec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+                } catch (e) {
+                    voiceRec = new MediaRecorder(stream);
+                }
+                mime = voiceRec.mimeType || mime;
+                voiceRec.ondataavailable = function (e) {
+                    if (e.data && e.data.size) voiceChunks.push(e.data);
+                };
+                voiceRec.onerror = function () {
+                    state.showToast('Ошибка записи');
+                    cancelVoice();
+                };
+                voiceStartedAt = Date.now();
+                voiceActive = true;
+                voiceRec.start(300);
+                setVoiceUi('recording', 0);
+                notifyVoicePending();
+                voiceTimer = setInterval(function () {
+                    var sec = (Date.now() - voiceStartedAt) / 1000;
+                    setVoiceUi('recording', sec);
+                    if (sec >= VOICE_MAX_SEC) {
+                        stopVoiceRecorder(true);
+                    }
+                }, 200);
+            })
+            .catch(function () {
+                state.showToast('Нет доступа к микрофону');
+            });
+    }
+
+    function commitVoice() {
+        if (voiceActive) {
+            return stopVoiceRecorder(true).then(function (pending) {
+                if (!pending) return Promise.reject(new Error('empty'));
+                return uploadBlob(
+                    pending.blob,
+                    'voice_' + Date.now() + extForMime(pending.mime, 'voice'),
+                    'voice',
+                    pending.duration
+                ).then(function (res) {
+                    voicePending = null;
+                    setVoiceUi('idle');
+                    notifyVoicePending();
+                    return res;
+                });
+            });
+        }
+        if (voicePending) {
+            var p = voicePending;
+            voicePending = null;
+            setVoiceUi('idle');
+            notifyVoicePending();
+            return uploadBlob(
+                p.blob,
+                'voice_' + Date.now() + extForMime(p.mime, 'voice'),
+                'voice',
+                p.duration
+            );
+        }
+        return Promise.resolve(null);
+    }
+
+    function hasPendingVoice() {
+        return voiceActive || !!voicePending;
+    }
+
+    /* ---------- Video note ---------- */
 
     function updateVnoteRing(sec) {
         var circle = document.getElementById('vnote-ring-progress');
@@ -84,135 +321,62 @@
         var overlay = document.getElementById('vnote-overlay');
         var timer = document.getElementById('vnote-timer');
         var recBtn = document.getElementById('vnote-record-btn');
+        var sendBtn = document.getElementById('vnote-send-btn');
         if (overlay) overlay.classList.toggle('is-recording', !!active);
         if (recBtn) recBtn.classList.toggle('is-recording', !!active);
+        if (sendBtn) sendBtn.disabled = active;
         if (timer && sec != null) timer.textContent = formatDuration(sec);
         if (sec != null) updateVnoteRing(sec);
         if (!active) resetVnoteRing();
     }
 
-    function uploadBlob(blob, filename, variant, durationSec) {
-        if (!state.uploadFn) return Promise.reject(new Error('no_upload'));
-        var fd = new FormData();
-        fd.append('files', blob, filename);
-        fd.append('variant', variant);
-        if (durationSec != null) fd.append('duration', String(durationSec));
-        var reply = state.getReplyToId ? state.getReplyToId() : state.replyToId;
-        if (reply) fd.append('reply_to', String(reply));
-        state.onLockInput(true);
-        return state.uploadFn(fd).finally(function () {
-            state.onLockInput(false);
-        });
+    function cleanupVnoteUi() {
+        var overlay = document.getElementById('vnote-overlay');
+        if (overlay) overlay.classList.remove('active', 'is-recording');
+        if (vnoteRaf) {
+            cancelAnimationFrame(vnoteRaf);
+            vnoteRaf = null;
+        }
+        setVnoteUi(false, 0);
+        vnoteVideo = null;
+        vnoteCanvas = null;
     }
 
-  /* ---------- Voice ---------- */
-
-    function stopVoiceTimer() {
-        if (voiceRec && voiceRec._timer) {
-            clearInterval(voiceRec._timer);
-            voiceRec._timer = null;
+    function clearVnoteTimer() {
+        if (vnoteTimer) {
+            clearInterval(vnoteTimer);
+            vnoteTimer = null;
         }
     }
 
-    function cancelVoice() {
-        stopVoiceTimer();
-        voiceActive = false;
-        if (voiceRec && voiceRec.state !== 'inactive') {
-            try { voiceRec.stop(); } catch (e) { /* ignore */ }
+    function shutdownVnote() {
+        clearVnoteTimer();
+        vnoteActive = false;
+        vnotePending = null;
+        vnoteChunks = [];
+        vnoteDiscardOnStop = false;
+        if (vnoteRecorder && vnoteRecorder.state !== 'inactive') {
+            try { vnoteRecorder.stop(); } catch (e) { /* ignore */ }
         }
-        voiceRec = null;
-        voiceChunks = [];
-        stopStream(voiceStream);
-        voiceStream = null;
-        setVoiceUi(false);
+        vnoteRecorder = null;
+        stopStream(vnoteStream);
+        vnoteStream = null;
+        cleanupVnoteUi();
     }
 
-    function finishVoice(blob, mime, durationSec) {
-        var name = 'voice_' + Date.now() + extForMime(mime);
-        return uploadBlob(blob, name, 'voice', durationSec);
-    }
-
-    function startVoice() {
-        if (voiceActive || vnoteActive) return;
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            state.showToast('Микрофон недоступен в этом браузере');
-            return;
-        }
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(function (stream) {
-                voiceStream = stream;
-                voiceChunks = [];
-                var mime = pickMime([
-                    'audio/webm;codecs=opus',
-                    'audio/webm',
-                    'audio/ogg;codecs=opus',
-                    'audio/mp4',
-                ]);
-                try {
-                    voiceRec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
-                } catch (e) {
-                    voiceRec = new MediaRecorder(stream);
-                }
-                mime = voiceRec.mimeType || mime;
-                voiceRec.ondataavailable = function (e) {
-                    if (e.data && e.data.size) voiceChunks.push(e.data);
-                };
-                voiceRec.onstop = function () {
-                    var dur = Math.round((Date.now() - voiceStartedAt) / 1000);
-                    stopStream(voiceStream);
-                    voiceStream = null;
-                    voiceActive = false;
-                    setVoiceUi(false);
-                    var blob = new Blob(voiceChunks, { type: mime || 'audio/webm' });
-                    voiceChunks = [];
-                    if (!blob.size || dur < 1) {
-                        state.showToast('Запись слишком короткая');
-                        return;
-                    }
-                    finishVoice(blob, mime, dur)
-                        .catch(function (err) {
-                            var msg = err && err.error ? err.error : 'Не удалось отправить голосовое';
-                            state.showToast(msg);
-                        });
-                };
-                voiceRec.onerror = function () {
-                    cancelVoice();
-                    state.showToast('Ошибка записи');
-                };
-                voiceStartedAt = Date.now();
-                voiceActive = true;
-                voiceRec.start(250);
-                setVoiceUi(true, 0);
-                voiceRec._timer = setInterval(function () {
-                    var sec = (Date.now() - voiceStartedAt) / 1000;
-                    setVoiceUi(true, sec);
-                    if (sec >= VOICE_MAX_SEC) stopVoice();
-                }, 200);
-            })
-            .catch(function () {
-                state.showToast('Нет доступа к микрофону');
-            });
-    }
-
-    function stopVoice() {
-        if (!voiceActive || !voiceRec) return;
-        stopVoiceTimer();
-        try {
-            if (voiceRec.state === 'recording') voiceRec.stop();
-        } catch (e) {
-            cancelVoice();
+    function closeVnoteOverlay() {
+        vnoteDiscardOnStop = true;
+        if (vnoteActive && vnoteRecorder) {
+            try {
+                if (vnoteRecorder.state === 'recording') vnoteRecorder.requestData();
+                vnoteRecorder.stop();
+            } catch (e) {
+                shutdownVnote();
+            }
+        } else {
+            shutdownVnote();
         }
     }
-
-    function toggleVoice() {
-        if (voiceActive) stopVoice();
-        else startVoice();
-    }
-
-  /* ---------- Video note ---------- */
-
-    var vnoteCanvas = null;
-    var vnoteVideo = null;
 
     function drawVnoteFrame() {
         if (!vnoteCanvas || !vnoteVideo || vnoteVideo.readyState < 2) return;
@@ -240,46 +404,9 @@
         vnoteRaf = requestAnimationFrame(vnoteLoop);
     }
 
-    function openVnoteOverlay() {
-        var overlay = document.getElementById('vnote-overlay');
-        if (overlay) overlay.classList.add('active');
-        resetVnoteRing();
-        setVnoteUi(false, 0);
-    }
-
-    function closeVnoteOverlay() {
-        cancelVnote();
-        var overlay = document.getElementById('vnote-overlay');
-        if (overlay) overlay.classList.remove('active');
-    }
-
-    function cancelVnote() {
-        if (vnoteRec && vnoteRec._timer) {
-            clearInterval(vnoteRec._timer);
-            vnoteRec._timer = null;
-        }
-        if (vnoteRaf) {
-            cancelAnimationFrame(vnoteRaf);
-            vnoteRaf = null;
-        }
-        vnoteActive = false;
-        if (vnoteRecorder && vnoteRecorder.state !== 'inactive') {
-            try { vnoteRecorder.stop(); } catch (e) { /* ignore */ }
-        }
-        vnoteRecorder = null;
-        vnoteChunks = [];
-        stopStream(vnoteStream);
-        vnoteStream = null;
-        setVnoteUi(false);
-    }
-
     function prepareVnotePreview() {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            state.showToast('Камера недоступна');
-            return Promise.reject();
-        }
         return navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } },
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
             audio: true,
         }).then(function (stream) {
             vnoteStream = stream;
@@ -288,43 +415,62 @@
             if (!vnoteVideo || !vnoteCanvas) throw new Error('no_dom');
             vnoteVideo.srcObject = stream;
             vnoteVideo.muted = true;
-            vnoteVideo.playsInline = true;
-            return vnoteVideo.play().then(function () {
-                vnoteCanvas.width = VNOTE_SIZE;
-                vnoteCanvas.height = VNOTE_SIZE;
-                vnoteLoop();
-            });
-        }).catch(function () {
-            state.showToast('Нет доступа к камере');
+            vnoteVideo.setAttribute('playsinline', 'true');
+            vnoteVideo.setAttribute('webkit-playsinline', 'true');
+            return vnoteVideo.play();
+        }).then(function () {
+            vnoteCanvas.width = VNOTE_SIZE;
+            vnoteCanvas.height = VNOTE_SIZE;
+            vnoteLoop();
         });
     }
 
-    function stopVnote() {
-        if (!vnoteActive || !vnoteRecorder) return;
-        if (vnoteRecorder._timer) {
-            clearInterval(vnoteRecorder._timer);
-            vnoteRecorder._timer = null;
+    function stopVnoteRecorder(collectPending) {
+        if (!vnoteRecorder || vnoteRecorder.state === 'inactive') {
+            return Promise.resolve(vnotePending);
         }
-        try {
-            if (vnoteRecorder.state === 'recording') vnoteRecorder.stop();
-        } catch (e) {
-            cancelVnote();
-        }
+        return new Promise(function (resolve) {
+            var mime = vnoteRecorder.mimeType || 'video/webm';
+            vnoteRecorder.onstop = function () {
+                clearVnoteTimer();
+                vnoteActive = false;
+                var dur = Math.max(1, Math.round((Date.now() - vnoteStartedAt) / 1000));
+                var blob = new Blob(vnoteChunks, { type: mime });
+                vnoteChunks = [];
+                vnoteRecorder = null;
+
+                if (vnoteDiscardOnStop) {
+                    vnoteDiscardOnStop = false;
+                    stopStream(vnoteStream);
+                    vnoteStream = null;
+                    setVnoteUi(false, 0);
+                    resolve(null);
+                    return;
+                }
+
+                if (collectPending && blob.size) {
+                    vnotePending = { blob: blob, mime: mime, duration: dur };
+                    setVnoteUi(false, dur);
+                    resolve(vnotePending);
+                } else {
+                    setVnoteUi(false, 0);
+                    resolve(null);
+                }
+            };
+            try {
+                if (vnoteRecorder.state === 'recording') vnoteRecorder.requestData();
+                vnoteRecorder.stop();
+            } catch (e) {
+                vnoteRecorder.onstop();
+            }
+        });
     }
 
     function startVnote() {
-        if (vnoteActive || voiceActive) return;
-        if (!vnoteStream) {
-            state.showToast('Сначала откройте запись кружка');
-            return;
-        }
+        if (vnoteActive || !vnoteStream) return;
         vnoteChunks = [];
-        var mime = pickMime([
-            'video/webm;codecs=vp9,opus',
-            'video/webm;codecs=vp8,opus',
-            'video/webm',
-            'video/mp4',
-        ]);
+        vnotePending = null;
+        var mime = pickMime(vnoteMimeCandidates());
         try {
             vnoteRecorder = mime
                 ? new MediaRecorder(vnoteStream, { mimeType: mime })
@@ -336,106 +482,159 @@
         vnoteRecorder.ondataavailable = function (e) {
             if (e.data && e.data.size) vnoteChunks.push(e.data);
         };
-        vnoteRecorder.onstop = function () {
-            var dur = Math.round((Date.now() - vnoteStartedAt) / 1000);
-            vnoteActive = false;
-            setVnoteUi(false);
-            if (vnoteRaf) {
-                cancelAnimationFrame(vnoteRaf);
-                vnoteRaf = null;
-            }
-            stopStream(vnoteStream);
-            vnoteStream = null;
-            var blob = new Blob(vnoteChunks, { type: mime || 'video/webm' });
-            vnoteChunks = [];
-            closeVnoteOverlay();
-            if (!blob.size || dur < 1) {
-                state.showToast('Запись слишком короткая');
-                return;
-            }
-            var name = 'vnote_' + Date.now() + extForMime(mime);
-            uploadBlob(blob, name, 'video_note', dur)
-                .catch(function (err) {
-                    var msg = err && err.error ? err.error : 'Не удалось отправить кружок';
-                    state.showToast(msg);
-                });
-        };
         vnoteRecorder.onerror = function () {
-            cancelVnote();
-            state.showToast('Ошибка записи видео');
+            state.showToast('Ошибка записи');
+            vnoteActive = false;
+            setVnoteUi(false, 0);
         };
         vnoteStartedAt = Date.now();
         vnoteActive = true;
-        vnoteRecorder.start(250);
+        vnoteDiscardOnStop = false;
+        vnoteRecorder.start(300);
         setVnoteUi(true, 0);
-        vnoteRecorder._timer = setInterval(function () {
+        vnoteTimer = setInterval(function () {
             var sec = (Date.now() - vnoteStartedAt) / 1000;
             setVnoteUi(true, sec);
-            if (sec >= VNOTE_MAX_SEC) stopVnote();
+            if (sec >= VNOTE_MAX_SEC) {
+                stopVnoteRecorder(true);
+            }
         }, 200);
     }
 
+    function commitVnote() {
+        var chain = Promise.resolve();
+        if (vnoteActive) {
+            chain = stopVnoteRecorder(true);
+        }
+        return chain.then(function (pending) {
+            var p = pending || vnotePending;
+            if (!p || !p.blob || !p.blob.size) {
+                state.showToast('Сначала запишите кружок');
+                return Promise.reject(new Error('empty'));
+            }
+            state.showToast('Отправка…');
+            return uploadBlob(
+                p.blob,
+                'vnote_' + Date.now() + extForMime(p.mime, 'video_note'),
+                'video_note',
+                p.duration
+            ).then(function (res) {
+                vnotePending = null;
+                stopStream(vnoteStream);
+                vnoteStream = null;
+                cleanupVnoteUi();
+                return res;
+            }).catch(function (err) {
+                var msg = err && err.error ? err.error : 'Не удалось отправить кружок';
+                state.showToast(msg);
+                throw err;
+            });
+        });
+    }
+
     function openVideoNote() {
-        if (voiceActive) return;
-        openVnoteOverlay();
-        prepareVnotePreview();
+        if (voiceActive || voicePending) {
+            state.showToast('Сначала завершите голосовое');
+            return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            state.showToast('Камера недоступна');
+            return;
+        }
+        var overlay = document.getElementById('vnote-overlay');
+        if (overlay) overlay.classList.add('active');
+        resetVnoteRing();
+        setVnoteUi(false, 0);
+        vnotePending = null;
+        vnoteDiscardOnStop = false;
+        prepareVnotePreview().catch(function () {
+            cleanupVnoteUi();
+        });
     }
 
     function bindUi() {
         var voiceBtn = document.getElementById('chat-voice-btn');
-        var vnoteBtn = document.getElementById('chat-vnote-btn');
         var voiceCancel = document.getElementById('voice-record-cancel');
+        var vnoteBtn = document.getElementById('chat-vnote-btn');
         var vnoteClose = document.getElementById('vnote-close-btn');
+        var vnoteSend = document.getElementById('vnote-send-btn');
         var vnoteRec = document.getElementById('vnote-record-btn');
+        var vnoteOverlay = document.getElementById('vnote-overlay');
+        var vnotePanel = document.querySelector('.vnote-panel');
 
         if (voiceBtn) {
             voiceBtn.addEventListener('click', function (e) {
                 e.preventDefault();
-                toggleVoice();
+                e.stopPropagation();
+                if (voiceActive || voicePending) {
+                    state.showToast('Отправьте голосовое кнопкой со стрелкой или «Отмена»');
+                    return;
+                }
+                startVoice();
             });
         }
         if (voiceCancel) {
             voiceCancel.addEventListener('click', function (e) {
                 e.preventDefault();
+                e.stopPropagation();
                 cancelVoice();
             });
         }
         if (vnoteBtn) {
             vnoteBtn.addEventListener('click', function (e) {
                 e.preventDefault();
+                e.stopPropagation();
                 openVideoNote();
             });
         }
         if (vnoteClose) {
             vnoteClose.addEventListener('click', function (e) {
                 e.preventDefault();
+                e.stopPropagation();
                 closeVnoteOverlay();
+            });
+        }
+        if (vnoteSend) {
+            vnoteSend.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                commitVnote();
             });
         }
         if (vnoteRec) {
             vnoteRec.addEventListener('click', function (e) {
                 e.preventDefault();
-                if (vnoteActive) stopVnote();
-                else startVnote();
+                e.stopPropagation();
+                if (vnoteActive) {
+                    stopVnoteRecorder(true);
+                } else {
+                    startVnote();
+                }
             });
         }
-        var vnoteOverlay = document.getElementById('vnote-overlay');
         if (vnoteOverlay) {
             vnoteOverlay.addEventListener('click', function (e) {
-                if (e.target === vnoteOverlay && !vnoteActive) closeVnoteOverlay();
+                if (e.target === vnoteOverlay && !vnoteActive) {
+                    closeVnoteOverlay();
+                }
+            });
+        }
+        if (vnotePanel) {
+            vnotePanel.addEventListener('click', function (e) {
+                e.stopPropagation();
             });
         }
     }
 
     global.WBChatMedia = {
         init: function (opts) {
-            state.conversationId = opts.conversationId;
-            state.csrfToken = opts.csrfToken || '';
             state.uploadFn = opts.uploadFn;
             state.showToast = opts.showToast || function () {};
             state.onLockInput = opts.onLockInput || function () {};
             state.getReplyToId = opts.getReplyToId || function () { return null; };
+            state.onVoicePendingChange = opts.onVoicePendingChange || function () {};
             bindUi();
+            notifyVoicePending();
         },
         cancelAll: function () {
             cancelVoice();
@@ -444,5 +643,8 @@
         isRecording: function () {
             return voiceActive || vnoteActive;
         },
+        hasPendingVoice: hasPendingVoice,
+        commitVoice: commitVoice,
+        commitVnote: commitVnote,
     };
 })(window);

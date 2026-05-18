@@ -8,7 +8,7 @@ CHAT_VOICE_MAX_DURATION_SEC = 300  # 5 мин
 CHAT_VIDEO_NOTE_MAX_DURATION_SEC = 60  # как в Telegram
 
 CHAT_VOICE_EXTENSIONS = frozenset({'.webm', '.ogg', '.opus', '.m4a', '.mp4', '.mp3', '.wav'})
-CHAT_VIDEO_NOTE_EXTENSIONS = frozenset({'.webm', '.mp4', '.mov'})
+CHAT_VIDEO_NOTE_EXTENSIONS = frozenset({'.webm', '.mp4', '.mov', '.m4v'})
 
 # Исполняемые и опасные расширения (в т.ч. .exe)
 CHAT_BLOCKED_EXTENSIONS = frozenset({
@@ -99,13 +99,16 @@ def validate_chat_upload_variant(filename: str, size: int, mime_type=None, varia
         max_dur = CHAT_VOICE_MAX_DURATION_SEC
         label = 'Голосовое сообщение'
         allowed_ext = CHAT_VOICE_EXTENSIONS
-        mime_ok = mime.startswith('audio/') or mime in ('video/webm', 'application/ogg')
+        mime_ok = (
+            mime.startswith('audio/')
+            or mime in ('video/webm', 'application/ogg', 'application/octet-stream')
+        )
     else:
         max_bytes = CHAT_VIDEO_NOTE_MAX_BYTES
         max_dur = CHAT_VIDEO_NOTE_MAX_DURATION_SEC
         label = 'Видеосообщение'
         allowed_ext = CHAT_VIDEO_NOTE_EXTENSIONS
-        mime_ok = mime.startswith('video/')
+        mime_ok = mime.startswith('video/') or mime in ('video/quicktime', 'application/octet-stream')
 
     if size > max_bytes:
         mb = max_bytes // (1024 * 1024)
