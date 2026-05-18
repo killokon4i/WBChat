@@ -643,56 +643,54 @@
         color: var(--magenta);
     }
 
-  .message.message-vnote-only,
-    .message-other.message-vnote-only,
-    .message-own.message-vnote-only {
-        padding: 0 !important;
-        margin: 0 0 8px 0;
-        max-width: none !important;
-        width: auto !important;
-        background: none !important;
-        background-color: transparent !important;
-        box-shadow: none !important;
-        border: none !important;
-    }
-    .message-vnote-only.message-has-media,
-    .message-vnote-only.message-media-only {
-        padding: 0 !important;
-        background: transparent !important;
-    }
-    .message-vnote-only .message-time { display: none !important; }
-    .message-vnote-only .message-content { display: none !important; }
-    .message-vnote-only .msg-attachment {
-        margin: 0 !important;
+  .message-vnote-only {
+        padding: 4px 8px 6px !important;
+        max-width: min(240px, 88%) !important;
         background: transparent !important;
         box-shadow: none !important;
     }
-    .message-vnote-only .message-author {
-        margin: 0 0 4px 4px;
-        padding: 0;
+    .message-vnote-only .message-time { display: none; }
+    .message-own.message-voice-only .message-time,
+    .message-own.message-media-only .message-time {
+        color: var(--text-secondary);
+        opacity: 1;
     }
     .msg-vnote-wrap {
         position: relative;
-        display: block;
+        display: inline-block;
         line-height: 0;
-        background: transparent !important;
-        box-shadow: none !important;
     }
     .msg-vnote-player {
         position: relative;
         width: 200px;
         height: 200px;
         flex-shrink: 0;
-        cursor: pointer;
-        background: transparent !important;
-        box-shadow: none !important;
-        transform: scale(1);
-        transform-origin: center center;
-        transition: transform 0.22s ease;
     }
-    .msg-vnote-player.is-playing {
-        transform: scale(1.05);
-        filter: drop-shadow(0 6px 16px rgba(0, 0, 0, .22));
+    .msg-vnote-ring {
+        position: absolute;
+        inset: -3px;
+        width: calc(100% + 6px);
+        height: calc(100% + 6px);
+        transform: rotate(-90deg);
+        pointer-events: none;
+        z-index: 2;
+    }
+    .msg-vnote-ring-bg {
+        fill: none;
+        stroke: rgba(0, 0, 0, .12);
+        stroke-width: 2.5;
+    }
+    .msg-vnote-ring-bar {
+        fill: none;
+        stroke: var(--magenta);
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-dasharray: 100 100;
+        stroke-dashoffset: 100;
+        transition: stroke-dashoffset .1s linear;
+    }
+    .msg-vnote-player.is-playing .msg-vnote-ring-bar {
+        stroke: #fff;
     }
     .msg-vnote {
         width: 100%;
@@ -700,8 +698,11 @@
         border-radius: 50%;
         overflow: hidden;
         position: relative;
-        background: #0a0a0a;
-        box-shadow: none !important;
+        background: #111;
+        box-shadow: 0 4px 16px rgba(0,0,0,.2);
+    }
+    .message-own .msg-vnote {
+        box-shadow: 0 2px 12px rgba(0,0,0,.15);
     }
     .msg-vnote video {
         width: 100%;
@@ -709,7 +710,6 @@
         object-fit: cover;
         display: block;
         background: #000;
-        border-radius: 50%;
     }
     .msg-vnote-play {
         position: absolute;
@@ -717,25 +717,24 @@
         top: 50%;
         transform: translate(-50%, -50%);
         z-index: 3;
-        width: 48px;
-        height: 48px;
+        width: 52px;
+        height: 52px;
         border: none;
         border-radius: 50%;
-        background: rgba(0, 0, 0, .5);
+        background: rgba(0, 0, 0, .45);
         color: #fff;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        opacity: 1;
-        pointer-events: auto;
+        transition: background .2s, opacity .2s;
     }
     .msg-vnote-play svg {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
         margin-left: 3px;
     }
-    .msg-vnote-player.is-playing:not(:hover) .msg-vnote-play {
+    .msg-vnote-player.is-playing .msg-vnote-play {
         opacity: 0;
         pointer-events: none;
     }
@@ -746,41 +745,40 @@
     }
     .msg-vnote-duration {
         position: absolute;
-        bottom: 8px;
-        left: 10px;
-        z-index: 4;
-        background: rgba(0, 0, 0, .55);
+        bottom: 10px;
+        right: 12px;
+        z-index: 3;
+        background: rgba(0,0,0,.55);
         color: #fff;
-        font-size: 11px;
-        padding: 2px 7px;
-        border-radius: 8px;
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 10px;
         pointer-events: none;
-        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
     }
-    .msg-vnote-player.is-playing .msg-vnote-duration {
-        opacity: 0;
-    }
-    .msg-vnote-meta {
-        position: absolute;
-        bottom: 8px;
-        right: 10px;
-        z-index: 4;
-        display: inline-flex;
+    .msg-vnote-footer {
+        display: flex;
         align-items: center;
-        gap: 4px;
-        background: rgba(0, 0, 0, .55);
-        color: #fff;
-        font-size: 11px;
-        line-height: 1.2;
-        padding: 2px 7px;
-        border-radius: 8px;
-        pointer-events: none;
+        justify-content: flex-end;
+        gap: 5px;
+        margin-top: 6px;
+        padding: 0 4px;
+        font-size: 12px;
+        line-height: 1;
+        color: var(--text-secondary);
     }
-    .msg-vnote-meta .read-indicator { font-size: 12px; }
-    .msg-vnote-meta .read-indicator.sent::before { color: rgba(255, 255, 255, .92); }
-    .msg-vnote-meta .read-indicator.read::before { color: #8ed4fc; }
-    .message-vnote-only .msg-attachment-dl { display: none; }
-
+    .message-other .msg-vnote-footer {
+        justify-content: flex-start;
+    }
+    .msg-vnote-footer-time {
+        font-variant-numeric: tabular-nums;
+        opacity: .85;
+    }
+    .message-vnote-only .msg-attachment-dl {
+        top: 4px;
+        right: 4px;
+        z-index: 4;
+    }
 
     .vnote-overlay {
         position: fixed;
@@ -1791,35 +1789,21 @@ function addMessage(msg, skipParentNotify, addOpts) {
 
     const attsForClass = msg.attachments || (msg.attachment ? [msg.attachment] : []);
     const textOnly = (msg.content || '').trim();
-    const mediaPlaceholders = ['🎤 Голосовое сообщение', '📹 Видеосообщение', '📹 Кружок', 'Видеосообщение'];
-    function isVnotePlaceholderText(text, att, author) {
-        if (!text) return true;
-        if (mediaPlaceholders.indexOf(text) !== -1) return true;
-        if (att && att.name && text === String(att.name).trim()) return true;
-        if (author) {
-            const a = String(author).trim();
-            if (text === a) return true;
-            const compact = text.replace(/\s+/g, '');
-            const aCompact = a.replace(/\s+/g, '');
-            if (compact === aCompact || compact === aCompact + aCompact) return true;
-        }
-        return false;
-    }
-    const vnoteAtt = attsForClass.length === 1 && attsForClass[0].variant === 'video_note' ? attsForClass[0] : null;
-    const isVnoteOnly = !!vnoteAtt && !msg.reply_to_id && !msg.forwarded_from_id &&
-        isVnotePlaceholderText(textOnly, vnoteAtt, msg.author_username);
+    const mediaPlaceholders = ['🎤 Голосовое сообщение', '📹 Видеосообщение'];
     const isJustFilename = attsForClass.length > 0 && (
         attsForClass.some(function (a) { return a.name === textOnly; }) ||
         mediaPlaceholders.indexOf(textOnly) !== -1
     );
-    const hasVisibleText = !isVnoteOnly && textOnly && !isJustFilename &&
-        textOnly.indexOf('[link_card]') === -1 && textOnly.indexOf('[kb_share]') === -1;
-    if (attsForClass.length && !isVnoteOnly) div.classList.add('message-has-media');
-    if (attsForClass.length && !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id && !isVnoteOnly) {
+    const hasVisibleText = textOnly && !isJustFilename && textOnly.indexOf('[link_card]') === -1 && textOnly.indexOf('[kb_share]') === -1;
+    if (attsForClass.length) div.classList.add('message-has-media');
+    if (attsForClass.length && !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id) {
         div.classList.add('message-media-only');
     }
     const isVoiceOnly = attsForClass.length === 1 &&
         (attsForClass[0].variant === 'voice') &&
+        !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id;
+    const isVnoteOnly = attsForClass.length === 1 &&
+        (attsForClass[0].variant === 'video_note') &&
         !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id;
     if (isVoiceOnly) {
         div.classList.add('message-voice-only');
@@ -1827,7 +1811,7 @@ function addMessage(msg, skipParentNotify, addOpts) {
     }
     if (isVnoteOnly) {
         div.classList.add('message-vnote-only');
-        div.classList.remove('message-media-only', 'message-has-media');
+        div.classList.remove('message-media-only');
     }
 
     const time = window.WBChatTime
@@ -1858,7 +1842,7 @@ function addMessage(msg, skipParentNotify, addOpts) {
 
     if (!isOwn) html += `<div class="message-author">${escapeHtml(msg.author_username)}</div>`;
 
-    if (!isVnoteOnly) html += buildContentHtml(msg);
+    html += buildContentHtml(msg);
 
     const atts = msg.attachments || (msg.attachment ? [msg.attachment] : []);
     atts.forEach(att => { html += buildAttachmentHtml(att); });
@@ -1868,7 +1852,6 @@ function addMessage(msg, skipParentNotify, addOpts) {
     div.innerHTML = html;
     div.querySelectorAll('.msg-voice-wrap').forEach(function (wrap) { bindVoicePlayer(wrap); });
     bindAllVnotePlayers(div);
-    attachVnoteMessageMeta(div);
     container.appendChild(div);
     bindMessageGestures(div, msg);
     if (!addOpts.noAutoScroll) {
@@ -1946,21 +1929,6 @@ function formatAttDuration(sec) {
     return m + ':' + String(s).padStart(2, '0');
 }
 
-function attachVnoteMessageMeta(msgEl) {
-    if (!msgEl || !msgEl.classList.contains('message-vnote-only')) return;
-    const timeEl = msgEl.querySelector('.message-time');
-    const player = msgEl.querySelector('.msg-vnote-player');
-    if (!timeEl || !player) return;
-    let meta = player.querySelector('.msg-vnote-meta');
-    if (!meta) {
-        meta = document.createElement('div');
-        meta.className = 'msg-vnote-meta';
-        player.appendChild(meta);
-    }
-    meta.innerHTML = timeEl.innerHTML;
-    timeEl.remove();
-}
-
 function bindAllVnotePlayers(root) {
     var scope = root || document;
     scope.querySelectorAll('.msg-vnote-wrap').forEach(function (wrap) {
@@ -1984,6 +1952,7 @@ function bindVnotePlayer(wrap) {
     const player = wrap.querySelector('.msg-vnote-player');
     const video = wrap.querySelector('video');
     const playBtn = wrap.querySelector('.msg-vnote-play');
+    const ringBar = wrap.querySelector('.msg-vnote-ring-bar');
     if (!video) return;
     if (video.dataset.vnotePlayerInit) return;
     video.dataset.vnotePlayerInit = '1';
@@ -1991,18 +1960,25 @@ function bindVnotePlayer(wrap) {
     const root = player || wrap.querySelector('.msg-vnote');
     if (!root) return;
 
+    const total = player ? (parseInt(player.getAttribute('data-duration'), 10) || 0) : 0;
+    const ringLen = 100;
+
+    function setRing(pct) {
+        if (!ringBar) return;
+        var p = Math.min(1, Math.max(0, pct || 0));
+        ringBar.style.strokeDasharray = ringLen + ' ' + ringLen;
+        ringBar.style.strokeDashoffset = String(ringLen * (1 - p));
+    }
+
     function stopOthers() {
         document.querySelectorAll('.msg-vnote-wrap').forEach(function (w) {
             if (w === wrap) return;
             var v = w.querySelector('video');
             var p = w.querySelector('.msg-vnote-player') || w.querySelector('.msg-vnote');
-            var ob = w.querySelector('.msg-vnote-play');
-            if (v) { v.pause(); v.currentTime = 0; v.loop = false; }
+            if (v) { v.pause(); v.currentTime = 0; }
             if (p) p.classList.remove('is-playing', 'is-paused');
-            if (ob) {
-                ob.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8 5 20 12 8 19"/></svg>';
-                ob.style.marginLeft = '3px';
-            }
+            var rb = w.querySelector('.msg-vnote-ring-bar');
+            if (rb) rb.style.strokeDashoffset = String(ringLen);
         });
     }
 
@@ -2014,33 +1990,19 @@ function bindVnotePlayer(wrap) {
         playBtn.style.marginLeft = playing ? '0' : '3px';
     }
 
-    function resetVnote(toStart) {
-        video.pause();
-        if (toStart) video.currentTime = 0;
-        root.classList.remove('is-playing', 'is-paused');
-        setPlayIcon(false);
-    }
-
-    function canStart() {
-        return video.paused || video.ended;
-    }
-
     function playVnote() {
         stopOthers();
-        if (video.ended) video.currentTime = 0;
-        video.loop = false;
+        video.muted = false;
+        video.loop = true;
         video.playsInline = true;
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
-        video.muted = true;
         video.play().then(function () {
-            video.muted = false;
             root.classList.add('is-playing');
             root.classList.remove('is-paused');
             setPlayIcon(true);
         }).catch(function () {
-            resetVnote(true);
-            if (typeof showToast === 'function') showToast('Не удалось воспроизвести');
+            openMediaViewer('video', video.currentSrc || video.src);
         });
     }
 
@@ -2051,35 +2013,39 @@ function bindVnotePlayer(wrap) {
         setPlayIcon(false);
     }
 
-    function toggleVnote() {
-        if (canStart()) playVnote();
-        else pauseVnote();
-    }
-
-    video.loop = false;
+    setRing(0);
     setPlayIcon(false);
 
     if (playBtn) {
         playBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            toggleVnote();
+            if (video.paused) playVnote();
+            else pauseVnote();
         });
     }
 
     root.addEventListener('click', function (e) {
-        if (e.target.closest('.msg-vnote-play')) return;
+        if (e.target.closest('.msg-attachment-dl') || e.target.closest('.msg-vnote-play')) return;
         e.preventDefault();
         e.stopPropagation();
-        toggleVnote();
+        if (video.paused) playVnote();
+        else pauseVnote();
     });
 
+    video.addEventListener('timeupdate', function () {
+        var dur = (video.duration && isFinite(video.duration)) ? video.duration : total;
+        if (!dur) return;
+        setRing(video.currentTime / dur);
+    });
     video.addEventListener('ended', function () {
-        resetVnote(true);
+        root.classList.remove('is-playing', 'is-paused');
+        setPlayIcon(false);
+        setRing(0);
+        video.currentTime = 0;
     });
     video.addEventListener('pause', function () {
-        if (video.ended) return;
-        if (!video.duration || video.currentTime < video.duration - 0.08) {
+        if (!video.duration || video.currentTime < video.duration - 0.05) {
             root.classList.remove('is-playing');
             root.classList.add('is-paused');
             setPlayIcon(false);
@@ -2190,18 +2156,9 @@ function buildAttachmentHtml(att) {
         return html;
     }
     if (variant === 'video_note') {
-        const durSec = parseInt(att.duration, 10) || 0;
-        const dur = formatAttDuration(durSec);
-        const mimeAttr = att.mime ? ` type="${escapeHtml(att.mime)}"` : '';
-        return `<div class="msg-attachment msg-vnote-wrap">
-        <div class="msg-vnote-player" data-duration="${durSec}">
-            <div class="msg-vnote">
-                <video src="${att.url}"${mimeAttr} playsinline webkit-playsinline preload="metadata"></video>
-            </div>
-            <button type="button" class="msg-vnote-play" aria-label="Воспроизвести">
-                <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8 5 20 12 8 19"/></svg>
-            </button>
-            <span class="msg-vnote-duration">${dur}</span>
+        const dur = att.duration ? `<span class="msg-vnote-duration">${formatAttDuration(att.duration)}</span>` : '';
+        return `<div class="msg-attachment">${dlBtn}<div class="msg-vnote" onclick="openMediaViewer('video','${att.url}')">
+            <video src="${att.url}" playsinline loop muted preload="metadata"></video>${dur}
         </div></div>`;
     }
     if (att.type === 'image') {
@@ -2284,9 +2241,7 @@ function handleReadReceipt(readUserId, messageIds) {
     (messageIds || []).forEach(mid => {
         const el = document.getElementById(`message-${mid}`);
         if (!el) return;
-        el.querySelectorAll('.read-indicator').forEach(function (ind) {
-            setReadIndicatorElement(ind, true);
-        });
+        setReadIndicatorElement(el.querySelector('.read-indicator'), true);
     });
 }
 
@@ -2511,9 +2466,16 @@ function cancelEdit() {
 }
 
 /* ========== Delete ========== */
-function deleteMessage(msgId) {
+async function deleteMessage(msgId) {
     closeContextMenu();
-    if (!confirm('Удалить сообщение?')) return;
+    const ok = await showConfirm({
+        title: 'Удалить сообщение?',
+        message: 'Сообщение будет удалено для всех участников чата.',
+        confirmText: 'Удалить',
+        cancelText: 'Отмена',
+        danger: true
+    });
+    if (!ok) return;
     if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
         chatSocket.send(JSON.stringify({ type: 'delete_message', message_id: msgId }));
     }
@@ -3260,8 +3222,15 @@ function addMember(uid) {
     });
 }
 
-function removeMember(uid) {
-    if (!confirm('Удалить участника из беседы?')) return;
+async function removeMember(uid) {
+    const ok = await showConfirm({
+        title: 'Удалить участника?',
+        message: 'Пользователь будет исключён из беседы.',
+        confirmText: 'Удалить',
+        cancelText: 'Отмена',
+        danger: true
+    });
+    if (!ok) return;
     fetch(`/chat/api/remove-member/${conversationId}/`, {
         method: 'POST',
         headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },

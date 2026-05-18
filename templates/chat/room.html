@@ -1082,9 +1082,16 @@ function cancelEdit() {
 }
 
 /* ========== Delete ========== */
-function deleteMessage(msgId) {
+async function deleteMessage(msgId) {
     document.getElementById('ctx-menu').classList.remove('active');
-    if (!confirm('Удалить сообщение?')) return;
+    const ok = await showConfirm({
+        title: 'Удалить сообщение?',
+        message: 'Сообщение будет удалено для всех участников чата.',
+        confirmText: 'Удалить',
+        cancelText: 'Отмена',
+        danger: true
+    });
+    if (!ok) return;
     if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
         chatSocket.send(JSON.stringify({ type: 'delete_message', message_id: msgId }));
     }
