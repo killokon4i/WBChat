@@ -3,5 +3,7 @@
 buildCommand = "pip install -r requirements.txt && python manage.py collectstatic --noinput"
 
 [deploy]
+# Миграции перед стартом (иначе API чата падает без колонки attachment.variant)
+releaseCommand = "python manage.py migrate --noinput"
 # ASGI обязателен для WebSocket (чаты, уведомления)
-startCommand = "daphne -b 0.0.0.0 -p ${PORT:-8000} WBChat.asgi:application"
+startCommand = "python manage.py migrate --noinput && daphne -b 0.0.0.0 -p ${PORT:-8000} WBChat.asgi:application"

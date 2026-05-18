@@ -373,8 +373,26 @@
     .typing-indicator { padding: 8px 16px; font-size: 13px; color: var(--text-secondary); font-style: italic; min-height: 32px; }
 
     .chat-input-area {
-        padding: 16px 20px; border-top: 1px solid var(--border-color);
-        display: flex; gap: 12px; align-items: flex-end;
+        padding: 16px 20px;
+        padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-end;
+    }
+    .chat-input-tools {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+        align-items: center;
+    }
+    .chat-input-main {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        flex: 1 1 180px;
+        min-width: 0;
     }
     .chat-textarea {
         flex: 1; padding: 12px 16px;
@@ -547,11 +565,40 @@
     .vnote-overlay.active { display: flex; }
     .vnote-preview-wrap {
         width: min(320px, 80vw); height: min(320px, 80vw);
-        border-radius: 50%; overflow: hidden; position: relative;
-        border: 3px solid rgba(255,255,255,.25);
+        border-radius: 50%; overflow: visible; position: relative;
         margin-bottom: 24px;
     }
-    #vnote-preview-canvas { width: 100%; height: 100%; display: block; }
+  .vnote-ring {
+        position: absolute;
+        inset: -6px;
+        width: calc(100% + 12px);
+        height: calc(100% + 12px);
+        transform: rotate(-90deg);
+        pointer-events: none;
+        z-index: 2;
+    }
+    .vnote-ring-bg {
+        fill: none;
+        stroke: rgba(255,255,255,.2);
+        stroke-width: 4;
+    }
+    .vnote-ring-progress {
+        fill: none;
+        stroke: #ff4081;
+        stroke-width: 4;
+        stroke-linecap: round;
+        stroke-dasharray: 289.03;
+        stroke-dashoffset: 289.03;
+        transition: stroke-dashoffset 0.12s linear;
+    }
+    .vnote-overlay.is-recording .vnote-ring-progress {
+        stroke: #ff73cb;
+    }
+    #vnote-preview-canvas {
+        width: 100%; height: 100%; display: block;
+        border-radius: 50%;
+        border: 3px solid rgba(255,255,255,.25);
+    }
     #vnote-preview-video { display: none; }
     .vnote-timer { color: #fff; font-size: 20px; font-weight: 600; margin-bottom: 16px; font-variant-numeric: tabular-nums; }
     .vnote-actions { display: flex; gap: 16px; align-items: center; }
@@ -927,19 +974,43 @@
         }
 
         .chat-input-area {
-            padding: 10px;
+            padding: 8px 10px;
+            padding-bottom: max(10px, env(safe-area-inset-bottom, 8px));
             gap: 8px;
         }
 
+        .chat-input-tools {
+            order: 1;
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        .chat-input-main {
+            order: 2;
+            width: 100%;
+            flex: 1 1 100%;
+        }
+
+        .voice-record-hint {
+            display: none;
+        }
+
+        .chat-media-btn,
         .chat-attach-btn,
         .chat-send-btn {
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
         }
 
         .chat-textarea {
-            font-size: 14px;
+            font-size: 16px;
             padding: 10px 12px;
+            min-height: 40px;
+        }
+
+        .messages-scroll-wrap {
+            min-height: 120px;
         }
 
         .pending-files-bar {
@@ -1049,25 +1120,29 @@
         <div class="voice-record-panel" id="voice-record-panel">
             <span class="voice-record-dot" aria-hidden="true"></span>
             <span class="voice-record-timer" id="voice-record-timer">0:00</span>
-            <span style="font-size:13px;color:var(--text-secondary);flex:1">Запись… нажмите микрофон ещё раз, чтобы отправить</span>
+            <span class="voice-record-hint" style="font-size:13px;color:var(--text-secondary);flex:1">Запись… нажмите микрофон ещё раз, чтобы отправить</span>
             <button type="button" class="voice-record-cancel" id="voice-record-cancel">Отмена</button>
         </div>
 
         <div class="chat-input-area">
             <input type="file" id="file-input" style="display:none" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.zip" onchange="handleFileSelect(this)">
-            <button type="button" class="chat-media-btn" id="chat-vnote-btn" title="Видеосообщение (кружок)">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>
-            </button>
-            <button type="button" class="chat-media-btn" id="chat-voice-btn" title="Голосовое сообщение">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
-            </button>
-            <button type="button" class="chat-attach-btn" onclick="document.getElementById('file-input').click()" title="Прикрепить файл">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-            </button>
-            <textarea id="message-input" class="chat-textarea" placeholder="Введите сообщение..." rows="1"></textarea>
-            <button id="send-btn" class="chat-send-btn" onclick="sendMessage()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </button>
+            <div class="chat-input-tools">
+                <button type="button" class="chat-media-btn" id="chat-vnote-btn" title="Видеосообщение (кружок)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>
+                </button>
+                <button type="button" class="chat-media-btn" id="chat-voice-btn" title="Голосовое сообщение">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                </button>
+                <button type="button" class="chat-attach-btn" onclick="document.getElementById('file-input').click()" title="Прикрепить файл">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                </button>
+            </div>
+            <div class="chat-input-main">
+                <textarea id="message-input" class="chat-textarea" placeholder="Введите сообщение..." rows="1" enterkeyhint="send"></textarea>
+                <button type="button" id="send-btn" class="chat-send-btn" onclick="sendMessage()" title="Отправить">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -1113,6 +1188,10 @@
 <div class="vnote-overlay" id="vnote-overlay">
     <div class="vnote-timer" id="vnote-timer">0:00</div>
     <div class="vnote-preview-wrap">
+        <svg class="vnote-ring" viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="vnote-ring-bg" cx="50" cy="50" r="46"></circle>
+            <circle class="vnote-ring-progress" id="vnote-ring-progress" cx="50" cy="50" r="46"></circle>
+        </svg>
         <canvas id="vnote-preview-canvas" width="480" height="480"></canvas>
         <video id="vnote-preview-video" playsinline muted></video>
     </div>
@@ -1144,7 +1223,7 @@
 {% block extra_scripts %}
 <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
 <script src="{% static 'js/chat-time.js' %}?v=1"></script>
-<script src="{% static 'js/chat-media-recorder.js' %}?v=1"></script>
+<script src="{% static 'js/chat-media-recorder.js' %}?v=2"></script>
 <script>
 const conversationId = {{ conversation.id }};
 const userId = {{ user.id }};
@@ -2262,13 +2341,42 @@ function closeMediaViewer() {
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMediaViewer(); });
 
 /* ========== Send ========== */
+function isChatWsReady() {
+    return chatSocket && chatSocket.readyState === WebSocket.OPEN;
+}
+
+function sendTextViaHttp(text, replyId) {
+    const fd = new FormData();
+    fd.append('text', text);
+    if (replyId) fd.append('reply_to', String(replyId));
+    return uploadChatFiles(fd, null).then(function (data) {
+        if (data.success && data.message) {
+            addMessage(data.message);
+            notifyParentInbox(data.message);
+            return data;
+        }
+        if (data.error) {
+            showToast('Ошибка: ' + data.error);
+            throw data;
+        }
+        return data;
+    }).catch(function (err) {
+        const msg = err && err.error ? err.error : 'Не удалось отправить сообщение';
+        if (!err || !err.error) showToast(msg);
+        throw err;
+    });
+}
+
 function sendMessage() {
     const input = document.getElementById('message-input');
     const message = input.value.trim();
 
     if (editingMessageId) {
         if (!message) return;
-        if (!(chatSocket && chatSocket.readyState === WebSocket.OPEN)) return;
+        if (!isChatWsReady()) {
+            showToast('Редактирование доступно только при активном соединении');
+            return;
+        }
         chatSocket.send(JSON.stringify({ type: 'edit_message', message_id: editingMessageId, content: message }));
         cancelEdit();
         input.value = '';
@@ -2324,17 +2432,22 @@ function sendMessage() {
         });
 
         return;
-    } else {
-        if (!(chatSocket && chatSocket.readyState === WebSocket.OPEN)) return;
-        const payload = { type: 'chat_message', message: message };
-        if (replyToId) payload.reply_to = replyToId;
-        chatSocket.send(JSON.stringify(payload));
-        cancelReply();
     }
 
+    const savedReply = replyToId;
     input.value = '';
     input.style.height = 'auto';
     stopTyping();
+    cancelReply();
+
+    if (isChatWsReady()) {
+        const payload = { type: 'chat_message', message: message };
+        if (savedReply) payload.reply_to = savedReply;
+        chatSocket.send(JSON.stringify(payload));
+        return;
+    }
+
+    sendTextViaHttp(message, savedReply);
 }
 
 function handleTyping() {
@@ -2671,18 +2784,39 @@ function startMessagePolling() {
 
 function loadMessages() {
     lastMessageDayKey = null;
-    fetch(`/chat/api/messages/${conversationId}/`)
-        .then(r => r.json())
-        .then(data => {
-            if (data.messages) {
+    const container = getMessagesEl();
+    fetch(`/chat/api/messages/${conversationId}/`, {
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' },
+    })
+        .then(function (r) {
+            if (!r.ok) {
+                return r.text().then(function (t) {
+                    throw new Error('HTTP ' + r.status + (t ? ': ' + t.slice(0, 120) : ''));
+                });
+            }
+            return r.json();
+        })
+        .then(function (data) {
+            if (data.error) throw new Error(data.error);
+            if (data.messages && data.messages.length) {
                 data.messages.forEach(function (msg) {
                     addMessage(msg, true, { noAutoScroll: true });
                 });
                 scrollToBottom(false);
+            } else if (container && !container.querySelector('.message')) {
+                addSystemMessage('Нет сообщений. Напишите первым.');
             }
             startMessagePolling();
         })
-        .catch(err => console.log('Could not load messages:', err));
+        .catch(function (err) {
+            console.error('Could not load messages:', err);
+            showToast('Не удалось загрузить сообщения');
+            if (container) {
+                addSystemMessage('Ошибка загрузки. Потяните страницу вниз для обновления или откройте чат снова.');
+            }
+            startMessagePolling();
+        });
 }
 
 document.addEventListener('visibilitychange', function () {

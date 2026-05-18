@@ -67,6 +67,19 @@
         if (timer && sec != null) timer.textContent = formatDuration(sec);
     }
 
+    var VNOTE_RING_LEN = 289.03;
+
+    function updateVnoteRing(sec) {
+        var circle = document.getElementById('vnote-ring-progress');
+        if (!circle) return;
+        var pct = Math.min(1, Math.max(0, (sec || 0) / VNOTE_MAX_SEC));
+        circle.style.strokeDashoffset = String(VNOTE_RING_LEN * (1 - pct));
+    }
+
+    function resetVnoteRing() {
+        updateVnoteRing(0);
+    }
+
     function setVnoteUi(active, sec) {
         var overlay = document.getElementById('vnote-overlay');
         var timer = document.getElementById('vnote-timer');
@@ -74,6 +87,8 @@
         if (overlay) overlay.classList.toggle('is-recording', !!active);
         if (recBtn) recBtn.classList.toggle('is-recording', !!active);
         if (timer && sec != null) timer.textContent = formatDuration(sec);
+        if (sec != null) updateVnoteRing(sec);
+        if (!active) resetVnoteRing();
     }
 
     function uploadBlob(blob, filename, variant, durationSec) {
@@ -228,6 +243,7 @@
     function openVnoteOverlay() {
         var overlay = document.getElementById('vnote-overlay');
         if (overlay) overlay.classList.add('active');
+        resetVnoteRing();
         setVnoteUi(false, 0);
     }
 
