@@ -1796,7 +1796,13 @@ function addMessage(msg, skipParentNotify, addOpts) {
         if (!text) return true;
         if (mediaPlaceholders.indexOf(text) !== -1) return true;
         if (att && att.name && text === String(att.name).trim()) return true;
-        if (author && text === String(author).trim()) return true;
+        if (author) {
+            const a = String(author).trim();
+            if (text === a) return true;
+            const compact = text.replace(/\s+/g, '');
+            const aCompact = a.replace(/\s+/g, '');
+            if (compact === aCompact || compact === aCompact + aCompact) return true;
+        }
         return false;
     }
     const vnoteAtt = attsForClass.length === 1 && attsForClass[0].variant === 'video_note' ? attsForClass[0] : null;
