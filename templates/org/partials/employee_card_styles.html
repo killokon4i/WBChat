@@ -1,0 +1,455 @@
+.employee-page {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    /* Header */
+    .employee-header {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 28px;
+        padding: 32px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 32px;
+        align-items: flex-start;
+    }
+    
+    @media (max-width: 768px) {
+        .employee-header {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .employee-header-info {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .employee-page .employee-meta {
+            justify-content: center;
+            width: 100%;
+        }
+
+        .employee-page .meta-item {
+            justify-content: center;
+        }
+
+        .employee-actions {
+            justify-content: center;
+            width: 100%;
+        }
+    }
+    
+    .employee-avatar-large {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: var(--colorPink600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        flex-shrink: 0;
+        border: 4px solid var(--border-color);
+        overflow: hidden;
+    }
+    
+    .employee-avatar-large img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .employee-avatar-large .avatar-initials,
+    .manager-avatar .avatar-initials,
+    .subordinate-avatar .avatar-initials {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        line-height: 1;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        user-select: none;
+    }
+
+    .employee-avatar-large .avatar-initials {
+        font-size: 42px;
+        font-weight: 600;
+        font-family: var(--fontWBSans, inherit);
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: clip;
+    }
+
+    .manager-avatar .avatar-initials {
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .subordinate-avatar .avatar-initials {
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .employee-header-info {
+        flex: 1;
+    }
+    
+    .employee-name-large {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .employee-username {
+        font-size: 15px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+    }
+    
+    .employee-position-large {
+        font-size: 16px;
+        color: var(--magenta);
+        margin-bottom: 16px;
+    }
+    
+    /* Action buttons */
+    .employee-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-message {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: var(--colorPink600);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-message:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(228, 0, 175, 0.36);
+    }
+    
+    .employee-page .employee-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .meta-icon {
+        color: var(--magenta);
+    }
+    
+    .employee-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 28px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .employee-status-badge.active {
+        background: var(--success-bg);
+        color: var(--success-text);
+    }
+    
+    .employee-status-badge.vacation {
+        background: var(--warning-bg);
+        color: var(--warning-text);
+    }
+    
+    .employee-status-badge.sick {
+        background: var(--error-bg);
+        color: var(--error-text);
+    }
+    
+    /* Sections */
+    .employee-sections {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+    
+    @media (max-width: 768px) {
+        .employee-sections {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .section-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 24px;
+    }
+    
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .section-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(228, 0, 175, 0.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--magenta);
+    }
+
+    .section-icon svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+    }
+    
+    /* Info rows */
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .info-value {
+        font-size: 14px;
+        color: var(--text-primary);
+        text-align: right;
+    }
+    
+    .info-value a {
+        color: var(--magenta);
+        text-decoration: none;
+    }
+    
+    .info-value a:hover {
+        color: var(--link-hover);
+    }
+    
+    /* Manager card */
+    .manager-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--bg-hover);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        margin-top: 8px;
+        text-decoration: none;
+    }
+    
+    .manager-card:hover {
+        background: var(--border-color);
+    }
+    
+    .manager-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--colorPink600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        overflow: hidden;
+    }
+    
+    .manager-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .manager-info {
+        flex: 1;
+    }
+    
+    .manager-name {
+        font-size: 14px;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+    
+    .manager-position {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    
+    /* Subordinates */
+    .subordinates-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 16px;
+    }
+    
+    .subordinate-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background: var(--bg-hover);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        text-decoration: none;
+    }
+    
+    .subordinate-item:hover {
+        background: var(--border-color);
+    }
+    
+    .subordinate-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--colorPink600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        overflow: hidden;
+    }
+    
+    .subordinate-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .subordinate-name {
+        font-size: 14px;
+        color: var(--text-primary);
+    }
+    
+    /* About */
+    .about-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+    
+    /* Back link */
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+    
+    .back-link:hover {
+        color: var(--magenta);
+    }
+
+    @media (max-width: 480px) {
+        .employee-header {
+            padding: 16px;
+            border-radius: 22px;
+            gap: 14px;
+        }
+
+        .employee-avatar-large {
+            width: 96px;
+            height: 96px;
+        }
+
+        .employee-avatar-large .avatar-initials {
+            font-size: 30px;
+        }
+
+        .employee-name-large {
+            font-size: 22px;
+        }
+
+        .employee-position-large {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .employee-page .employee-meta {
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .employee-page .meta-item {
+            font-size: 12px;
+            justify-content: center;
+        }
+
+        .employee-actions {
+            width: 100%;
+        }
+
+        .employee-actions .btn-message,
+        .employee-actions .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .section-card {
+            padding: 14px;
+            border-radius: 20px;
+        }
+
+        .info-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .info-value {
+            text-align: left;
+            word-break: break-word;
+        }
+    }

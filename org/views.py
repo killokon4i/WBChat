@@ -50,17 +50,40 @@ def employee_card(request, user_id):
         User.objects.select_related('department', 'position', 'manager', 'substitute'),
         id=user_id
     )
-    
+
     subordinates = directory_service.get_subordinates(user_id, direct_only=True)
-    
+
     is_admin = (request.user.is_superuser
                 or getattr(request.user, 'isModerator', False)
                 or getattr(request.user, 'is_admin_portal', False))
-    
-    return render(request, 'org/employee_card.html', {
+
+    embed = request.GET.get('embed', '').lower() in ('1', 'true', 'yes')
+    from_chat = request.GET.get('from_chat', '').strip()
+    hide_chat_button = False
+
+    if embed and from_chat:
+        try:
+            from chat.models import Conversation
+            conv = Conversation.objects.filter(
+                pk=int(from_chat),
+                participants=request.user,
+            ).first()
+            if conv and conv.type == 'direct':
+                other_ids = list(
+                    conv.participants.exclude(pk=request.user.pk).values_list('pk', flat=True)
+                )
+                if len(other_ids) == 1 and other_ids[0] == employee.id:
+                    hide_chat_button = True
+        except (ValueError, TypeError):
+            pass
+
+    template = 'org/employee_card_embed.html' if embed else 'org/employee_card.html'
+    return render(request, template, {
         'employee': employee,
         'subordinates': subordinates,
         'is_admin': is_admin,
+        'from_chat': from_chat,
+        'hide_chat_button': hide_chat_button,
     })
 
 

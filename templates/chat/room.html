@@ -1343,7 +1343,12 @@ let cipAddUsers = [];
 
 function openChatInfo() {
     if (convType === 'direct' && otherUserId) {
-        window.location.href = '/directory/employee/' + otherUserId + '/';
+        var inFrame = window.self !== window.top;
+        if (inFrame) {
+            window.location.href = '/directory/employee/' + otherUserId + '/?embed=1&from_chat=' + conversationId;
+        } else {
+            window.location.href = '/directory/employee/' + otherUserId + '/';
+        }
         return;
     }
     document.getElementById('cip-overlay').classList.add('active');

@@ -263,13 +263,9 @@
     .message-own .read-indicator.read::before {
         color: #8ed4fc;
     }
-    .message-vnote-only .read-indicator {
-        opacity: 1;
-        font-size: 14px;
-    }
     .message-own.message-vnote-only .read-indicator.sent::before,
     .message-own.message-voice-only .read-indicator.sent::before {
-        color: rgba(0, 0, 0, .5);
+        color: rgba(0, 0, 0, .42);
     }
     .message-own.message-vnote-only .read-indicator.read::before,
     .message-own.message-voice-only .read-indicator.read::before {
@@ -653,21 +649,7 @@
         background: transparent !important;
         box-shadow: none !important;
     }
-    .message-vnote-only .message-time {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 5px;
-        margin-top: 6px;
-        padding: 0 4px;
-        font-size: 12px;
-        line-height: 1;
-        opacity: 1;
-        color: var(--text-secondary);
-    }
-    .message-other.message-vnote-only .message-time {
-        justify-content: flex-start;
-    }
+    .message-vnote-only .message-time { display: none; }
     .message-own.message-voice-only .message-time,
     .message-own.message-media-only .message-time {
         color: var(--text-secondary);
@@ -1509,7 +1491,7 @@
 {% block extra_scripts %}
 <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
 <script src="{% static 'js/chat-time.js' %}?v=1"></script>
-<script src="{% static 'js/chat-media-recorder.js' %}?v=10"></script>
+<script src="{% static 'js/chat-media-recorder.js' %}?v=9"></script>
 <script>
 const conversationId = {{ conversation.id }};
 const userId = {{ user.id }};
@@ -2174,22 +2156,9 @@ function buildAttachmentHtml(att) {
         return html;
     }
     if (variant === 'video_note') {
-        const durSec = parseInt(att.duration, 10) || 0;
-        const dur = formatAttDuration(durSec);
-        const mimeAttr = att.mime ? ` type="${escapeHtml(att.mime)}"` : '';
-        return `<div class="msg-attachment msg-vnote-wrap">${dlBtn}
-        <div class="msg-vnote-player" data-duration="${durSec}">
-            <svg class="msg-vnote-ring" viewBox="0 0 36 36" aria-hidden="true">
-                <circle class="msg-vnote-ring-bg" cx="18" cy="18" r="16"></circle>
-                <circle class="msg-vnote-ring-bar" cx="18" cy="18" r="16"></circle>
-            </svg>
-            <div class="msg-vnote">
-                <video src="${att.url}"${mimeAttr} playsinline webkit-playsinline preload="metadata"></video>
-            </div>
-            <button type="button" class="msg-vnote-play" aria-label="Воспроизвести">
-                <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8 5 20 12 8 19"/></svg>
-            </button>
-            <span class="msg-vnote-duration">${dur}</span>
+        const dur = att.duration ? `<span class="msg-vnote-duration">${formatAttDuration(att.duration)}</span>` : '';
+        return `<div class="msg-attachment">${dlBtn}<div class="msg-vnote" onclick="openMediaViewer('video','${att.url}')">
+            <video src="${att.url}" playsinline loop muted preload="metadata"></video>${dur}
         </div></div>`;
     }
     if (att.type === 'image') {
@@ -3086,7 +3055,7 @@ let cipAddUsers = [];
 
 function openChatInfo() {
     if (convType === 'direct' && otherUserId) {
-        window.location.href = '/directory/employee/' + otherUserId + '/';
+        window.location.href = '/directory/employee/' + otherUserId + '/?embed=1&from_chat=' + conversationId;
         return;
     }
     document.getElementById('cip-overlay').classList.add('active');

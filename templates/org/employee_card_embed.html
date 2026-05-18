@@ -1,0 +1,100 @@
+{% extends 'chat/base_embed.html' %}
+{% load user_extras %}
+
+{% block title %}{{ employee.get_full_name }} — WB Bank{% endblock %}
+
+{% block extra_styles %}
+<style>
+{% include 'org/partials/employee_card_styles.html' %}
+html, body.chat-embed-body {
+    height: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.emp-embed-shell {
+    min-height: 100%;
+    padding: 12px 14px 24px;
+    box-sizing: border-box;
+}
+.emp-embed-topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 8px 0;
+    background: var(--bg-primary, #fff);
+}
+[data-theme="dark"] .emp-embed-topbar {
+    background: var(--bg-primary, #1a1a1e);
+}
+.emp-embed-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border-radius: 14px;
+    padding: 8px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+}
+.emp-embed-back:hover {
+    border-color: var(--magenta);
+    color: var(--magenta);
+}
+.employee-page--embed {
+    max-width: 100%;
+    margin: 0;
+}
+.employee-page--embed .employee-header {
+    margin-bottom: 16px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="emp-embed-shell">
+    <div class="emp-embed-topbar">
+        <button type="button" class="emp-embed-back" id="empEmbedBack" aria-label="Назад">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Назад
+        </button>
+    </div>
+    {% include 'org/partials/employee_card_body.html' with embed_mode=True from_chat=from_chat hide_chat_button=hide_chat_button %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+    var back = document.getElementById('empEmbedBack');
+    if (!back) return;
+    back.addEventListener('click', function () {
+        var params = new URLSearchParams(window.location.search);
+        var chatId = params.get('from_chat');
+        if (chatId) {
+            window.location.href = '/chat/' + chatId + '/?embed=1';
+            return;
+        }
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+        try {
+            if (window.parent && window.parent.ChatShell) {
+                window.parent.ChatShell.closeChat();
+                return;
+            }
+        } catch (e) { /* ignore */ }
+        window.location.href = '/chat/';
+    });
+})();
+</script>
+{% endblock %}
