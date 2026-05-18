@@ -665,6 +665,17 @@
         width: 200px;
         height: 200px;
         flex-shrink: 0;
+        cursor: pointer;
+        transform: scale(1);
+        transform-origin: center center;
+        transition: transform 0.28s cubic-bezier(.2, .75, .2, 1), box-shadow 0.28s ease;
+    }
+    .msg-vnote-player.is-playing {
+        transform: scale(1.08);
+        box-shadow: 0 10px 32px rgba(0, 0, 0, .32);
+    }
+    .message-own .msg-vnote-player.is-playing {
+        box-shadow: 0 8px 26px rgba(228, 0, 175, .32);
     }
     .msg-vnote-ring {
         position: absolute;
@@ -2025,8 +2036,13 @@ function bindVnotePlayer(wrap) {
             if (w === wrap) return;
             var v = w.querySelector('video');
             var p = w.querySelector('.msg-vnote-player') || w.querySelector('.msg-vnote');
-            if (v) { v.pause(); v.currentTime = 0; }
+            var ob = w.querySelector('.msg-vnote-play');
+            if (v) { v.pause(); v.currentTime = 0; v.loop = false; }
             if (p) p.classList.remove('is-playing', 'is-paused');
+            if (ob) {
+                ob.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8 5 20 12 8 19"/></svg>';
+                ob.style.marginLeft = '3px';
+            }
             var rb = w.querySelector('.msg-vnote-ring-bar');
             if (rb) rb.style.strokeDashoffset = String(ringLen);
         });
@@ -2040,19 +2056,38 @@ function bindVnotePlayer(wrap) {
         playBtn.style.marginLeft = playing ? '0' : '3px';
     }
 
+    function resetVnote(stopAtStart) {
+        video.pause();
+        if (stopAtStart) video.currentTime = 0;
+        root.classList.remove('is-playing', 'is-paused');
+        setPlayIcon(false);
+        setRing(0);
+    }
+
     function playVnote() {
         stopOthers();
-        video.muted = false;
-        video.loop = true;
+        video.loop = false;
         video.playsInline = true;
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
-        video.play().then(function () {
+        var tryPlay = function (muted) {
+            video.muted = !!muted;
+            return video.play();
+        };
+        tryPlay(true).then(function () {
+            video.muted = false;
             root.classList.add('is-playing');
             root.classList.remove('is-paused');
             setPlayIcon(true);
         }).catch(function () {
-            openMediaViewer('video', video.currentSrc || video.src);
+            tryPlay(false).then(function () {
+                root.classList.add('is-playing');
+                root.classList.remove('is-paused');
+                setPlayIcon(true);
+            }).catch(function () {
+                resetVnote(true);
+                if (typeof showToast === 'function') showToast('Не удалось воспроизвести кружок');
+            });
         });
     }
 
@@ -2063,6 +2098,8 @@ function bindVnotePlayer(wrap) {
         setPlayIcon(false);
     }
 
+    video.loop = false;
+
     setRing(0);
     setPlayIcon(false);
 
@@ -2070,17 +2107,23 @@ function bindVnotePlayer(wrap) {
         playBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            if (video.paused) playVnote();
+            if (video.paused || video.ended) playVnote();
             else pauseVnote();
         });
     }
 
     root.addEventListener('click', function (e) {
-        if (e.target.closest('.msg-attachment-dl') || e.target.closest('.msg-vnote-play')) return;
+        if (e.target.closest('.msg-attachment-dl')) return;
+        if (e.target.closest('.msg-vnote-play')) return;
         e.preventDefault();
         e.stopPropagation();
-        if (video.paused) playVnote();
+        if (video.paused || video.ended) playVnote();
         else pauseVnote();
+    });
+
+    video.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
     });
 
     video.addEventListener('timeupdate', function () {
@@ -2089,13 +2132,11 @@ function bindVnotePlayer(wrap) {
         setRing(video.currentTime / dur);
     });
     video.addEventListener('ended', function () {
-        root.classList.remove('is-playing', 'is-paused');
-        setPlayIcon(false);
-        setRing(0);
-        video.currentTime = 0;
+        resetVnote(true);
     });
     video.addEventListener('pause', function () {
-        if (!video.duration || video.currentTime < video.duration - 0.05) {
+        if (video.ended) return;
+        if (!video.duration || video.currentTime < video.duration - 0.08) {
             root.classList.remove('is-playing');
             root.classList.add('is-paused');
             setPlayIcon(false);
