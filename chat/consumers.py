@@ -124,15 +124,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.broadcast_inbox_update(message.id)
 
     async def handle_typing(self, data):
-        """Handle typing indicator"""
+        """Handle typing / recording activity indicator."""
         is_typing = data.get('is_typing', False)
+        activity = (data.get('activity') or 'typing').strip().lower()
+        if activity not in ('typing', 'voice', 'video_note'):
+            activity = 'typing'
 
         if is_typing:
             await self.set_typing_indicator()
         else:
             await self.clear_typing_indicator()
 
-        # Broadcast typing status to room
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -140,6 +142,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'user_id': self.user.id,
                 'username': self.user.username,
                 'is_typing': is_typing,
+                'activity': activity if is_typing else None,
             }
         )
 
@@ -230,6 +233,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'user_id': event['user_id'],
                 'username': event['username'],
                 'is_typing': event['is_typing'],
+                'activity': event.get('activity'),
             }))
 
     async def read_receipt(self, event):

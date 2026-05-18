@@ -12,6 +12,7 @@
         margin: 0;
         overflow: hidden;
         background: var(--bg-card);
+        overscroll-behavior: none;
     }
 
     .chat-container {
@@ -24,6 +25,7 @@
         margin: 0;
         padding: 12px 12px 14px;
         box-sizing: border-box;
+        overscroll-behavior: contain;
     }
     .chat-header-card {
         background: var(--bg-card);
@@ -616,19 +618,57 @@
         color: var(--magenta);
     }
 
+  .message-vnote-only {
+        padding: 4px 8px 6px !important;
+        max-width: min(240px, 88%) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+    .message-vnote-only .message-time {
+        margin-top: 4px;
+    }
+    .msg-vnote-wrap {
+        position: relative;
+        display: inline-block;
+        line-height: 0;
+    }
     .msg-vnote {
-        width: 220px; height: 220px; border-radius: 50%;
-        overflow: hidden; position: relative; margin-top: 6px;
-        background: #111; cursor: pointer;
-        box-shadow: 0 4px 20px rgba(0,0,0,.25);
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        overflow: hidden;
+        position: relative;
+        background: #111;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(0,0,0,.2);
+    }
+    .message-own .msg-vnote {
+        box-shadow: 0 2px 12px rgba(0,0,0,.15);
     }
     .msg-vnote video {
-        width: 100%; height: 100%; object-fit: cover; display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        background: #000;
+    }
+    .msg-vnote.is-playing video {
+        outline: 2px solid var(--magenta);
     }
     .msg-vnote-duration {
-        position: absolute; bottom: 10px; right: 12px;
-        background: rgba(0,0,0,.55); color: #fff;
-        font-size: 12px; padding: 2px 8px; border-radius: 10px;
+        position: absolute;
+        bottom: 10px;
+        right: 12px;
+        background: rgba(0,0,0,.55);
+        color: #fff;
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        pointer-events: none;
+    }
+    .message-vnote-only .msg-attachment-dl {
+        top: 4px;
+        right: 4px;
     }
 
     .vnote-overlay {
@@ -1342,7 +1382,7 @@
 {% block extra_scripts %}
 <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
 <script src="{% static 'js/chat-time.js' %}?v=1"></script>
-<script src="{% static 'js/chat-media-recorder.js' %}?v=3"></script>
+<script src="{% static 'js/chat-media-recorder.js' %}?v=4"></script>
 <script>
 const conversationId = {{ conversation.id }};
 const userId = {{ user.id }};
@@ -1353,6 +1393,9 @@ const otherUserId = {% if other_user %}{{ other_user.id }}{% else %}null{% endif
 let otherPresence = {{ other_presence_json|safe }};
 let chatSocket = null;
 let typingTimer = null;
+let mediaActivityTimer = null;
+let currentMediaActivity = null;
+let mediaSendLock = false;
 let reconnectAttempts = 0;
 const maxReconnectAttempts = 3;
 let wsGiveUp = false;
@@ -1571,9 +1614,7 @@ function handleMessage(data) {
             if (data.message.author_id !== userId) markConversationRead();
             break;
         case 'typing':
-            const typing = document.getElementById('typing');
-            if (data.is_typing && data.user_id !== userId) typing.textContent = `${data.username} печатает...`;
-            else typing.textContent = '';
+            updateTypingIndicator(data);
             break;
         case 'presence_update':
             if (convType === 'direct' && data.user_id === otherUserId) {
@@ -1652,8 +1693,15 @@ function addMessage(msg, skipParentNotify, addOpts) {
     const isVoiceOnly = attsForClass.length === 1 &&
         (attsForClass[0].variant === 'voice') &&
         !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id;
+    const isVnoteOnly = attsForClass.length === 1 &&
+        (attsForClass[0].variant === 'video_note') &&
+        !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id;
     if (isVoiceOnly) {
         div.classList.add('message-voice-only');
+        div.classList.remove('message-media-only');
+    }
+    if (isVnoteOnly) {
+        div.classList.add('message-vnote-only');
         div.classList.remove('message-media-only');
     }
 
@@ -1694,6 +1742,7 @@ function addMessage(msg, skipParentNotify, addOpts) {
 
     div.innerHTML = html;
     div.querySelectorAll('.msg-voice-wrap').forEach(function (wrap) { bindVoicePlayer(wrap); });
+    div.querySelectorAll('.msg-vnote-wrap').forEach(function (wrap) { bindVnotePlayer(wrap); });
     container.appendChild(div);
     bindMessageGestures(div, msg);
     if (!addOpts.noAutoScroll) {
@@ -1755,6 +1804,43 @@ function formatAttDuration(sec) {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
     return m + ':' + String(s).padStart(2, '0');
+}
+
+function bindVnotePlayer(wrap) {
+    const circle = wrap.querySelector('.msg-vnote');
+    const video = wrap.querySelector('video');
+    if (!circle || !video) return;
+    circle.addEventListener('click', function (e) {
+        if (e.target.closest('.msg-attachment-dl')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        document.querySelectorAll('.msg-vnote video').forEach(function (v) {
+            if (v !== video) {
+                v.pause();
+                v.currentTime = 0;
+                var p = v.closest('.msg-vnote');
+                if (p) p.classList.remove('is-playing');
+            }
+        });
+        if (video.paused) {
+            video.muted = false;
+            video.loop = true;
+            video.playsInline = true;
+            video.setAttribute('playsinline', '');
+            video.play().then(function () {
+                circle.classList.add('is-playing');
+            }).catch(function () {
+                openMediaViewer('video', video.currentSrc || video.src);
+            });
+        } else {
+            video.pause();
+            circle.classList.remove('is-playing');
+        }
+    });
+    video.addEventListener('ended', function () {
+        circle.classList.remove('is-playing');
+        video.currentTime = 0;
+    });
 }
 
 function bindVoicePlayer(wrap) {
@@ -1861,8 +1947,9 @@ function buildAttachmentHtml(att) {
     }
     if (variant === 'video_note') {
         const dur = att.duration ? `<span class="msg-vnote-duration">${formatAttDuration(att.duration)}</span>` : '';
-        return `<div class="msg-attachment">${dlBtn}<div class="msg-vnote" onclick="openMediaViewer('video','${att.url}')">
-            <video src="${att.url}" playsinline loop muted preload="metadata"></video>${dur}
+        const mimeAttr = att.mime ? ` type="${escapeHtml(att.mime)}"` : '';
+        return `<div class="msg-attachment msg-vnote-wrap">${dlBtn}<div class="msg-vnote" role="button" tabindex="0" aria-label="Видеосообщение">
+            <video src="${att.url}"${mimeAttr} playsinline webkit-playsinline preload="metadata"></video>${dur}
         </div></div>`;
     }
     if (att.type === 'image') {
@@ -2511,19 +2598,23 @@ function sendMessage() {
         return;
     }
 
-    if (isUploading) return;
-    if (window.WBChatMedia && WBChatMedia.isRecording && WBChatMedia.isRecording()) {
-        showToast('Сначала завершите запись кружка');
-        return;
-    }
+    if (isUploading || mediaSendLock) return;
+
     if (window.WBChatMedia && WBChatMedia.hasPendingVoice && WBChatMedia.hasPendingVoice()) {
-        WBChatMedia.commitVoice().then(function (data) {
-            if (data && data.message) notifyParentInbox(data.message);
-        }).catch(function () {});
+        mediaSendLock = true;
+        WBChatMedia.commitVoice().catch(function (err) {
+            if (err && err.error) showToast(err.error);
+        }).finally(function () {
+            mediaSendLock = false;
+        });
         input.value = '';
         input.style.height = 'auto';
         stopTyping();
         cancelReply();
+        return;
+    }
+    if (window.WBChatMedia && WBChatMedia.isRecording && WBChatMedia.isRecording()) {
+        showToast('Отправьте кружок кнопкой «Отправить» в окне записи');
         return;
     }
     if (!message && !pendingFiles.length) return;
@@ -2589,16 +2680,60 @@ function sendMessage() {
     sendTextViaHttp(message, savedReply);
 }
 
+const ACTIVITY_LABELS = {
+    typing: 'печатает',
+    voice: 'записывает голосовое',
+    video_note: 'записывает видеосообщение',
+};
+
+function updateTypingIndicator(data) {
+    const typing = document.getElementById('typing');
+    if (!typing) return;
+    if (!data || !data.is_typing || data.user_id === userId) {
+        typing.textContent = '';
+        return;
+    }
+    const act = data.activity || 'typing';
+    const verb = ACTIVITY_LABELS[act] || ACTIVITY_LABELS.typing;
+    typing.textContent = data.username + ' ' + verb + '…';
+}
+
+function sendChatActivity(activity, active) {
+    if (!isChatWsReady()) return;
+    chatSocket.send(JSON.stringify({
+        type: 'typing',
+        is_typing: !!active,
+        activity: activity || 'typing',
+    }));
+}
+
+function setMediaActivity(activity, active) {
+    if (active) {
+        currentMediaActivity = activity;
+        sendChatActivity(activity, true);
+        clearTimeout(mediaActivityTimer);
+        mediaActivityTimer = setTimeout(function () {
+            setMediaActivity(activity, false);
+        }, 2500);
+        return;
+    }
+    if (currentMediaActivity === activity) {
+        currentMediaActivity = null;
+        sendChatActivity(activity, false);
+    }
+}
+
 function handleTyping() {
+    if (currentMediaActivity) return;
     if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
-        chatSocket.send(JSON.stringify({ type: 'typing', is_typing: true }));
+        chatSocket.send(JSON.stringify({ type: 'typing', is_typing: true, activity: 'typing' }));
         clearTimeout(typingTimer);
         typingTimer = setTimeout(stopTyping, 1000);
     }
 }
 function stopTyping() {
     if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
-        chatSocket.send(JSON.stringify({ type: 'typing', is_typing: false }));
+        chatSocket.send(JSON.stringify({ type: 'typing', is_typing: false, activity: 'typing' }));
     }
 }
 
@@ -3015,6 +3150,9 @@ if (window.WBChatMedia) {
             setInputLocked(locked);
         },
         getReplyToId: function () { return replyToId; },
+        onActivityChange: function (activity, active) {
+            setMediaActivity(activity, active);
+        },
     });
 }
 
