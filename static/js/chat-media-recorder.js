@@ -47,6 +47,43 @@
     var vnoteUploading = false;
     var vnoteVideo = null;
     var vnoteCanvas = null;
+    var sharedMicStream = null;
+    var sharedCamStream = null;
+
+    function streamLive(stream) {
+        return !!(stream && stream.getTracks().some(function (t) {
+            return t.readyState === 'live';
+        }));
+    }
+
+    function acquireMic() {
+        if (streamLive(sharedMicStream)) {
+            return Promise.resolve(sharedMicStream);
+        }
+        return navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true },
+        }).then(function (stream) {
+            sharedMicStream = stream;
+            return stream;
+        });
+    }
+
+    function acquireCam() {
+        if (streamLive(sharedCamStream)) {
+            return Promise.resolve(sharedCamStream);
+        }
+        return navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: 'user',
+                width: { ideal: 480, max: 640 },
+                height: { ideal: 480, max: 640 },
+            },
+            audio: { echoCancellation: true, noiseSuppression: true },
+        }).then(function (stream) {
+            sharedCamStream = stream;
+            return stream;
+        });
+    }
 
     function pickMime(candidates) {
         if (!global.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
@@ -162,7 +199,6 @@
             try { voiceRec.stop(); } catch (e) { /* ignore */ }
         }
         voiceRec = null;
-        stopStream(voiceStream);
         voiceStream = null;
         setVoiceUi('idle');
         notifyVoicePending();
@@ -184,7 +220,6 @@
                 };
                 voiceChunks = [];
             }
-            stopStream(voiceStream);
             voiceStream = null;
             voiceActive = false;
             clearVoiceTimer();
@@ -200,7 +235,6 @@
             var rec = voiceRec;
             rec.onstop = function () {
                 clearVoiceTimer();
-                stopStream(voiceStream);
                 voiceStream = null;
                 voiceActive = false;
                 voiceRec = null;
@@ -234,7 +268,7 @@
             state.showToast('Микрофон недоступен');
             return;
         }
-        navigator.mediaDevices.getUserMedia({ audio: true })
+        acquireMic()
             .then(function (stream) {
                 voiceStream = stream;
                 voiceChunks = [];
@@ -357,7 +391,9 @@
             try { vnoteRecorder.stop(); } catch (e) { /* ignore */ }
         }
         vnoteRecorder = null;
-        stopStream(vnoteStream);
+        if (vnoteVideo) {
+            try { vnoteVideo.srcObject = null; } catch (e) { /* ignore */ }
+        }
         vnoteStream = null;
         cleanupVnoteUi();
         if (wasActive) setActivity('video_note', false);
@@ -396,9 +432,6 @@
         ctx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
-        /* Фронт-камера в потоке зеркальная — разворачиваем в записи (превью зеркалим в CSS). */
-        ctx.translate(w, 0);
-        ctx.scale(-1, 1);
         ctx.drawImage(vnoteVideo, sx, sy, side, side, 0, 0, w, h);
         ctx.restore();
     }
@@ -445,17 +478,7 @@
     }
 
     function prepareVnotePreview() {
-        return navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: 'user',
-                width: { ideal: 480, max: 640 },
-                height: { ideal: 480, max: 640 },
-            },
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-            },
-        }).then(function (stream) {
+        return acquireCam().then(function (stream) {
             vnoteStream = stream;
             vnoteVideo = document.getElementById('vnote-preview-video');
             vnoteCanvas = document.getElementById('vnote-preview-canvas');
@@ -491,7 +514,9 @@
 
                     if (vnoteDiscardOnStop) {
                         vnoteDiscardOnStop = false;
-                        stopStream(vnoteStream);
+                        if (vnoteVideo) {
+                            try { vnoteVideo.srcObject = null; } catch (e) { /* ignore */ }
+                        }
                         vnoteStream = null;
                         setVnoteUi(false, 0);
                         resolve(null);
@@ -572,7 +597,9 @@
                 p.duration
             ).then(function (res) {
                 vnotePending = null;
-                stopStream(vnoteStream);
+                if (vnoteVideo) {
+                    try { vnoteVideo.srcObject = null; } catch (e) { /* ignore */ }
+                }
                 vnoteStream = null;
                 cleanupVnoteUi();
                 return res;
@@ -691,6 +718,12 @@
             state.onActivityChange = opts.onActivityChange || function () {};
             bindUi();
             notifyVoicePending();
+            global.addEventListener('pagehide', function () {
+                stopStream(sharedMicStream);
+                sharedMicStream = null;
+                stopStream(sharedCamStream);
+                sharedCamStream = null;
+            });
         },
         cancelAll: function () {
             cancelVoice();
