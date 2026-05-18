@@ -234,18 +234,41 @@
     .message-edited { font-size: 10px; opacity: .6; }
     .message-pinned-indicator { font-size: 10px; opacity: .7; }
 
-    /* Read indicator */
+    /* Статус: 1 галочка — отправлено, 2 — прочитано */
     .read-indicator {
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: .2px;
-        border-radius: 16px;
-        padding: 2px 7px;
-        background: rgba(255, 255, 255, .18);
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+        line-height: 1;
+        background: none;
+        padding: 0;
     }
-    .read-indicator.read { color: #7de0b0; background: rgba(0, 138, 78, .2); }
-    .message-own .read-indicator.read { color: #d8fbe9; background: rgba(255,255,255,.18); }
-    .read-indicator.unread { opacity: .75; }
+    .read-indicator .msg-check,
+    .read-indicator .msg-checks {
+        display: block;
+    }
+    .read-indicator.unread {
+        color: rgba(0, 0, 0, .38);
+    }
+    .message-own .read-indicator.unread {
+        color: rgba(255, 255, 255, .65);
+    }
+    .read-indicator.read {
+        color: #53bdeb;
+    }
+    .message-own .read-indicator.read {
+        color: #8ed4fc;
+    }
+    .message-own.message-vnote-only .read-indicator.unread,
+    .message-own.message-voice-only .read-indicator.unread,
+    .message-own.message-media-only .read-indicator.unread {
+        color: rgba(0, 0, 0, .4);
+    }
+    .message-own.message-vnote-only .read-indicator.read,
+    .message-own.message-voice-only .read-indicator.read,
+    .message-own.message-media-only .read-indicator.read {
+        color: #4a9fd4;
+    }
 
     /* Reply preview */
     .reply-preview {
@@ -624,7 +647,14 @@
         background: transparent !important;
         box-shadow: none !important;
     }
-    .message-vnote-only .message-time {
+    .message-own.message-vnote-only .message-time,
+    .message-own.message-voice-only .message-time,
+    .message-own.message-media-only .message-time {
+        color: var(--text-secondary);
+        opacity: 1;
+    }
+    .message-vnote-only .message-time,
+    .message-voice-only .message-time {
         margin-top: 4px;
     }
     .msg-vnote-wrap {
@@ -727,6 +757,7 @@
         width: 100%; height: 100%; display: block;
         border-radius: 50%;
         border: 3px solid rgba(255,255,255,.25);
+        transform: scaleX(-1);
     }
     #vnote-preview-video { display: none; }
     .vnote-timer { color: #fff; font-size: 20px; font-weight: 600; margin-bottom: 16px; font-variant-numeric: tabular-nums; }
@@ -1382,7 +1413,7 @@
 {% block extra_scripts %}
 <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
 <script src="{% static 'js/chat-time.js' %}?v=1"></script>
-<script src="{% static 'js/chat-media-recorder.js' %}?v=5"></script>
+<script src="{% static 'js/chat-media-recorder.js' %}?v=6"></script>
 <script>
 const conversationId = {{ conversation.id }};
 const userId = {{ user.id }};
@@ -1714,7 +1745,7 @@ function addMessage(msg, skipParentNotify, addOpts) {
     let readHtml = '';
     if (isOwn) {
         const isRead = msg.is_read === true;
-        readHtml = `<span class="read-indicator ${isRead ? 'read' : 'unread'}">${isRead ? 'прочитано' : 'доставлено'}</span>`;
+        readHtml = readStatusHtml(isRead);
     }
 
     let html = '';
@@ -1797,6 +1828,32 @@ function messagePreviewText(msg) {
         return '📎 ' + atts[0].name;
     }
     return 'Сообщение';
+}
+
+function readStatusHtml(isRead) {
+    const cls = 'read-indicator ' + (isRead ? 'read' : 'unread');
+    const label = isRead ? 'Прочитано' : 'Отправлено';
+    if (isRead) {
+        return '<span class="' + cls + '" title="' + label + '" aria-label="' + label + '">' +
+            '<svg class="msg-checks" viewBox="0 0 20 11" width="18" height="10" aria-hidden="true">' +
+            '<path fill="currentColor" d="M7.6 10.6L1.1 4.1 2.5 2.7 7.6 7.8 17.5 0l1.4 1.4z"/>' +
+            '<path fill="currentColor" d="M12.2 10.6L5.7 4.1 7.1 2.7 12.2 7.8 20 0l1.4 1.4z"/>' +
+            '</svg></span>';
+    }
+    return '<span class="' + cls + '" title="' + label + '" aria-label="' + label + '">' +
+        '<svg class="msg-check" viewBox="0 0 16 11" width="14" height="10" aria-hidden="true">' +
+        '<path fill="currentColor" d="M14.2 0.4L5.6 9 2.2 5.6 0.8 7l4.8 4.8 10-10z"/>' +
+        '</svg></span>';
+}
+
+function setReadIndicatorElement(ind, isRead) {
+    if (!ind) return;
+    ind.className = 'read-indicator ' + (isRead ? 'read' : 'unread');
+    ind.title = isRead ? 'Прочитано' : 'Отправлено';
+    ind.setAttribute('aria-label', ind.title);
+    ind.innerHTML = isRead
+        ? '<svg class="msg-checks" viewBox="0 0 20 11" width="18" height="10" aria-hidden="true"><path fill="currentColor" d="M7.6 10.6L1.1 4.1 2.5 2.7 7.6 7.8 17.5 0l1.4 1.4z"/><path fill="currentColor" d="M12.2 10.6L5.7 4.1 7.1 2.7 12.2 7.8 20 0l1.4 1.4z"/></svg>'
+        : '<svg class="msg-check" viewBox="0 0 16 11" width="14" height="10" aria-hidden="true"><path fill="currentColor" d="M14.2 0.4L5.6 9 2.2 5.6 0.8 7l4.8 4.8 10-10z"/></svg>';
 }
 
 function formatAttDuration(sec) {
@@ -2031,11 +2088,7 @@ function handleReadReceipt(readUserId, messageIds) {
     (messageIds || []).forEach(mid => {
         const el = document.getElementById(`message-${mid}`);
         if (!el) return;
-        const ind = el.querySelector('.read-indicator');
-        if (ind) {
-            ind.className = 'read-indicator read';
-            ind.textContent = 'прочитано';
-        }
+        setReadIndicatorElement(el.querySelector('.read-indicator'), true);
     });
 }
 

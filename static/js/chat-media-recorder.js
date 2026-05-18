@@ -396,6 +396,9 @@
         ctx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
+        /* Фронт-камера в потоке зеркальная — разворачиваем в записи (превью зеркалим в CSS). */
+        ctx.translate(w, 0);
+        ctx.scale(-1, 1);
         ctx.drawImage(vnoteVideo, sx, sy, side, side, 0, 0, w, h);
         ctx.restore();
     }
