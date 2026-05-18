@@ -710,7 +710,6 @@
         object-fit: cover;
         display: block;
         background: #000;
-        transform: scaleX(-1);
     }
     .msg-vnote-play {
         position: absolute;
@@ -837,7 +836,6 @@
         width: 100%; height: 100%; display: block;
         border-radius: 50%;
         border: 3px solid rgba(255,255,255,.25);
-        transform: scaleX(-1);
     }
     #vnote-preview-video { display: none; }
     .vnote-timer { color: #fff; font-size: 20px; font-weight: 600; margin-bottom: 16px; font-variant-numeric: tabular-nums; }
@@ -1932,39 +1930,105 @@ function formatAttDuration(sec) {
 }
 
 function bindVnotePlayer(wrap) {
-    const circle = wrap.querySelector('.msg-vnote');
+    const player = wrap.querySelector('.msg-vnote-player');
     const video = wrap.querySelector('video');
-    if (!circle || !video) return;
-    circle.addEventListener('click', function (e) {
-        if (e.target.closest('.msg-attachment-dl')) return;
+    const playBtn = wrap.querySelector('.msg-vnote-play');
+    const ringBar = wrap.querySelector('.msg-vnote-ring-bar');
+    if (!video) return;
+
+    const root = player || wrap.querySelector('.msg-vnote');
+    if (!root) return;
+
+    const total = player ? (parseInt(player.getAttribute('data-duration'), 10) || 0) : 0;
+    const ringLen = 100;
+
+    function setRing(pct) {
+        if (!ringBar) return;
+        var p = Math.min(1, Math.max(0, pct || 0));
+        ringBar.style.strokeDasharray = ringLen + ' ' + ringLen;
+        ringBar.style.strokeDashoffset = String(ringLen * (1 - p));
+    }
+
+    function stopOthers() {
+        document.querySelectorAll('.msg-vnote-wrap').forEach(function (w) {
+            if (w === wrap) return;
+            var v = w.querySelector('video');
+            var p = w.querySelector('.msg-vnote-player') || w.querySelector('.msg-vnote');
+            if (v) { v.pause(); v.currentTime = 0; }
+            if (p) p.classList.remove('is-playing', 'is-paused');
+            var rb = w.querySelector('.msg-vnote-ring-bar');
+            if (rb) rb.style.strokeDashoffset = String(ringLen);
+        });
+    }
+
+    function setPlayIcon(playing) {
+        if (!playBtn) return;
+        playBtn.innerHTML = playing
+            ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8 5 20 12 8 19"/></svg>';
+        playBtn.style.marginLeft = playing ? '0' : '3px';
+    }
+
+    function playVnote() {
+        stopOthers();
+        video.muted = false;
+        video.loop = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        video.play().then(function () {
+            root.classList.add('is-playing');
+            root.classList.remove('is-paused');
+            setPlayIcon(true);
+        }).catch(function () {
+            openMediaViewer('video', video.currentSrc || video.src);
+        });
+    }
+
+    function pauseVnote() {
+        video.pause();
+        root.classList.remove('is-playing');
+        root.classList.add('is-paused');
+        setPlayIcon(false);
+    }
+
+    setRing(0);
+    setPlayIcon(false);
+
+    if (playBtn) {
+        playBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (video.paused) playVnote();
+            else pauseVnote();
+        });
+    }
+
+    root.addEventListener('click', function (e) {
+        if (e.target.closest('.msg-attachment-dl') || e.target.closest('.msg-vnote-play')) return;
         e.preventDefault();
         e.stopPropagation();
-        document.querySelectorAll('.msg-vnote video').forEach(function (v) {
-            if (v !== video) {
-                v.pause();
-                v.currentTime = 0;
-                var p = v.closest('.msg-vnote');
-                if (p) p.classList.remove('is-playing');
-            }
-        });
-        if (video.paused) {
-            video.muted = false;
-            video.loop = true;
-            video.playsInline = true;
-            video.setAttribute('playsinline', '');
-            video.play().then(function () {
-                circle.classList.add('is-playing');
-            }).catch(function () {
-                openMediaViewer('video', video.currentSrc || video.src);
-            });
-        } else {
-            video.pause();
-            circle.classList.remove('is-playing');
-        }
+        if (video.paused) playVnote();
+        else pauseVnote();
+    });
+
+    video.addEventListener('timeupdate', function () {
+        var dur = (video.duration && isFinite(video.duration)) ? video.duration : total;
+        if (!dur) return;
+        setRing(video.currentTime / dur);
     });
     video.addEventListener('ended', function () {
-        circle.classList.remove('is-playing');
+        root.classList.remove('is-playing', 'is-paused');
+        setPlayIcon(false);
+        setRing(0);
         video.currentTime = 0;
+    });
+    video.addEventListener('pause', function () {
+        if (!video.duration || video.currentTime < video.duration - 0.05) {
+            root.classList.remove('is-playing');
+            root.classList.add('is-paused');
+            setPlayIcon(false);
+        }
     });
 }
 
@@ -2071,9 +2135,22 @@ function buildAttachmentHtml(att) {
         return html;
     }
     if (variant === 'video_note') {
-        const dur = att.duration ? `<span class="msg-vnote-duration">${formatAttDuration(att.duration)}</span>` : '';
-        return `<div class="msg-attachment">${dlBtn}<div class="msg-vnote" onclick="openMediaViewer('video','${att.url}')">
-            <video src="${att.url}" playsinline loop muted preload="metadata"></video>${dur}
+        const durSec = parseInt(att.duration, 10) || 0;
+        const dur = formatAttDuration(durSec);
+        const mimeAttr = att.mime ? ` type="${escapeHtml(att.mime)}"` : '';
+        return `<div class="msg-attachment msg-vnote-wrap">${dlBtn}
+        <div class="msg-vnote-player" data-duration="${durSec}">
+            <svg class="msg-vnote-ring" viewBox="0 0 36 36" aria-hidden="true">
+                <circle class="msg-vnote-ring-bg" cx="18" cy="18" r="16"></circle>
+                <circle class="msg-vnote-ring-bar" cx="18" cy="18" r="16"></circle>
+            </svg>
+            <div class="msg-vnote">
+                <video src="${att.url}"${mimeAttr} playsinline webkit-playsinline preload="metadata"></video>
+            </div>
+            <button type="button" class="msg-vnote-play" aria-label="Воспроизвести">
+                <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8 5 20 12 8 19"/></svg>
+            </button>
+            <span class="msg-vnote-duration">${dur}</span>
         </div></div>`;
     }
     if (att.type === 'image') {
