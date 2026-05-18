@@ -177,6 +177,15 @@
     function handlePayload(data) {
         if (!data || !data.type) return;
 
+        if (window.WBChatNotify && typeof window.WBChatNotify.handleChatInbox === 'function') {
+            if (data.type === 'chat_inbox') {
+                window.WBChatNotify.handleChatInbox(data);
+            }
+        }
+        if (window.WBRealtime && typeof window.WBRealtime._onPayload === 'function') {
+            window.WBRealtime._onPayload(data);
+        }
+
         if (data.counts) {
             applyCounts(data.counts);
         }

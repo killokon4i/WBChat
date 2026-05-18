@@ -502,6 +502,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'size': a.file_size,
                 'type': a.file_type,
                 'mime': a.mime_type,
+                'variant': getattr(a, 'variant', 'default') or 'default',
+                'duration': a.duration,
             } for a in atts]
         if message.reply_to_id:
             try:

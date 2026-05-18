@@ -338,6 +338,12 @@ class Attachment(models.Model):
         ('other', 'Other'),
     ]
 
+    VARIANT_CHOICES = [
+        ('default', 'Default'),
+        ('voice', 'Voice message'),
+        ('video_note', 'Video note (circle)'),
+    ]
+
     message = models.ForeignKey(
         Message,
         on_delete=models.CASCADE,
@@ -350,6 +356,11 @@ class Attachment(models.Model):
     file_size = models.PositiveIntegerField(help_text="File size in bytes")
     file_type = models.CharField(max_length=10, choices=ATTACHMENT_TYPES, default='other')
     mime_type = models.CharField(max_length=100)
+    variant = models.CharField(
+        max_length=20,
+        choices=VARIANT_CHOICES,
+        default='default',
+    )
 
     # Media-specific fields
     thumbnail = models.ImageField(upload_to='chat_thumbnails/%Y/%m/%d/', blank=True, null=True)

@@ -12,7 +12,7 @@ from django.utils import timezone
 from .models import Conversation, Message, UserConversation, Attachment
 from .message_format import build_message_dict, conversation_display_name
 from .realtime import _message_preview, get_unread_summary
-from .services.file_upload import validate_chat_upload_file
+from .services.file_upload import validate_chat_upload_variant
 from .services.avatar_display import attach_conversation_display
 from .services.presence import (
     get_direct_chat_partner,
@@ -316,6 +316,13 @@ def upload_attachment(request, conversation_id):
 
     files = request.FILES.getlist('files')
     text = request.POST.get('text', '').strip()
+    variant = (request.POST.get('variant') or 'default').strip().lower()
+    if variant not in ('default', 'voice', 'video_note'):
+        variant = 'default'
+    try:
+        duration_sec = int(request.POST.get('duration') or 0) or None
+    except (TypeError, ValueError):
+        duration_sec = None
     reply_to_id = request.POST.get('reply_to') or None
     if reply_to_id is not None:
         try:
@@ -331,9 +338,17 @@ def upload_attachment(request, conversation_id):
     if not files and not text:
         return JsonResponse({'error': 'Нет содержимого'}, status=400)
 
+    if variant in ('voice', 'video_note'):
+        if len(files) != 1:
+            return JsonResponse({'error': 'Одна запись за раз'}, status=400)
+        if text:
+            text = ''
+
     for f in files:
         mime = mimetypes.guess_type(f.name)[0]
-        err = validate_chat_upload_file(f.name, f.size, mime)
+        err = validate_chat_upload_variant(
+            f.name, f.size, mime, variant=variant, duration_sec=duration_sec,
+        )
         if err:
             return JsonResponse({'error': err}, status=400)
 
@@ -343,15 +358,23 @@ def upload_attachment(request, conversation_id):
     has_video = any(
         (mimetypes.guess_type(f.name)[0] or '').startswith('video/') for f in files
     )
-    if files:
+    if variant == 'voice':
+        msg_type = 'audio'
+        default_content = '🎤 Голосовое сообщение'
+    elif variant == 'video_note':
+        msg_type = 'video'
+        default_content = '📹 Видеосообщение'
+    elif files:
         msg_type = 'image' if has_image and not has_video else ('video' if has_video else 'file')
+        default_content = files[0].name
     else:
         msg_type = 'text'
+        default_content = ''
 
     message = Message.objects.create(
         conversation_id=conversation_id,
         author=request.user,
-        content=text or (files[0].name if files else ''),
+        content=text or default_content,
         type=msg_type,
         reply_to_id=reply_to_id,
     )
@@ -374,6 +397,8 @@ def upload_attachment(request, conversation_id):
             file_size=f.size,
             file_type=file_type,
             mime_type=mime,
+            variant=variant if variant in ('voice', 'video_note') else 'default',
+            duration=duration_sec,
             uploaded_by=request.user,
         )
         attachments_data.append({
@@ -383,6 +408,8 @@ def upload_attachment(request, conversation_id):
             'size': att.file_size,
             'type': att.file_type,
             'mime': att.mime_type,
+            'variant': att.variant,
+            'duration': att.duration,
         })
 
     Conversation.objects.filter(id=conversation_id).update(updated_at=timezone.now())

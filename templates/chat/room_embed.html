@@ -463,6 +463,114 @@
         transition: all .3s; flex-shrink: 0;
     }
     .chat-attach-btn:hover { border-color: var(--magenta); color: var(--magenta); }
+    .chat-media-btn {
+        width: 48px; height: 48px; border-radius: 50%;
+        background: var(--bg-hover); border: 2px solid var(--border-color);
+        color: var(--text-secondary); cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all .3s; flex-shrink: 0;
+    }
+    .chat-media-btn:hover { border-color: var(--magenta); color: var(--magenta); }
+    .chat-media-btn.is-recording {
+        border-color: #ff73cb; color: #fff; background: var(--magenta);
+        animation: voicePulse 1s ease infinite;
+    }
+    @keyframes voicePulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(255, 47, 179, .45); }
+        50% { box-shadow: 0 0 0 8px rgba(255, 47, 179, 0); }
+    }
+    .chat-media-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    .voice-record-panel {
+        display: none; align-items: center; gap: 12px;
+        padding: 10px 20px; border-top: 1px solid var(--border-color);
+        background: rgba(255, 47, 179, .08);
+    }
+    .voice-record-panel.active { display: flex; }
+    .voice-record-dot {
+        width: 10px; height: 10px; border-radius: 50%;
+        background: #ff4081; animation: voicePulse 1s ease infinite;
+    }
+    .voice-record-timer { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; flex: 1; }
+    .voice-record-cancel {
+        border: none; background: var(--bg-card); border-radius: 16px;
+        padding: 8px 14px; cursor: pointer; font-size: 13px; color: var(--text-primary);
+    }
+
+    .msg-voice {
+        display: flex; align-items: center; gap: 10px;
+        min-width: 200px; max-width: min(280px, 100%);
+        padding: 8px 12px; border-radius: 20px;
+        background: rgba(0,0,0,.1);
+    }
+    .message-own .msg-voice { background: rgba(255,255,255,.15); }
+    .msg-voice-play {
+        width: 40px; height: 40px; border-radius: 50%; border: none;
+        background: var(--magenta); color: #fff; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .msg-voice-play svg { width: 18px; height: 18px; }
+    .msg-voice-meta { flex: 1; min-width: 0; }
+    .msg-voice-progress {
+        height: 4px; border-radius: 2px; background: rgba(0,0,0,.15);
+        margin-top: 6px; overflow: hidden; cursor: pointer;
+    }
+    .message-own .msg-voice-progress { background: rgba(255,255,255,.2); }
+    .msg-voice-progress-fill {
+        height: 100%; width: 0; background: var(--magenta);
+        border-radius: inherit; transition: width .1s linear;
+    }
+    .message-own .msg-voice-progress-fill { background: #fff; }
+    .msg-voice-time { font-size: 12px; opacity: .75; margin-top: 4px; }
+
+    .msg-vnote {
+        width: 220px; height: 220px; border-radius: 50%;
+        overflow: hidden; position: relative; margin-top: 6px;
+        background: #111; cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    }
+    .msg-vnote video {
+        width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .msg-vnote-duration {
+        position: absolute; bottom: 10px; right: 12px;
+        background: rgba(0,0,0,.55); color: #fff;
+        font-size: 12px; padding: 2px 8px; border-radius: 10px;
+    }
+
+    .vnote-overlay {
+        position: fixed; inset: 0; z-index: 6000;
+        background: rgba(0,0,0,.88); display: none;
+        flex-direction: column; align-items: center; justify-content: center;
+        padding: 24px;
+    }
+    .vnote-overlay.active { display: flex; }
+    .vnote-preview-wrap {
+        width: min(320px, 80vw); height: min(320px, 80vw);
+        border-radius: 50%; overflow: hidden; position: relative;
+        border: 3px solid rgba(255,255,255,.25);
+        margin-bottom: 24px;
+    }
+    #vnote-preview-canvas { width: 100%; height: 100%; display: block; }
+    #vnote-preview-video { display: none; }
+    .vnote-timer { color: #fff; font-size: 20px; font-weight: 600; margin-bottom: 16px; font-variant-numeric: tabular-nums; }
+    .vnote-actions { display: flex; gap: 16px; align-items: center; }
+    .vnote-record-btn {
+        width: 72px; height: 72px; border-radius: 50%;
+        border: 4px solid #fff; background: transparent; cursor: pointer;
+        position: relative;
+    }
+    .vnote-record-btn.is-recording { border-color: #ff4081; background: rgba(255,64,129,.25); }
+    .vnote-record-btn::after {
+        content: ''; position: absolute; inset: 18px; border-radius: 50%;
+        background: #ff4081;
+    }
+    .vnote-record-btn.is-recording::after { border-radius: 8px; inset: 22px; }
+    .vnote-close-btn {
+        border: none; background: rgba(255,255,255,.15); color: #fff;
+        padding: 10px 18px; border-radius: 20px; cursor: pointer; font-size: 14px;
+    }
+
     .chat-send-btn {
         width: 48px; height: 48px; border-radius: 50%;
         background: var(--colorPink600);
@@ -938,9 +1046,22 @@
 
         <div class="pending-files-bar" id="pending-files-bar"></div>
 
+        <div class="voice-record-panel" id="voice-record-panel">
+            <span class="voice-record-dot" aria-hidden="true"></span>
+            <span class="voice-record-timer" id="voice-record-timer">0:00</span>
+            <span style="font-size:13px;color:var(--text-secondary);flex:1">Запись… нажмите микрофон ещё раз, чтобы отправить</span>
+            <button type="button" class="voice-record-cancel" id="voice-record-cancel">Отмена</button>
+        </div>
+
         <div class="chat-input-area">
-            <input type="file" id="file-input" style="display:none" multiple onchange="handleFileSelect(this)">
-            <button class="chat-attach-btn" onclick="document.getElementById('file-input').click()" title="Прикрепить файл">
+            <input type="file" id="file-input" style="display:none" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.zip" onchange="handleFileSelect(this)">
+            <button type="button" class="chat-media-btn" id="chat-vnote-btn" title="Видеосообщение (кружок)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>
+            </button>
+            <button type="button" class="chat-media-btn" id="chat-voice-btn" title="Голосовое сообщение">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+            </button>
+            <button type="button" class="chat-attach-btn" onclick="document.getElementById('file-input').click()" title="Прикрепить файл">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
             </button>
             <textarea id="message-input" class="chat-textarea" placeholder="Введите сообщение..." rows="1"></textarea>
@@ -988,6 +1109,20 @@
     <div class="media-viewer-content" id="media-viewer-content"></div>
 </div>
 
+<!-- Video note recorder -->
+<div class="vnote-overlay" id="vnote-overlay">
+    <div class="vnote-timer" id="vnote-timer">0:00</div>
+    <div class="vnote-preview-wrap">
+        <canvas id="vnote-preview-canvas" width="480" height="480"></canvas>
+        <video id="vnote-preview-video" playsinline muted></video>
+    </div>
+    <div class="vnote-actions">
+        <button type="button" class="vnote-close-btn" id="vnote-close-btn">Закрыть</button>
+        <button type="button" class="vnote-record-btn" id="vnote-record-btn" title="Запись"></button>
+    </div>
+    <p style="color:rgba(255,255,255,.7);font-size:13px;margin-top:12px;text-align:center">Нажмите кнопку для записи (до 60 с)</p>
+</div>
+
 <!-- Toast -->
 <div class="chat-toast" id="chat-toast"></div>
 
@@ -1009,6 +1144,7 @@
 {% block extra_scripts %}
 <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
 <script src="{% static 'js/chat-time.js' %}?v=1"></script>
+<script src="{% static 'js/chat-media-recorder.js' %}?v=1"></script>
 <script>
 const conversationId = {{ conversation.id }};
 const userId = {{ user.id }};
@@ -1305,7 +1441,11 @@ function addMessage(msg, skipParentNotify, addOpts) {
 
     const attsForClass = msg.attachments || (msg.attachment ? [msg.attachment] : []);
     const textOnly = (msg.content || '').trim();
-    const isJustFilename = attsForClass.length > 0 && attsForClass.some(function (a) { return a.name === textOnly; });
+    const mediaPlaceholders = ['🎤 Голосовое сообщение', '📹 Видеосообщение'];
+    const isJustFilename = attsForClass.length > 0 && (
+        attsForClass.some(function (a) { return a.name === textOnly; }) ||
+        mediaPlaceholders.indexOf(textOnly) !== -1
+    );
     const hasVisibleText = textOnly && !isJustFilename && textOnly.indexOf('[link_card]') === -1 && textOnly.indexOf('[kb_share]') === -1;
     if (attsForClass.length) div.classList.add('message-has-media');
     if (attsForClass.length && !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id) {
@@ -1348,6 +1488,7 @@ function addMessage(msg, skipParentNotify, addOpts) {
     html += `<div class="message-time">${pinnedLabel}${editedLabel}${time}${readHtml}</div>`;
 
     div.innerHTML = html;
+    div.querySelectorAll('.msg-voice-wrap').forEach(function (wrap) { bindVoicePlayer(wrap); });
     container.appendChild(div);
     bindMessageGestures(div, msg);
     if (!addOpts.noAutoScroll) {
@@ -1395,8 +1536,75 @@ function messagePreviewText(msg) {
     if (kbIdx > -1) text = text.substring(0, kbIdx).trim();
     if (text) return text.substring(0, 80);
     const atts = msg.attachments || (msg.attachment ? [msg.attachment] : []);
-    if (atts.length) return '📎 ' + atts[0].name;
+    if (atts.length) {
+        const v = atts[0].variant || 'default';
+        if (v === 'voice') return '🎤 Голосовое';
+        if (v === 'video_note') return '📹 Кружок';
+        return '📎 ' + atts[0].name;
+    }
     return 'Сообщение';
+}
+
+function formatAttDuration(sec) {
+    sec = Math.max(0, Math.floor(parseInt(sec, 10) || 0));
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m + ':' + String(s).padStart(2, '0');
+}
+
+function bindVoicePlayer(wrap) {
+    const audio = wrap.querySelector('audio');
+    const btn = wrap.querySelector('.msg-voice-play');
+    const fill = wrap.querySelector('.msg-voice-progress-fill');
+    const curEl = wrap.querySelector('.msg-voice-cur');
+    const bar = wrap.querySelector('.msg-voice-progress');
+    if (!audio || !btn) return;
+    let playing = false;
+    function setPlayIcon(on) {
+        btn.innerHTML = on
+            ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8 5 20 12 8 19"/></svg>';
+    }
+    setPlayIcon(false);
+    btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        document.querySelectorAll('.msg-voice audio').forEach(function (a) {
+            if (a !== audio) { a.pause(); a.currentTime = 0; }
+        });
+        if (playing) {
+            audio.pause();
+            return;
+        }
+        audio.play();
+    });
+    audio.addEventListener('play', function () {
+        playing = true;
+        setPlayIcon(true);
+    });
+    audio.addEventListener('pause', function () {
+        playing = false;
+        setPlayIcon(false);
+    });
+    audio.addEventListener('ended', function () {
+        playing = false;
+        setPlayIcon(false);
+        if (fill) fill.style.width = '0%';
+        if (curEl) curEl.textContent = '0:00';
+    });
+    audio.addEventListener('timeupdate', function () {
+        if (!audio.duration || !isFinite(audio.duration)) return;
+        const pct = (audio.currentTime / audio.duration) * 100;
+        if (fill) fill.style.width = pct + '%';
+        if (curEl) curEl.textContent = formatAttDuration(audio.currentTime);
+    });
+    if (bar) {
+        bar.addEventListener('click', function (e) {
+            if (!audio.duration) return;
+            const rect = bar.getBoundingClientRect();
+            const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+            audio.currentTime = ratio * audio.duration;
+        });
+    }
 }
 
 function buildContentHtml(msg) {
@@ -1421,7 +1629,10 @@ function buildContentHtml(msg) {
     }
     if (!msg.content || !msg.content.trim()) return '';
     const atts = msg.attachments || (msg.attachment ? [msg.attachment] : []);
-    const isJustFilename = atts.length > 0 && atts.some(a => a.name === msg.content.trim());
+    const ph = ['🎤 Голосовое сообщение', '📹 Видеосообщение'];
+    const isJustFilename = atts.length > 0 && (
+        atts.some(a => a.name === msg.content.trim()) || ph.indexOf(msg.content.trim()) !== -1
+    );
     if (isJustFilename) return '';
     return `<div class="message-content">${linkify(msg.content)}</div>`;
 }
@@ -1429,6 +1640,26 @@ function buildContentHtml(msg) {
 function buildAttachmentHtml(att) {
     const dl = attachmentDownloadUrl(att);
     const dlBtn = `<a href="${dl}" class="msg-attachment-dl" title="Скачать" download="${escapeHtml(att.name || 'file')}" onclick="event.stopPropagation()">&#8595;</a>`;
+    const variant = att.variant || 'default';
+    if (variant === 'voice') {
+        const dur = formatAttDuration(att.duration || 0);
+        const html = `<div class="msg-attachment msg-voice-wrap">${dlBtn}
+            <div class="msg-voice">
+                <button type="button" class="msg-voice-play" aria-label="Воспроизвести"></button>
+                <div class="msg-voice-meta">
+                    <div class="msg-voice-progress"><div class="msg-voice-progress-fill"></div></div>
+                    <div class="msg-voice-time"><span class="msg-voice-cur">0:00</span> / ${dur}</div>
+                </div>
+                <audio src="${att.url}" preload="metadata"></audio>
+            </div></div>`;
+        return html;
+    }
+    if (variant === 'video_note') {
+        const dur = att.duration ? `<span class="msg-vnote-duration">${formatAttDuration(att.duration)}</span>` : '';
+        return `<div class="msg-attachment">${dlBtn}<div class="msg-vnote" onclick="openMediaViewer('video','${att.url}')">
+            <video src="${att.url}" playsinline loop muted preload="metadata"></video>${dur}
+        </div></div>`;
+    }
     if (att.type === 'image') {
         return `<div class="msg-attachment">${dlBtn}<img src="${att.url}" alt="${escapeHtml(att.name)}" onclick="openMediaViewer('image','${att.url}')"></div>`;
     }
@@ -1927,9 +2158,13 @@ function removePendingFile(id) {
 function setInputLocked(locked) {
     const sendBtn = document.getElementById('send-btn');
     const attachBtn = document.querySelector('.chat-attach-btn');
+    const voiceBtn = document.getElementById('chat-voice-btn');
+    const vnoteBtn = document.getElementById('chat-vnote-btn');
     const textareaEl = document.getElementById('message-input');
     if (sendBtn) sendBtn.disabled = !!locked;
     if (attachBtn) attachBtn.disabled = !!locked;
+    if (voiceBtn) voiceBtn.disabled = !!locked;
+    if (vnoteBtn) vnoteBtn.disabled = !!locked;
     if (textareaEl) textareaEl.disabled = !!locked;
 }
 
@@ -2043,6 +2278,7 @@ function sendMessage() {
     }
 
     if (isUploading) return;
+    if (window.WBChatMedia && WBChatMedia.isRecording && WBChatMedia.isRecording()) return;
     if (!message && !pendingFiles.length) return;
 
     if (pendingFiles.length > 0) {
@@ -2471,6 +2707,43 @@ document.getElementById('chatEmbedBack')?.addEventListener('click', function () 
     } catch (e) { /* cross-origin */ }
     window.top.location.href = '/chat/';
 });
+
+function signalChatActive() {
+    try {
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+                source: 'wbchat-embed',
+                type: 'chat_active',
+                conversation_id: conversationId,
+            }, '*');
+        }
+    } catch (e) { /* ignore */ }
+}
+window.addEventListener('focus', signalChatActive);
+signalChatActive();
+
+if (window.WBChatMedia) {
+    WBChatMedia.init({
+        conversationId: conversationId,
+        csrfToken: csrfToken,
+        uploadFn: function (formData) {
+            return uploadChatFiles(formData, null).then(function (data) {
+                if (data.success && data.message) {
+                    addMessage(data.message);
+                    notifyParentInbox(data.message);
+                }
+                if (!data.success) throw data;
+                return data;
+            });
+        },
+        showToast: showToast,
+        onLockInput: function (locked) {
+            isUploading = !!locked;
+            setInputLocked(locked);
+        },
+        getReplyToId: function () { return replyToId; },
+    });
+}
 
 initScrollDownButton();
 connect();

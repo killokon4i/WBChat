@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="{% static 'css/avatar-initials.css' %}?v=1">
     {% block extra_styles %}{% endblock %}
 </head>
-<body{% if user.is_authenticated %} class="portal-body"{% endif %}>
+<body{% if user.is_authenticated %} class="portal-body" data-user-id="{{ user.id }}"{% endif %}>
     {% if user.is_authenticated %}
     <nav class="navbar">
         <div class="nav-container">
@@ -371,7 +371,13 @@
     {% load static %}
     <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
     <script src="{% static 'js/chat-time.js' %}?v=1"></script>
-    <script src="{% static 'js/wb-realtime.js' %}?v=5"></script>
+    <script src="{% static 'js/wb-chat-notify.js' %}?v=1"></script>
+    <script src="{% static 'js/wb-realtime.js' %}?v=6"></script>
+    <script>
+    if (window.WBChatNotify && document.body && document.body.dataset.userId) {
+        WBChatNotify.init({ userId: parseInt(document.body.dataset.userId, 10) });
+    }
+    </script>
     {% endif %}
 </body>
 </html>

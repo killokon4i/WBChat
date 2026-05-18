@@ -37,6 +37,8 @@ def build_message_dict(msg, viewer):
             'size': a.file_size,
             'type': a.file_type,
             'mime': a.mime_type,
+            'variant': getattr(a, 'variant', 'default') or 'default',
+            'duration': a.duration,
         } for a in atts]
 
     if msg.reply_to:
