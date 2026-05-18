@@ -643,22 +643,30 @@
         color: var(--magenta);
     }
 
-  .message-vnote-only {
-        padding: 4px 8px 6px !important;
-        max-width: min(240px, 88%) !important;
+  .message-vnote-only,
+    .message-vnote-only.message-has-media,
+    .message-other.message-vnote-only,
+    .message-own.message-vnote-only {
+        padding: 0 !important;
+        margin: 0;
+        max-width: none !important;
         background: transparent !important;
         box-shadow: none !important;
+        border: none !important;
     }
     .message-vnote-only .message-time { display: none !important; }
-    .message-own.message-voice-only .message-time,
-    .message-own.message-media-only .message-time {
-        color: var(--text-secondary);
-        opacity: 1;
+    .message-vnote-only .msg-attachment {
+        margin: 0;
+        background: transparent;
+    }
+    .message-vnote-only .message-author {
+        margin-bottom: 4px;
     }
     .msg-vnote-wrap {
         position: relative;
         display: inline-block;
         line-height: 0;
+        vertical-align: top;
     }
     .msg-vnote-player {
         position: relative;
@@ -668,40 +676,38 @@
         cursor: pointer;
         transform: scale(1);
         transform-origin: center center;
-        transition: transform 0.28s cubic-bezier(.2, .75, .2, 1), box-shadow 0.28s ease;
+        transition: transform 0.25s cubic-bezier(.2, .75, .2, 1), box-shadow 0.25s ease;
     }
     .msg-vnote-player.is-playing {
-        transform: scale(1.08);
-        box-shadow: 0 10px 32px rgba(0, 0, 0, .32);
+        transform: scale(1.06);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
     }
     .message-own .msg-vnote-player.is-playing {
-        box-shadow: 0 8px 26px rgba(228, 0, 175, .32);
+        box-shadow: 0 6px 22px rgba(228, 0, 175, .28);
     }
     .msg-vnote-ring {
         position: absolute;
-        inset: -3px;
-        width: calc(100% + 6px);
-        height: calc(100% + 6px);
+        inset: 0;
+        width: 100%;
+        height: 100%;
         transform: rotate(-90deg);
         pointer-events: none;
-        z-index: 2;
+        z-index: 4;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+    .msg-vnote-player.is-playing .msg-vnote-ring {
+        opacity: 1;
     }
     .msg-vnote-ring-bg {
-        fill: none;
-        stroke: rgba(0, 0, 0, .12);
-        stroke-width: 2.5;
+        display: none;
     }
     .msg-vnote-ring-bar {
         fill: none;
-        stroke: var(--magenta);
-        stroke-width: 2.5;
+        stroke: rgba(255, 255, 255, .95);
+        stroke-width: 1.5;
         stroke-linecap: round;
-        stroke-dasharray: 100 100;
-        stroke-dashoffset: 100;
-        transition: stroke-dashoffset .1s linear;
-    }
-    .msg-vnote-player.is-playing .msg-vnote-ring-bar {
-        stroke: #fff;
+        vector-effect: non-scaling-stroke;
     }
     .msg-vnote {
         width: 100%;
@@ -710,10 +716,7 @@
         overflow: hidden;
         position: relative;
         background: #111;
-        box-shadow: 0 4px 16px rgba(0,0,0,.2);
-    }
-    .message-own .msg-vnote {
-        box-shadow: 0 2px 12px rgba(0,0,0,.15);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, .18);
     }
     .msg-vnote video {
         width: 100%;
@@ -727,9 +730,9 @@
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
-        z-index: 3;
-        width: 52px;
-        height: 52px;
+        z-index: 5;
+        width: 48px;
+        height: 48px;
         border: none;
         border-radius: 50%;
         background: rgba(0, 0, 0, .45);
@@ -738,14 +741,16 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: background .2s, opacity .2s;
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity 0.15s ease, background 0.15s ease;
     }
     .msg-vnote-play svg {
-        width: 22px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
         margin-left: 3px;
     }
-    .msg-vnote-player.is-playing .msg-vnote-play {
+    .msg-vnote-player.is-playing:not(:hover) .msg-vnote-play {
         opacity: 0;
         pointer-events: none;
     }
@@ -756,74 +761,62 @@
     }
     .msg-vnote-duration {
         position: absolute;
-        bottom: 10px;
-        left: 12px;
-        right: auto;
-        z-index: 3;
-        background: rgba(0,0,0,.55);
+        bottom: 8px;
+        left: 10px;
+        z-index: 5;
+        background: rgba(0, 0, 0, .5);
         color: #fff;
-        font-size: 12px;
-        padding: 2px 8px;
-        border-radius: 10px;
+        font-size: 11px;
+        padding: 2px 7px;
+        border-radius: 8px;
         pointer-events: none;
         font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+    }
+    .msg-vnote-player.is-playing .msg-vnote-duration {
+        opacity: 0;
     }
     .msg-vnote-meta {
         position: absolute;
-        bottom: 10px;
+        bottom: 8px;
         right: 10px;
-        z-index: 5;
+        z-index: 6;
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        max-width: calc(100% - 24px);
-        background: rgba(0, 0, 0, .55);
+        background: rgba(0, 0, 0, .5);
         color: #fff;
-        font-size: 12px;
+        font-size: 11px;
         line-height: 1.2;
-        padding: 2px 8px;
-        border-radius: 10px;
+        padding: 2px 7px;
+        border-radius: 8px;
         pointer-events: none;
         font-variant-numeric: tabular-nums;
     }
-    .msg-vnote-meta .message-edited,
-    .msg-vnote-meta .message-pinned-indicator {
-        color: rgba(255, 255, 255, .75);
-        font-size: 10px;
-    }
     .msg-vnote-meta .read-indicator {
-        font-size: 13px;
-        min-width: 16px;
+        font-size: 12px;
+        min-width: 14px;
     }
     .msg-vnote-meta .read-indicator.sent::before {
-        color: rgba(255, 255, 255, .88);
+        color: rgba(255, 255, 255, .9);
     }
     .msg-vnote-meta .read-indicator.read::before {
         color: #8ed4fc;
     }
-    .msg-vnote-footer {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 5px;
-        margin-top: 6px;
-        padding: 0 4px;
-        font-size: 12px;
-        line-height: 1;
-        color: var(--text-secondary);
-    }
-    .message-other .msg-vnote-footer {
-        justify-content: flex-start;
-    }
-    .msg-vnote-footer-time {
-        font-variant-numeric: tabular-nums;
-        opacity: .85;
-    }
     .message-vnote-only .msg-attachment-dl {
-        top: 4px;
-        right: 4px;
-        z-index: 4;
+        top: 6px;
+        right: 6px;
+        z-index: 7;
+        opacity: 0;
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
     }
+    .message-vnote-only .msg-vnote-wrap:hover .msg-attachment-dl,
+    .message-vnote-only .msg-attachment-dl:focus {
+        opacity: 1;
+    }
+
 
     .vnote-overlay {
         position: fixed;
@@ -2056,38 +2049,46 @@ function bindVnotePlayer(wrap) {
         playBtn.style.marginLeft = playing ? '0' : '3px';
     }
 
-    function resetVnote(stopAtStart) {
+    function resetVnote(toStart) {
         video.pause();
-        if (stopAtStart) video.currentTime = 0;
+        if (toStart) video.currentTime = 0;
         root.classList.remove('is-playing', 'is-paused');
         setPlayIcon(false);
         setRing(0);
     }
 
+    function canStart() {
+        return video.paused || video.ended;
+    }
+
     function playVnote() {
         stopOthers();
+        if (video.ended) video.currentTime = 0;
         video.loop = false;
         video.playsInline = true;
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
-        var tryPlay = function (muted) {
-            video.muted = !!muted;
-            return video.play();
-        };
-        tryPlay(true).then(function () {
-            video.muted = false;
+        var p = video.muted ? Promise.resolve() : Promise.reject();
+        if (!video.muted) {
+            video.muted = true;
+            p = video.play().then(function () { video.muted = false; });
+        } else {
+            p = video.play();
+        }
+        p.then(function () {
             root.classList.add('is-playing');
             root.classList.remove('is-paused');
             setPlayIcon(true);
         }).catch(function () {
-            tryPlay(false).then(function () {
+            video.muted = false;
+            return video.play().then(function () {
                 root.classList.add('is-playing');
                 root.classList.remove('is-paused');
                 setPlayIcon(true);
-            }).catch(function () {
-                resetVnote(true);
-                if (typeof showToast === 'function') showToast('Не удалось воспроизвести кружок');
             });
+        }).catch(function () {
+            resetVnote(true);
+            if (typeof showToast === 'function') showToast('Не удалось воспроизвести');
         });
     }
 
@@ -2098,8 +2099,12 @@ function bindVnotePlayer(wrap) {
         setPlayIcon(false);
     }
 
-    video.loop = false;
+    function toggleVnote() {
+        if (canStart()) playVnote();
+        else pauseVnote();
+    }
 
+    video.loop = false;
     setRing(0);
     setPlayIcon(false);
 
@@ -2107,8 +2112,7 @@ function bindVnotePlayer(wrap) {
         playBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            if (video.paused || video.ended) playVnote();
-            else pauseVnote();
+            toggleVnote();
         });
     }
 
@@ -2117,18 +2121,12 @@ function bindVnotePlayer(wrap) {
         if (e.target.closest('.msg-vnote-play')) return;
         e.preventDefault();
         e.stopPropagation();
-        if (video.paused || video.ended) playVnote();
-        else pauseVnote();
-    });
-
-    video.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
+        toggleVnote();
     });
 
     video.addEventListener('timeupdate', function () {
         var dur = (video.duration && isFinite(video.duration)) ? video.duration : total;
-        if (!dur) return;
+        if (!dur || !root.classList.contains('is-playing')) return;
         setRing(video.currentTime / dur);
     });
     video.addEventListener('ended', function () {
