@@ -108,7 +108,19 @@
             return fromUrl ? String(fromUrl) : '';
         }
 
+        function notifyEmbedChatLeft() {
+            try {
+                if (frame.contentWindow) {
+                    frame.contentWindow.postMessage(
+                        { source: 'wbchat-parent', type: 'chat_left' },
+                        '*'
+                    );
+                }
+            } catch (e) { /* ignore */ }
+        }
+
         function closeChat(pushState) {
+            notifyEmbedChatLeft();
             loadToken += 1;
             currentChatId = '';
             frame.dataset.currentChat = '';

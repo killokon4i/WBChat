@@ -639,45 +639,6 @@
 <script>
 let allUsers = [];
 
-
-const chatPageCsrf = '{{ csrf_token }}';
-
-function startChatWithUser(userId, event) {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    const list = document.getElementById('userList');
-    if (list) list.style.pointerEvents = 'none';
-    fetch('/chat/api/start-direct/' + userId + '/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': chatPageCsrf,
-            'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin',
-    })
-        .then(function (r) {
-            return r.json().then(function (d) {
-                return { ok: r.ok, data: d };
-            });
-        })
-        .then(function (res) {
-            closeNewChatModal();
-            if (res.ok && res.data.success && res.data.conversation_id) {
-                window.location.href = '/chat/?c=' + res.data.conversation_id;
-                return;
-            }
-            alert((res.data && res.data.error) || 'Не удалось создать чат');
-        })
-        .catch(function () {
-            alert('Ошибка сети');
-        })
-        .finally(function () {
-            if (list) list.style.pointerEvents = '';
-        });
-}
-
 function openNewChatModal() {
     document.getElementById('newChatModal').classList.add('active');
     document.getElementById('userSearchInput').value = '';
@@ -747,13 +708,13 @@ function renderUsers(users) {
             : initials;
 
         return `
-            <button type="button" class="user-list-item" data-user-id="${user.id}" onclick="startChatWithUser(${user.id}, event)">
+            <a href="/chat/start/${user.id}/" class="user-list-item">
                 ${avatarHtml}
                 <div class="user-list-info">
                     <div class="user-list-name">${fullName}</div>
                     ${position ? `<div class="user-list-position">${position}</div>` : ''}
-                </button>
-            </button>
+                </div>
+            </a>
         `;
     }).join('');
 }
@@ -1008,5 +969,5 @@ function createGroup(e) {
 {% block extra_scripts %}
 <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
 {% load static %}
-<script src="{% static 'js/chat-shell.js' %}?v=9"></script>
+<script src="{% static 'js/chat-shell.js' %}?v=10"></script>
 {% endblock %}

@@ -3228,6 +3228,39 @@ function removeMember(uid) {
 }
 
 /* ========== Load messages ========== */
+function resetChatLocalState() {
+    if (messagePollTimer) {
+        clearInterval(messagePollTimer);
+        messagePollTimer = null;
+    }
+    if (presencePollTimer) {
+        clearInterval(presencePollTimer);
+        presencePollTimer = null;
+    }
+    if (presenceLabelTimer) {
+        clearInterval(presenceLabelTimer);
+        presenceLabelTimer = null;
+    }
+    if (chatSocket) {
+        try {
+            chatSocket.onclose = null;
+            chatSocket.close();
+        } catch (e) { /* ignore */ }
+        chatSocket = null;
+    }
+    allMessages = {};
+    pinnedMessages = [];
+    lastMessageDayKey = null;
+    replyToId = null;
+    editingMessageId = null;
+    scrollDownBadgeCount = 0;
+    const container = getMessagesEl();
+    if (container) container.innerHTML = '';
+    const banner = document.getElementById('pinned-banner');
+    if (banner) banner.classList.remove('visible');
+    updateScrollDownButton();
+}
+
 function getLatestMessageId() {
     let max = 0;
     Object.keys(allMessages).forEach(function (id) {
@@ -3325,8 +3358,14 @@ document.addEventListener('visibilitychange', function () {
 
 window.addEventListener('message', function (ev) {
     var d = ev.data;
-    if (!d || d.source !== 'wbchat-parent' || d.type !== 'presence_update') return;
-    applyPresence(d);
+    if (!d || d.source !== 'wbchat-parent') return;
+    if (d.type === 'presence_update') {
+        applyPresence(d);
+        return;
+    }
+    if (d.type === 'chat_left') {
+        resetChatLocalState();
+    }
 });
 
 document.getElementById('chatEmbedBack')?.addEventListener('click', function () {

@@ -57,18 +57,19 @@ class Conversation(models.Model):
 
     def get_unread_count(self, user):
         """Get unread message count for a user"""
-        last_read = UserConversation.objects.filter(
+        uc = UserConversation.objects.filter(
             conversation=self,
-            user=user
+            user=user,
         ).first()
+        if not uc or uc.left_at:
+            return 0
 
-        if not last_read or not last_read.last_read_at:
-            # For first open, unread means messages from others only.
-            return self.messages.exclude(author=user).count()
-
-        return self.messages.filter(
-            created_at__gt=last_read.last_read_at
-        ).exclude(author=user).count()
+        qs = self.messages.filter(is_deleted=False).exclude(author=user)
+        if uc.history_cleared_at:
+            qs = qs.filter(created_at__gt=uc.history_cleared_at)
+        if not uc.last_read_at:
+            return qs.count()
+        return qs.filter(created_at__gt=uc.last_read_at).count()
 
 
 class UserConversation(models.Model):
@@ -96,6 +97,8 @@ class UserConversation(models.Model):
     last_read_at = models.DateTimeField(null=True, blank=True)
     joined_at = models.DateTimeField(auto_now_add=True)
     left_at = models.DateTimeField(null=True, blank=True)
+    # Скрыть историю у себя после «удаления» чата (как в Telegram)
+    history_cleared_at = models.DateTimeField(null=True, blank=True)
 
     # Permissions
     can_send_messages = models.BooleanField(default=True)

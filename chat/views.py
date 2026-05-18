@@ -19,6 +19,7 @@ from .services.presence import (
     serialize_user_presence,
 )
 from .services.direct import get_or_start_direct_conversation
+from .services.messages_visibility import visible_messages_queryset
 
 User = get_user_model()
 
@@ -166,9 +167,9 @@ def get_messages(request, conversation_id):
         except (TypeError, ValueError):
             since_id = None
     if since_id:
-        new_messages = Message.objects.filter(
-            conversation_id=conversation_id,
-            is_deleted=False,
+        new_messages = visible_messages_queryset(
+            request.user, conversation_id, user_conversation=user_conversation,
+        ).filter(
             id__gt=since_id,
         ).select_related(
             'author', 'reply_to', 'reply_to__author', 'forwarded_from', 'forwarded_from__author'
@@ -188,21 +189,19 @@ def get_messages(request, conversation_id):
     except (ValueError, TypeError):
         offset = 0
     
-    # Получаем сообщения
-    messages = Message.objects.filter(
-        conversation_id=conversation_id,
-        is_deleted=False
-    ).select_related('author', 'reply_to', 'reply_to__author', 'forwarded_from', 'forwarded_from__author'
+    visible_qs = visible_messages_queryset(
+        request.user, conversation_id, user_conversation=user_conversation,
+    )
+    messages = visible_qs.select_related(
+        'author', 'reply_to', 'reply_to__author', 'forwarded_from', 'forwarded_from__author',
     ).prefetch_related('attachments').order_by('-created_at')[offset:offset + limit]
-    
+
     messages_data = [build_message_dict(msg, request.user) for msg in reversed(list(messages))]
+    total_visible = visible_qs.count()
 
     return JsonResponse({
         'messages': messages_data,
-        'has_more': Message.objects.filter(
-            conversation_id=conversation_id,
-            is_deleted=False
-        ).count() > offset + limit
+        'has_more': total_visible > offset + limit,
     })
 
 
@@ -517,8 +516,15 @@ def api_inbox_sync(request):
     )
     items = []
     for conversation in conversations:
+        uc = UserConversation.objects.filter(
+            user=request.user,
+            conversation=conversation,
+        ).first()
+        last_msg_qs = Message.objects.filter(conversation=conversation, is_deleted=False)
+        if uc and uc.history_cleared_at:
+            last_msg_qs = last_msg_qs.filter(created_at__gt=uc.history_cleared_at)
         last_msg = (
-            Message.objects.filter(conversation=conversation, is_deleted=False)
+            last_msg_qs
             .select_related('author')
             .prefetch_related('attachments')
             .order_by('-created_at')

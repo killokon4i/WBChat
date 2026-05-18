@@ -132,12 +132,13 @@ class ConversationViewSet(viewsets.ModelViewSet):
     def leave(self, request, pk=None):
         """Покинуть чат"""
         conversation = self.get_object()
-        
+        now = timezone.now()
+
         UserConversation.objects.filter(
             user=request.user,
-            conversation=conversation
-        ).update(left_at=timezone.now())
-        
+            conversation=conversation,
+        ).update(left_at=now, history_cleared_at=now)
+
         return Response({'status': 'left'})
     
     @action(detail=True, methods=['post'])
