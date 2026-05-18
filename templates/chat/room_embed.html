@@ -1491,7 +1491,7 @@
 {% block extra_scripts %}
 <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
 <script src="{% static 'js/chat-time.js' %}?v=1"></script>
-<script src="{% static 'js/chat-media-recorder.js' %}?v=7"></script>
+<script src="{% static 'js/chat-media-recorder.js' %}?v=9"></script>
 <script>
 const conversationId = {{ conversation.id }};
 const userId = {{ user.id }};
@@ -1851,7 +1851,7 @@ function addMessage(msg, skipParentNotify, addOpts) {
 
     div.innerHTML = html;
     div.querySelectorAll('.msg-voice-wrap').forEach(function (wrap) { bindVoicePlayer(wrap); });
-    div.querySelectorAll('.msg-vnote-wrap').forEach(function (wrap) { bindVnotePlayer(wrap); });
+    bindAllVnotePlayers(div);
     container.appendChild(div);
     bindMessageGestures(div, msg);
     if (!addOpts.noAutoScroll) {
@@ -1929,12 +1929,33 @@ function formatAttDuration(sec) {
     return m + ':' + String(s).padStart(2, '0');
 }
 
+function bindAllVnotePlayers(root) {
+    var scope = root || document;
+    scope.querySelectorAll('.msg-vnote-wrap').forEach(function (wrap) {
+        if (wrap.dataset.vnoteBound) return;
+        wrap.dataset.vnoteBound = '1';
+        bindVnotePlayer(wrap);
+    });
+    scope.querySelectorAll('.msg-attachment:not(.msg-vnote-wrap) > .msg-vnote').forEach(function (vn) {
+        var wrap = vn.closest('.msg-attachment');
+        if (!wrap || wrap.dataset.vnoteBound) return;
+        wrap.classList.add('msg-vnote-wrap');
+        wrap.dataset.vnoteBound = '1';
+        bindVnotePlayer(wrap);
+    });
+}
+
 function bindVnotePlayer(wrap) {
+    if (wrap.dataset.vnoteBound !== '1') {
+        wrap.dataset.vnoteBound = '1';
+    }
     const player = wrap.querySelector('.msg-vnote-player');
     const video = wrap.querySelector('video');
     const playBtn = wrap.querySelector('.msg-vnote-play');
     const ringBar = wrap.querySelector('.msg-vnote-ring-bar');
     if (!video) return;
+    if (video.dataset.vnotePlayerInit) return;
+    video.dataset.vnotePlayerInit = '1';
 
     const root = player || wrap.querySelector('.msg-vnote');
     if (!root) return;
@@ -2135,22 +2156,9 @@ function buildAttachmentHtml(att) {
         return html;
     }
     if (variant === 'video_note') {
-        const durSec = parseInt(att.duration, 10) || 0;
-        const dur = formatAttDuration(durSec);
-        const mimeAttr = att.mime ? ` type="${escapeHtml(att.mime)}"` : '';
-        return `<div class="msg-attachment msg-vnote-wrap">${dlBtn}
-        <div class="msg-vnote-player" data-duration="${durSec}">
-            <svg class="msg-vnote-ring" viewBox="0 0 36 36" aria-hidden="true">
-                <circle class="msg-vnote-ring-bg" cx="18" cy="18" r="16"></circle>
-                <circle class="msg-vnote-ring-bar" cx="18" cy="18" r="16"></circle>
-            </svg>
-            <div class="msg-vnote">
-                <video src="${att.url}"${mimeAttr} playsinline webkit-playsinline preload="metadata"></video>
-            </div>
-            <button type="button" class="msg-vnote-play" aria-label="Воспроизвести">
-                <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8 5 20 12 8 19"/></svg>
-            </button>
-            <span class="msg-vnote-duration">${dur}</span>
+        const dur = att.duration ? `<span class="msg-vnote-duration">${formatAttDuration(att.duration)}</span>` : '';
+        return `<div class="msg-attachment">${dlBtn}<div class="msg-vnote" onclick="openMediaViewer('video','${att.url}')">
+            <video src="${att.url}" playsinline loop muted preload="metadata"></video>${dur}
         </div></div>`;
     }
     if (att.type === 'image') {
@@ -3292,6 +3300,7 @@ function loadMessages() {
                     addMessage(msg, true, { noAutoScroll: true });
                 });
                 scrollToBottom(false);
+                bindAllVnotePlayers(container);
             } else if (container && !container.querySelector('.message')) {
                 addSystemMessage('Нет сообщений. Напишите первым.');
             }

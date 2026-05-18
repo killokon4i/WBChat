@@ -415,6 +415,19 @@
         }
     }
 
+    function canVnoteCanvasRecord() {
+        if (!vnoteCanvas || !vnoteStream) return false;
+        if (typeof vnoteCanvas.captureStream !== 'function') return false;
+        try {
+            var test = vnoteCanvas.captureStream(1);
+            var track = test.getVideoTracks()[0];
+            if (track) track.stop();
+            return !!track;
+        } catch (e) {
+            return false;
+        }
+    }
+
     function drawVnoteFrame() {
         if (!vnoteCanvas || !vnoteVideo || vnoteVideo.readyState < 2) return;
         var ctx = vnoteCanvas.getContext('2d');
@@ -432,9 +445,11 @@
         ctx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
-        /* Селфи в файле = как на превью (без отдельного CSS-зеркала при воспроизведении). */
-        ctx.translate(w, 0);
-        ctx.scale(-1, 1);
+        /* Зеркало только если пишем с canvas — иначе превью и файл расходятся. */
+        if (canVnoteCanvasRecord()) {
+            ctx.translate(w, 0);
+            ctx.scale(-1, 1);
+        }
         ctx.drawImage(vnoteVideo, sx, sy, side, side, 0, 0, w, h);
         ctx.restore();
     }
@@ -445,9 +460,8 @@
     }
 
     function getVnoteRecordStream() {
-        if (!vnoteCanvas || !vnoteStream) return vnoteStream;
+        if (!canVnoteCanvasRecord()) return vnoteStream;
         try {
-            if (typeof vnoteCanvas.captureStream !== 'function') return vnoteStream;
             var canvasStream = vnoteCanvas.captureStream(VNOTE_FPS);
             var videoTrack = canvasStream.getVideoTracks()[0];
             if (!videoTrack) return vnoteStream;
