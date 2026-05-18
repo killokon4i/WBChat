@@ -2068,24 +2068,12 @@ function bindVnotePlayer(wrap) {
         video.playsInline = true;
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
-        var p = video.muted ? Promise.resolve() : Promise.reject();
-        if (!video.muted) {
-            video.muted = true;
-            p = video.play().then(function () { video.muted = false; });
-        } else {
-            p = video.play();
-        }
-        p.then(function () {
+        video.muted = true;
+        video.play().then(function () {
+            video.muted = false;
             root.classList.add('is-playing');
             root.classList.remove('is-paused');
             setPlayIcon(true);
-        }).catch(function () {
-            video.muted = false;
-            return video.play().then(function () {
-                root.classList.add('is-playing');
-                root.classList.remove('is-paused');
-                setPlayIcon(true);
-            });
         }).catch(function () {
             resetVnote(true);
             if (typeof showToast === 'function') showToast('Не удалось воспроизвести');
@@ -2251,8 +2239,7 @@ function buildAttachmentHtml(att) {
         return `<div class="msg-attachment msg-vnote-wrap">${dlBtn}
         <div class="msg-vnote-player" data-duration="${durSec}">
             <svg class="msg-vnote-ring" viewBox="0 0 36 36" aria-hidden="true">
-                <circle class="msg-vnote-ring-bg" cx="18" cy="18" r="16"></circle>
-                <circle class="msg-vnote-ring-bar" cx="18" cy="18" r="16"></circle>
+                <circle class="msg-vnote-ring-bar" cx="18" cy="18" r="16" pathLength="100"></circle>
             </svg>
             <div class="msg-vnote">
                 <video src="${att.url}"${mimeAttr} playsinline webkit-playsinline preload="metadata"></video>
