@@ -18,6 +18,7 @@ from .services.presence import (
     get_direct_chat_partner,
     serialize_user_presence,
 )
+from .services.direct import get_or_start_direct_conversation
 
 User = get_user_model()
 
@@ -259,50 +260,41 @@ def create_conversation(request):
 
 @login_required
 def start_chat(request, user_id):
-    """
-    Начать или открыть существующий личный чат с пользователем.
-    Если чат уже есть - редирект в него, иначе создаём новый.
-    """
+    """Начать или открыть личный чат (GET-редирект)."""
     from django.urls import reverse
 
-    # Нельзя начать чат с самим собой
     if request.user.id == user_id:
         return redirect('chat_index')
-    
-    # Получаем пользователя
+
     other_user = get_object_or_404(User, pk=user_id, is_active=True)
-    
-    # Ищем существующий direct чат между этими пользователями
-    existing_conversation = Conversation.objects.filter(
-        type='direct',
-        is_active=True,
-        participants=request.user
-    ).filter(
-        participants=other_user
-    ).first()
-    
-    if existing_conversation:
-        return redirect(f"{reverse('chat_index')}?c={existing_conversation.id}")
-    
-    # Создаём новый direct чат
-    conversation = Conversation.objects.create(
-        type='direct',
-        created_by=request.user
-    )
-    
-    # Добавляем обоих участников
-    UserConversation.objects.create(
-        user=request.user,
-        conversation=conversation,
-        role='member'
-    )
-    UserConversation.objects.create(
-        user=other_user,
-        conversation=conversation,
-        role='member'
-    )
-    
+    try:
+        conversation = get_or_start_direct_conversation(request.user, other_user)
+    except ValueError:
+        return redirect('chat_index')
+
     return redirect(f"{reverse('chat_index')}?c={conversation.id}")
+
+
+@login_required
+@require_POST
+def api_start_direct(request, user_id):
+    """Создать / открыть личный чат (JSON для модалки «Новый чат»)."""
+    if request.user.id == user_id:
+        return JsonResponse({'error': 'Нельзя написать самому себе'}, status=400)
+
+    other_user = User.objects.filter(pk=user_id, is_active=True).first()
+    if not other_user:
+        return JsonResponse({'error': 'Пользователь не найден'}, status=404)
+
+    try:
+        conversation = get_or_start_direct_conversation(request.user, other_user)
+    except ValueError:
+        return JsonResponse({'error': 'Нельзя написать самому себе'}, status=400)
+
+    return JsonResponse({
+        'success': True,
+        'conversation_id': conversation.id,
+    })
 
 
 @login_required
