@@ -921,9 +921,20 @@ function createGroup(e) {
         }).then(r => {
             if (!r.ok) throw new Error('HTTP ' + r.status);
             return r.json();
-        }).then(() => {
-            window.location.reload();
-        }).catch(() => {
+        }).then(function () {
+            var id = String(convId);
+            if (window.ChatShell && typeof window.ChatShell.onConversationLeft === 'function') {
+                window.ChatShell.onConversationLeft(id);
+            } else {
+                var active = new URLSearchParams(window.location.search).get('c');
+                if (active === id) {
+                    window.location.href = '/chat/';
+                } else {
+                    var item = document.querySelector('.chat-item[data-conversation-id="' + id + '"]');
+                    if (item) item.remove();
+                }
+            }
+        }).catch(function () {
             alert('Не удалось удалить чат. Попробуйте ещё раз.');
         });
     };
@@ -953,5 +964,5 @@ function createGroup(e) {
 {% block extra_scripts %}
 <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
 {% load static %}
-<script src="{% static 'js/chat-shell.js' %}?v=8"></script>
+<script src="{% static 'js/chat-shell.js' %}?v=9"></script>
 {% endblock %}

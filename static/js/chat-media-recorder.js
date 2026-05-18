@@ -7,7 +7,10 @@
 
     var VOICE_MAX_SEC = 300;
     var VNOTE_MAX_SEC = 60;
-    var VNOTE_SIZE = 480;
+    var VNOTE_SIZE = 384;
+    var VNOTE_FPS = 20;
+    var VNOTE_VIDEO_BPS = 650000;
+    var VNOTE_AUDIO_BPS = 48000;
     var VNOTE_RING_LEN = 289.03;
     var RECORDER_SLICE_MS = 250;
 
@@ -402,10 +405,53 @@
         vnoteRaf = requestAnimationFrame(vnoteLoop);
     }
 
+    function getVnoteRecordStream() {
+        if (!vnoteCanvas || !vnoteStream) return vnoteStream;
+        try {
+            if (typeof vnoteCanvas.captureStream !== 'function') return vnoteStream;
+            var canvasStream = vnoteCanvas.captureStream(VNOTE_FPS);
+            var videoTrack = canvasStream.getVideoTracks()[0];
+            if (!videoTrack) return vnoteStream;
+            var tracks = [videoTrack];
+            var audioTracks = vnoteStream.getAudioTracks();
+            if (audioTracks.length) tracks.push(audioTracks[0]);
+            return new MediaStream(tracks);
+        } catch (e) {
+            return vnoteStream;
+        }
+    }
+
+    function createVnoteRecorder(stream, mime) {
+        var opts = {};
+        if (mime) opts.mimeType = mime;
+        if (mime && mime.indexOf('video') === 0) {
+            opts.videoBitsPerSecond = VNOTE_VIDEO_BPS;
+            opts.audioBitsPerSecond = VNOTE_AUDIO_BPS;
+        }
+        try {
+            return Object.keys(opts).length
+                ? new MediaRecorder(stream, opts)
+                : new MediaRecorder(stream);
+        } catch (e) {
+            try {
+                return mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+            } catch (e2) {
+                return new MediaRecorder(stream);
+            }
+        }
+    }
+
     function prepareVnotePreview() {
         return navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
-            audio: true,
+            video: {
+                facingMode: 'user',
+                width: { ideal: 480, max: 640 },
+                height: { ideal: 480, max: 640 },
+            },
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+            },
         }).then(function (stream) {
             vnoteStream = stream;
             vnoteVideo = document.getElementById('vnote-preview-video');
@@ -473,14 +519,9 @@
         if (vnoteActive || !vnoteStream || vnoteUploading) return;
         vnoteChunks = [];
         vnotePending = null;
+        var recordStream = getVnoteRecordStream() || vnoteStream;
         var mime = pickMime(vnoteMimeCandidates());
-        try {
-            vnoteRecorder = mime
-                ? new MediaRecorder(vnoteStream, { mimeType: mime })
-                : new MediaRecorder(vnoteStream);
-        } catch (e) {
-            vnoteRecorder = new MediaRecorder(vnoteStream);
-        }
+        vnoteRecorder = createVnoteRecorder(recordStream, mime);
         mime = vnoteRecorder.mimeType || mime;
         vnoteRecorder.ondataavailable = function (e) {
             if (e.data && e.data.size) vnoteChunks.push(e.data);

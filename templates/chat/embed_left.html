@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Чат недоступен</title>
+</head>
+<body>
+<script>
+(function () {
+    try {
+        if (window.parent && window.parent !== window && window.parent.ChatShell) {
+            window.parent.ChatShell.closeChat();
+            return;
+        }
+    } catch (e) { /* cross-origin */ }
+    window.top.location.replace('/chat/');
+})();
+</script>
+</body>
+</html>

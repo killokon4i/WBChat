@@ -97,6 +97,8 @@ def chat_room(request, conversation_id):
     ).first()
     
     if not user_conversation:
+        if embed:
+            return render(request, 'chat/embed_left.html')
         raise Http404("Вы не являетесь участником этого чата")
     
     # Обновляем время последнего прочтения

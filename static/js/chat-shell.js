@@ -90,6 +90,24 @@
             }
         }
 
+        function removeChatFromList(id) {
+            if (!id) return;
+            id = String(id);
+            document.querySelectorAll('.chat-item').forEach(function (el) {
+                if (el.dataset.conversationId === id) {
+                    el.remove();
+                }
+            });
+        }
+
+        function getActiveChatId() {
+            if (currentChatId) return String(currentChatId);
+            var fromFrame = frame.dataset.currentChat;
+            if (fromFrame) return String(fromFrame);
+            var fromUrl = new URLSearchParams(window.location.search).get('c');
+            return fromUrl ? String(fromUrl) : '';
+        }
+
         function closeChat(pushState) {
             loadToken += 1;
             currentChatId = '';
@@ -106,6 +124,15 @@
             });
             if (pushState !== false) {
                 history.pushState({}, '', listUrl(null));
+            }
+        }
+
+        function onConversationLeft(id) {
+            if (!id) return;
+            id = String(id);
+            removeChatFromList(id);
+            if (getActiveChatId() === id) {
+                closeChat();
             }
         }
 
@@ -151,7 +178,13 @@
             openChat(initial, false);
         }
 
-        window.ChatShell = { openChat: openChat, closeChat: closeChat };
+        window.ChatShell = {
+            openChat: openChat,
+            closeChat: closeChat,
+            removeChatFromList: removeChatFromList,
+            onConversationLeft: onConversationLeft,
+            getActiveChatId: getActiveChatId,
+        };
 
         if (window.WBRealtime && typeof window.WBRealtime.syncInbox === 'function') {
             setInterval(window.WBRealtime.syncInbox, 2500);

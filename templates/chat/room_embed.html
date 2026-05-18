@@ -1349,7 +1349,7 @@
             <circle class="vnote-ring-bg" cx="50" cy="50" r="46"></circle>
             <circle class="vnote-ring-progress" id="vnote-ring-progress" cx="50" cy="50" r="46"></circle>
         </svg>
-        <canvas id="vnote-preview-canvas" width="480" height="480"></canvas>
+        <canvas id="vnote-preview-canvas" width="384" height="384"></canvas>
         <video id="vnote-preview-video" playsinline muted webkit-playsinline></video>
     </div>
     <div class="vnote-actions">
@@ -1382,7 +1382,7 @@
 {% block extra_scripts %}
 <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
 <script src="{% static 'js/chat-time.js' %}?v=1"></script>
-<script src="{% static 'js/chat-media-recorder.js' %}?v=4"></script>
+<script src="{% static 'js/chat-media-recorder.js' %}?v=5"></script>
 <script>
 const conversationId = {{ conversation.id }};
 const userId = {{ user.id }};
@@ -1947,9 +1947,8 @@ function buildAttachmentHtml(att) {
     }
     if (variant === 'video_note') {
         const dur = att.duration ? `<span class="msg-vnote-duration">${formatAttDuration(att.duration)}</span>` : '';
-        const mimeAttr = att.mime ? ` type="${escapeHtml(att.mime)}"` : '';
-        return `<div class="msg-attachment msg-vnote-wrap">${dlBtn}<div class="msg-vnote" role="button" tabindex="0" aria-label="Видеосообщение">
-            <video src="${att.url}"${mimeAttr} playsinline webkit-playsinline preload="metadata"></video>${dur}
+        return `<div class="msg-attachment">${dlBtn}<div class="msg-vnote" onclick="openMediaViewer('video','${att.url}')">
+            <video src="${att.url}" playsinline loop muted preload="metadata"></video>${dur}
         </div></div>`;
     }
     if (att.type === 'image') {
@@ -3031,15 +3030,30 @@ function getLatestMessageId() {
     return max;
 }
 
+function redirectIfChatUnavailable(response) {
+    if (!response || (response.status !== 403 && response.status !== 404)) return false;
+    try {
+        if (window.parent && window.parent !== window && window.parent.ChatShell) {
+            window.parent.ChatShell.closeChat();
+            return true;
+        }
+    } catch (e) { /* ignore */ }
+    window.top.location.replace('/chat/');
+    return true;
+}
+
 function pollNewMessages() {
     const since = getLatestMessageId();
     const url = since
         ? `/chat/api/messages/${conversationId}/?since_id=${since}`
         : `/chat/api/messages/${conversationId}/?limit=1`;
     fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-        .then(function (r) { return r.json(); })
+        .then(function (r) {
+            if (redirectIfChatUnavailable(r)) return null;
+            return r.json();
+        })
         .then(function (data) {
-            if (!data.messages || !data.messages.length) return;
+            if (!data || !data.messages || !data.messages.length) return;
             data.messages.forEach(function (msg) {
                 if (!document.getElementById('message-' + msg.id)) {
                     addMessage(msg);
@@ -3064,6 +3078,7 @@ function loadMessages() {
         headers: { 'Accept': 'application/json' },
     })
         .then(function (r) {
+            if (redirectIfChatUnavailable(r)) return null;
             if (!r.ok) {
                 return r.text().then(function (t) {
                     throw new Error('HTTP ' + r.status + (t ? ': ' + t.slice(0, 120) : ''));
@@ -3072,6 +3087,7 @@ function loadMessages() {
             return r.json();
         })
         .then(function (data) {
+            if (!data) return;
             if (data.error) throw new Error(data.error);
             if (data.messages && data.messages.length) {
                 data.messages.forEach(function (msg) {
