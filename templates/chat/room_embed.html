@@ -643,30 +643,40 @@
         color: var(--magenta);
     }
 
-  .message-vnote-only,
-    .message-vnote-only.message-has-media,
+  .message.message-vnote-only,
     .message-other.message-vnote-only,
     .message-own.message-vnote-only {
         padding: 0 !important;
-        margin: 0;
+        margin: 0 0 8px 0;
         max-width: none !important;
-        background: transparent !important;
+        width: auto !important;
+        background: none !important;
+        background-color: transparent !important;
         box-shadow: none !important;
         border: none !important;
     }
+    .message-vnote-only.message-has-media,
+    .message-vnote-only.message-media-only {
+        padding: 0 !important;
+        background: transparent !important;
+    }
     .message-vnote-only .message-time { display: none !important; }
+    .message-vnote-only .message-content { display: none !important; }
     .message-vnote-only .msg-attachment {
-        margin: 0;
-        background: transparent;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
     }
     .message-vnote-only .message-author {
-        margin-bottom: 4px;
+        margin: 0 0 4px 4px;
+        padding: 0;
     }
     .msg-vnote-wrap {
         position: relative;
-        display: inline-block;
+        display: block;
         line-height: 0;
-        vertical-align: top;
+        background: transparent !important;
+        box-shadow: none !important;
     }
     .msg-vnote-player {
         position: relative;
@@ -674,40 +684,15 @@
         height: 200px;
         flex-shrink: 0;
         cursor: pointer;
+        background: transparent !important;
+        box-shadow: none !important;
         transform: scale(1);
         transform-origin: center center;
-        transition: transform 0.25s cubic-bezier(.2, .75, .2, 1), box-shadow 0.25s ease;
+        transition: transform 0.22s ease;
     }
     .msg-vnote-player.is-playing {
-        transform: scale(1.06);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
-    }
-    .message-own .msg-vnote-player.is-playing {
-        box-shadow: 0 6px 22px rgba(228, 0, 175, .28);
-    }
-    .msg-vnote-ring {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        transform: rotate(-90deg);
-        pointer-events: none;
-        z-index: 4;
-        opacity: 0;
-        transition: opacity 0.15s ease;
-    }
-    .msg-vnote-player.is-playing .msg-vnote-ring {
-        opacity: 1;
-    }
-    .msg-vnote-ring-bg {
-        display: none;
-    }
-    .msg-vnote-ring-bar {
-        fill: none;
-        stroke: rgba(255, 255, 255, .95);
-        stroke-width: 1.5;
-        stroke-linecap: round;
-        vector-effect: non-scaling-stroke;
+        transform: scale(1.05);
+        filter: drop-shadow(0 6px 16px rgba(0, 0, 0, .22));
     }
     .msg-vnote {
         width: 100%;
@@ -715,8 +700,8 @@
         border-radius: 50%;
         overflow: hidden;
         position: relative;
-        background: #111;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, .18);
+        background: #0a0a0a;
+        box-shadow: none !important;
     }
     .msg-vnote video {
         width: 100%;
@@ -724,18 +709,19 @@
         object-fit: cover;
         display: block;
         background: #000;
+        border-radius: 50%;
     }
     .msg-vnote-play {
         position: absolute;
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
-        z-index: 5;
+        z-index: 3;
         width: 48px;
         height: 48px;
         border: none;
         border-radius: 50%;
-        background: rgba(0, 0, 0, .45);
+        background: rgba(0, 0, 0, .5);
         color: #fff;
         cursor: pointer;
         display: flex;
@@ -743,7 +729,6 @@
         justify-content: center;
         opacity: 1;
         pointer-events: auto;
-        transition: opacity 0.15s ease, background 0.15s ease;
     }
     .msg-vnote-play svg {
         width: 20px;
@@ -763,14 +748,13 @@
         position: absolute;
         bottom: 8px;
         left: 10px;
-        z-index: 5;
-        background: rgba(0, 0, 0, .5);
+        z-index: 4;
+        background: rgba(0, 0, 0, .55);
         color: #fff;
         font-size: 11px;
         padding: 2px 7px;
         border-radius: 8px;
         pointer-events: none;
-        font-variant-numeric: tabular-nums;
         line-height: 1.2;
     }
     .msg-vnote-player.is-playing .msg-vnote-duration {
@@ -780,42 +764,22 @@
         position: absolute;
         bottom: 8px;
         right: 10px;
-        z-index: 6;
+        z-index: 4;
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        background: rgba(0, 0, 0, .5);
+        background: rgba(0, 0, 0, .55);
         color: #fff;
         font-size: 11px;
         line-height: 1.2;
         padding: 2px 7px;
         border-radius: 8px;
         pointer-events: none;
-        font-variant-numeric: tabular-nums;
     }
-    .msg-vnote-meta .read-indicator {
-        font-size: 12px;
-        min-width: 14px;
-    }
-    .msg-vnote-meta .read-indicator.sent::before {
-        color: rgba(255, 255, 255, .9);
-    }
-    .msg-vnote-meta .read-indicator.read::before {
-        color: #8ed4fc;
-    }
-    .message-vnote-only .msg-attachment-dl {
-        top: 6px;
-        right: 6px;
-        z-index: 7;
-        opacity: 0;
-        width: 28px;
-        height: 28px;
-        font-size: 14px;
-    }
-    .message-vnote-only .msg-vnote-wrap:hover .msg-attachment-dl,
-    .message-vnote-only .msg-attachment-dl:focus {
-        opacity: 1;
-    }
+    .msg-vnote-meta .read-indicator { font-size: 12px; }
+    .msg-vnote-meta .read-indicator.sent::before { color: rgba(255, 255, 255, .92); }
+    .msg-vnote-meta .read-indicator.read::before { color: #8ed4fc; }
+    .message-vnote-only .msg-attachment-dl { display: none; }
 
 
     .vnote-overlay {
@@ -1827,21 +1791,29 @@ function addMessage(msg, skipParentNotify, addOpts) {
 
     const attsForClass = msg.attachments || (msg.attachment ? [msg.attachment] : []);
     const textOnly = (msg.content || '').trim();
-    const mediaPlaceholders = ['🎤 Голосовое сообщение', '📹 Видеосообщение'];
+    const mediaPlaceholders = ['🎤 Голосовое сообщение', '📹 Видеосообщение', '📹 Кружок', 'Видеосообщение'];
+    function isVnotePlaceholderText(text, att, author) {
+        if (!text) return true;
+        if (mediaPlaceholders.indexOf(text) !== -1) return true;
+        if (att && att.name && text === String(att.name).trim()) return true;
+        if (author && text === String(author).trim()) return true;
+        return false;
+    }
+    const vnoteAtt = attsForClass.length === 1 && attsForClass[0].variant === 'video_note' ? attsForClass[0] : null;
+    const isVnoteOnly = !!vnoteAtt && !msg.reply_to_id && !msg.forwarded_from_id &&
+        isVnotePlaceholderText(textOnly, vnoteAtt, msg.author_username);
     const isJustFilename = attsForClass.length > 0 && (
         attsForClass.some(function (a) { return a.name === textOnly; }) ||
         mediaPlaceholders.indexOf(textOnly) !== -1
     );
-    const hasVisibleText = textOnly && !isJustFilename && textOnly.indexOf('[link_card]') === -1 && textOnly.indexOf('[kb_share]') === -1;
-    if (attsForClass.length) div.classList.add('message-has-media');
-    if (attsForClass.length && !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id) {
+    const hasVisibleText = !isVnoteOnly && textOnly && !isJustFilename &&
+        textOnly.indexOf('[link_card]') === -1 && textOnly.indexOf('[kb_share]') === -1;
+    if (attsForClass.length && !isVnoteOnly) div.classList.add('message-has-media');
+    if (attsForClass.length && !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id && !isVnoteOnly) {
         div.classList.add('message-media-only');
     }
     const isVoiceOnly = attsForClass.length === 1 &&
         (attsForClass[0].variant === 'voice') &&
-        !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id;
-    const isVnoteOnly = attsForClass.length === 1 &&
-        (attsForClass[0].variant === 'video_note') &&
         !hasVisibleText && !msg.reply_to_id && !msg.forwarded_from_id;
     if (isVoiceOnly) {
         div.classList.add('message-voice-only');
@@ -1849,7 +1821,7 @@ function addMessage(msg, skipParentNotify, addOpts) {
     }
     if (isVnoteOnly) {
         div.classList.add('message-vnote-only');
-        div.classList.remove('message-media-only');
+        div.classList.remove('message-media-only', 'message-has-media');
     }
 
     const time = window.WBChatTime
@@ -1880,7 +1852,7 @@ function addMessage(msg, skipParentNotify, addOpts) {
 
     if (!isOwn) html += `<div class="message-author">${escapeHtml(msg.author_username)}</div>`;
 
-    html += buildContentHtml(msg);
+    if (!isVnoteOnly) html += buildContentHtml(msg);
 
     const atts = msg.attachments || (msg.attachment ? [msg.attachment] : []);
     atts.forEach(att => { html += buildAttachmentHtml(att); });
@@ -2006,23 +1978,12 @@ function bindVnotePlayer(wrap) {
     const player = wrap.querySelector('.msg-vnote-player');
     const video = wrap.querySelector('video');
     const playBtn = wrap.querySelector('.msg-vnote-play');
-    const ringBar = wrap.querySelector('.msg-vnote-ring-bar');
     if (!video) return;
     if (video.dataset.vnotePlayerInit) return;
     video.dataset.vnotePlayerInit = '1';
 
     const root = player || wrap.querySelector('.msg-vnote');
     if (!root) return;
-
-    const total = player ? (parseInt(player.getAttribute('data-duration'), 10) || 0) : 0;
-    const ringLen = 100;
-
-    function setRing(pct) {
-        if (!ringBar) return;
-        var p = Math.min(1, Math.max(0, pct || 0));
-        ringBar.style.strokeDasharray = ringLen + ' ' + ringLen;
-        ringBar.style.strokeDashoffset = String(ringLen * (1 - p));
-    }
 
     function stopOthers() {
         document.querySelectorAll('.msg-vnote-wrap').forEach(function (w) {
@@ -2036,8 +1997,6 @@ function bindVnotePlayer(wrap) {
                 ob.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="8 5 20 12 8 19"/></svg>';
                 ob.style.marginLeft = '3px';
             }
-            var rb = w.querySelector('.msg-vnote-ring-bar');
-            if (rb) rb.style.strokeDashoffset = String(ringLen);
         });
     }
 
@@ -2054,7 +2013,6 @@ function bindVnotePlayer(wrap) {
         if (toStart) video.currentTime = 0;
         root.classList.remove('is-playing', 'is-paused');
         setPlayIcon(false);
-        setRing(0);
     }
 
     function canStart() {
@@ -2093,7 +2051,6 @@ function bindVnotePlayer(wrap) {
     }
 
     video.loop = false;
-    setRing(0);
     setPlayIcon(false);
 
     if (playBtn) {
@@ -2105,18 +2062,12 @@ function bindVnotePlayer(wrap) {
     }
 
     root.addEventListener('click', function (e) {
-        if (e.target.closest('.msg-attachment-dl')) return;
         if (e.target.closest('.msg-vnote-play')) return;
         e.preventDefault();
         e.stopPropagation();
         toggleVnote();
     });
 
-    video.addEventListener('timeupdate', function () {
-        var dur = (video.duration && isFinite(video.duration)) ? video.duration : total;
-        if (!dur || !root.classList.contains('is-playing')) return;
-        setRing(video.currentTime / dur);
-    });
     video.addEventListener('ended', function () {
         resetVnote(true);
     });
@@ -2236,11 +2187,8 @@ function buildAttachmentHtml(att) {
         const durSec = parseInt(att.duration, 10) || 0;
         const dur = formatAttDuration(durSec);
         const mimeAttr = att.mime ? ` type="${escapeHtml(att.mime)}"` : '';
-        return `<div class="msg-attachment msg-vnote-wrap">${dlBtn}
+        return `<div class="msg-attachment msg-vnote-wrap">
         <div class="msg-vnote-player" data-duration="${durSec}">
-            <svg class="msg-vnote-ring" viewBox="0 0 36 36" aria-hidden="true">
-                <circle class="msg-vnote-ring-bar" cx="18" cy="18" r="16" pathLength="100"></circle>
-            </svg>
             <div class="msg-vnote">
                 <video src="${att.url}"${mimeAttr} playsinline webkit-playsinline preload="metadata"></video>
             </div>
