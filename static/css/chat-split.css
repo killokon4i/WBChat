@@ -254,6 +254,46 @@ body:has(.chat-page--split) .portal-container.container {
     font-size: 14px;
 }
 
+/* Десктоп (ПК): split на всю ширину окна под шапкой сайта */
+@media (min-width: 901px) {
+    body:has(.chat-page--split) .portal-shell,
+    body:has(.chat-page--split) .portal-page {
+        width: 100%;
+        max-width: none;
+    }
+
+    body:has(.chat-page--split) .portal-container.container {
+        max-width: none;
+        width: 100%;
+        padding: 0;
+    }
+
+    .chat-page--split {
+        width: 100%;
+        min-height: calc(100dvh - 64px);
+    }
+
+    .chat-split-layout {
+        width: 100%;
+        height: calc(100dvh - 64px);
+        max-height: none;
+        min-height: 0;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        box-shadow: none;
+    }
+
+    .chat-split-panel {
+        background: var(--bg-card);
+    }
+
+    .chat-split-frame {
+        display: block;
+        height: 100%;
+    }
+}
+
 @media (max-width: 900px) {
     body.chat-mobile-active {
         overflow: hidden;
