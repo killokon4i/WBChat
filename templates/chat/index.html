@@ -4,9 +4,8 @@
 
 {% block extra_styles %}
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/chat-split.css' %}?v=6">
+<link rel="stylesheet" href="{% static 'css/chat-split.css' %}?v=7">
 <link rel="stylesheet" href="{% static 'css/avatar-initials.css' %}?v=1">
-<link rel="stylesheet" href="{% static 'css/wb-confirm.css' %}?v=1">
 <style>
     .chat-list {
         display: flex;
@@ -510,7 +509,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="wb-portal-mesh-page wb-portal-marketing wb-list-page chat-page chat-page--split">
+<div class="wb-portal-mesh-page wb-portal-mesh-page--wide wb-portal-marketing wb-list-page chat-page chat-page--split">
     <div class="chat-split-layout{% if active_conversation_id %} chat-has-active{% endif %}"
          id="chatSplitLayout"
          data-initial-chat="{% if active_conversation_id %}{{ active_conversation_id }}{% endif %}">
@@ -914,16 +913,9 @@ function createGroup(e) {
         menu.style.top = y + 'px';
     }
 
-    window.deleteConversation = async function(convId) {
+    window.deleteConversation = function(convId) {
         hideChatContextMenu();
-        const ok = await showConfirm({
-            title: 'Удалить чат?',
-            message: 'Чат будет скрыт только у вас. Переписка сохранится у других участников.',
-            confirmText: 'Удалить',
-            cancelText: 'Отмена',
-            danger: true
-        });
-        if (!ok) return;
+        if (!confirm('Удалить чат из списка? Он будет скрыт только у вас.')) return;
         fetch(`/api/chat/conversations/${convId}/leave/`, {
             method: 'POST',
             headers: {
@@ -975,7 +967,6 @@ function createGroup(e) {
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{% static 'js/wb-confirm.js' %}?v=1"></script>
 <script src="{% static 'js/avatar-fallback.js' %}?v=1"></script>
 {% load static %}
 <script src="{% static 'js/chat-shell.js' %}?v=10"></script>
