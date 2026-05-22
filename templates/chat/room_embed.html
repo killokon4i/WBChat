@@ -1348,6 +1348,46 @@
      .msg-attachments .msg-attachment-file {
         max-width: 100px !important;
      }
+
+     /* First attachment larger */
+     .msg-attachments .msg-attachment:first-child img,
+     .msg-attachments .msg-attachment:first-child video {
+        max-width: 200px !important;
+        max-height: 200px !important;
+    }
+
+    /* Gallery navigation styles */
+    .gallery-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0,0,0,0.5);
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-size: 24px;
+        cursor: pointer;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .gallery-nav.nav-left { left: 10px; }
+    .gallery-nav.nav-right { right: 10px; }
+    .gallery-nav:hover { background: rgba(0,0,0,0.7); }
+    .gallery-caption {
+        position: absolute;
+        bottom: 10px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: white;
+        font-size: 16px;
+        background: rgba(0,0,0,0.5);
+        padding: 5px;
+    }
 </style>
 {% endblock %}
 
@@ -2211,10 +2251,10 @@ function buildAttachmentHtml(att) {
         </div></div>`;
     }
     if (att.type === 'image') {
-        return `<div class="msg-attachment">${dlBtn}<img src="${att.url}" alt="${escapeHtml(att.name)}" onclick="openMediaViewer('image','${att.url}')"></div>`;
+        return `<div class="msg-attachment">${dlBtn}<img src="${att.url}" alt="${escapeHtml(att.name)}" onclick="openMediaViewerForAttachment(event, '${att.url}', 'image', '${escapeHtml(att.name)}')"></div>`;
     }
     if (att.type === 'video') {
-        return `<div class="msg-attachment">${dlBtn}<video src="${att.url}" controls preload="metadata" onclick="event.preventDefault();openMediaViewer('video','${att.url}')"></video></div>`;
+        return `<div class="msg-attachment">${dlBtn}<video src="${att.url}" controls preload="metadata" onclick="event.preventDefault();openMediaViewerForAttachment(event, '${att.url}', 'video', '${escapeHtml(att.name)}')"></video></div>`;
     }
     const sizeStr = att.size > 1048576 ? (att.size / 1048576).toFixed(1) + ' МБ' : (att.size / 1024).toFixed(0) + ' КБ';
     const ext = (att.name || '').split('.').pop().toUpperCase();
@@ -2802,17 +2842,108 @@ function uploadChatFiles(formData, onProgress) {
 }
 
 /* ========== Media viewer ========== */
-function openMediaViewer(type, url) {
+function openMediaViewerForAttachment(event, url, type, name) {
+    // Find all attachments in this message
+    const msgElement = event.target.closest('.message');
+    if (!msgElement) {
+        // Fallback to single media viewer
+        openMediaViewer(type, url);
+        return;
+    }
+
+    // Extract all image/video attachments from this message
+    const attachments = [];
+    const attachmentElements = msgElement.querySelectorAll('.msg-attachment img, .msg-attachment video');
+
+    attachmentElements.forEach(el => {
+        // Get the parent attachment div to check type
+        const attachmentDiv = el.closest('.msg-attachment');
+        if (attachmentDiv) {
+            const imgEl = attachmentDiv.querySelector('img');
+            const videoEl = attachmentDiv.querySelector('video');
+            if (imgEl) {
+                attachments.push({
+                    type: 'image',
+                    url: imgEl.src,
+                    name: imgEl.alt || 'image'
+                });
+            } else if (videoEl) {
+                attachments.push({
+                    type: 'video',
+                    url: videoEl.src,
+                    name: videoEl.getAttribute('alt') || 'video'
+                });
+            }
+        }
+    });
+
+    // Find the index of the clicked attachment
+    const clickedIndex = attachments.findIndex(att => att.url === url);
+    if (clickedIndex >= 0) {
+        openMediaViewer(null, null, attachments, clickedIndex);
+    } else {
+        // Fallback to single media viewer
+        openMediaViewer(type, url);
+    }
+}
+
+function openMediaViewer(type, url, gallery = null, index = 0) {
     const content = document.getElementById('media-viewer-content');
-    if (type === 'image') content.innerHTML = `<img src="${url}" alt="">`;
-    else content.innerHTML = `<video src="${url}" controls autoplay></video>`;
+    if (gallery && gallery.length > 0) {
+        // Gallery mode
+        const media = gallery[index];
+        let mediaElement = '';
+        if (media.type === 'image') {
+            mediaElement = `<img src="${media.url}" alt="" style="max-width:90vw; max-height:90vh;">`;
+        } else {
+            mediaElement = `<video src="${media.url}" controls autoplay style="max-width:90vw; max-height:90vh;"></video>`;
+        }
+        const html = `
+            <div style="position:relative;">
+                ${mediaElement}
+                <button onclick="changeGallery(-1)" class="gallery-nav nav-left">&#9664;</button>
+                <button onclick="changeGallery(1)" class="gallery-nav nav-right">&#9654;</button>
+                <div class="gallery-caption">${index + 1}/${gallery.length}</div>
+            </div>
+        `;
+        content.innerHTML = html;
+        // Store the gallery and index in the content element for the nav buttons to use
+        content.dataset.gallery = JSON.stringify(gallery);
+        content.dataset.index = index;
+    } else {
+        // Single media mode
+        if (type === 'image') content.innerHTML = `<img src="${url}" alt="">`;
+        else content.innerHTML = `<video src="${url}" controls autoplay></video>`;
+    }
     document.getElementById('media-viewer').classList.add('active');
 }
 function closeMediaViewer() {
     document.getElementById('media-viewer').classList.remove('active');
     document.getElementById('media-viewer-content').innerHTML = '';
+    // Clear gallery data
+    const content = document.getElementById('media-viewer-content');
+    delete content.dataset.gallery;
+    delete content.dataset.index;
 }
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMediaViewer(); });
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeMediaViewer();
+    } else if (e.key === 'ArrowLeft') {
+        changeGallery(-1);
+    } else if (e.key === 'ArrowRight') {
+        changeGallery(1);
+    }
+});
+function changeGallery(delta) {
+    const content = document.getElementById('media-viewer-content');
+    if (!content.dataset.gallery) return;
+    const gallery = JSON.parse(content.dataset.gallery);
+    let index = parseInt(content.dataset.index);
+    index = (index + delta + gallery.length) % gallery.length;
+    content.dataset.index = index;
+    // Re-render
+    openMediaViewer(null, null, gallery, index);
+}
 
 /* ========== Send ========== */
 function isChatWsReady() {
