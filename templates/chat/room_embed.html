@@ -1881,10 +1881,19 @@ function addMessage(msg, skipParentNotify, addOpts) {
     html += buildContentHtml(msg);
 
     const atts = msg.attachments || (msg.attachment ? [msg.attachment] : []);
-    if (atts.length) {
+    // Filter for image/video attachments only
+    const mediaAtts = atts.filter(att => att.type === 'image' || att.type === 'video');
+    // Only group if there are 2 or more media attachments
+    if (mediaAtts.length >= 2) {
         html += '<div class="msg-attachments">';
-        atts.forEach(att => { html += buildAttachmentHtml(att); });
+        mediaAtts.forEach(att => { html += buildAttachmentHtml(att); });
         html += '</div>';
+        // Add document attachments separately (if any)
+        const docAtts = atts.filter(att => att.type !== 'image' && att.type !== 'video');
+        docAtts.forEach(att => { html += buildAttachmentHtml(att); });
+    } else {
+        // Show all attachments normally (vertically)
+        atts.forEach(att => { html += buildAttachmentHtml(att); });
     }
 
     html += `<div class="message-time">${pinnedLabel}${editedLabel}${time}${readHtml}</div>`;
