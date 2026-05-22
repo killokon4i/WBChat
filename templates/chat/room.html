@@ -596,6 +596,24 @@
             padding: 14px;
         }
     }
+     /* Attachment grid styles */
+     .msg-attachments {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+     }
+
+     .msg-attachment img,
+     .msg-attachment video {
+        max-width: 120px;
+        max-height: 120px;
+        border-radius: 12px;
+     }
+
+     .msg-attachments .msg-attachment-file {
+        max-width: 120px;
+     }
 </style>
 {% endblock %}
 
@@ -858,7 +876,11 @@ function addMessage(msg) {
     html += buildContentHtml(msg);
 
     const atts = msg.attachments || (msg.attachment ? [msg.attachment] : []);
-    atts.forEach(att => { html += buildAttachmentHtml(att); });
+    if (atts.length) {
+        html += '<div class="msg-attachments">';
+        atts.forEach(att => { html += buildAttachmentHtml(att); });
+        html += '</div>';
+    }
 
     html += `<div class="message-time">${pinnedLabel}${editedLabel}${time}${readHtml}</div>`;
 
