@@ -291,15 +291,6 @@
 
     /* Attachment rendering */
     .msg-attachment { margin-top: 8px; }
-    .msg-attachment img, .msg-attachment video {
-        max-width: min(260px, 100%);
-        max-height: 240px;
-        width: auto;
-        height: auto;
-        border-radius: 14px;
-        cursor: pointer;
-        display: block;
-    }
     .msg-attachment-file {
         display: flex; align-items: center; gap: 10px;
         background: rgba(0,0,0,.1); border-radius: 16px;
@@ -1339,6 +1330,24 @@
             padding: 14px;
         }
     }
+     /* Attachment grid styles */
+     .msg-attachments {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+     }
+
+     .msg-attachments .msg-attachment img,
+     .msg-attachments .msg-attachment video {
+        max-width: 100px !important;
+        max-height: 100px !important;
+        border-radius: 11px !important;
+     }
+
+     .msg-attachments .msg-attachment-file {
+        max-width: 100px !important;
+     }
 </style>
 {% endblock %}
 
@@ -1872,7 +1881,11 @@ function addMessage(msg, skipParentNotify, addOpts) {
     html += buildContentHtml(msg);
 
     const atts = msg.attachments || (msg.attachment ? [msg.attachment] : []);
-    atts.forEach(att => { html += buildAttachmentHtml(att); });
+    if (atts.length) {
+        html += '<div class="msg-attachments">';
+        atts.forEach(att => { html += buildAttachmentHtml(att); });
+        html += '</div>';
+    }
 
     html += `<div class="message-time">${pinnedLabel}${editedLabel}${time}${readHtml}</div>`;
 
